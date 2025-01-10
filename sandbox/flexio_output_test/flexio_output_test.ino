@@ -1,11 +1,13 @@
 #define PIN_HARDCODE_OUT  20 //this is just a simple test as a baseline
 
 // ---- FLEXIO STUFF BELOW ----
-#define PIN_STEP_OUT    35  //Teensy Pin 35, Pad B1_12, FlexIO Pin 2:28 
+#define PIN_STEP_OUT    35  //Teensy Pin 35, Pad B1_12, FlexIO Pin 2:28
+#define PIN_DIR_OUT     34  //Teensy Pin 34, Pad B1_13, FlexIO Pin 2:29
 
 void setup() {
   pinMode(PIN_HARDCODE_OUT, OUTPUT);
   pinMode(PIN_STEP_OUT, OUTPUT);
+  pinMode(PIN_DIR_OUT, OUTPUT);
 
   // --- CONFIG FLEXIO ---
   // I'm heavily referencing this post: https://forum.pjrc.com/index.php?threads/teensy-4-1-how-to-start-using-flexio.66201/
@@ -27,8 +29,9 @@ void setup() {
 
   // -- MAP PADS TO FLEXIO MODULE PINS --
   IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_12 = 4; //Map pad B1_12 to FLEXIO2 Module Pin FLEXIO28
+  IOMUXC_SW_MUX_CTL_PAD_GPIO_B1_13 = 4; //Map pad B1_13 to FLEXIO2 Module Pin FLEXIO29
   
-  // -- Configure Shifter --
+  // -- Configure Shifter 0 For Step Output --
 
   // Set Shifter Control Register (P2926)
   FLEXIO2_SHIFTCTL0	= FLEXIO_SHIFTCTL_TIMSEL(0) |	// select timer0 as input. Multiple shifters can share a timer input.
@@ -43,7 +46,21 @@ void setup() {
 			  // FLEXIO_SHIFTCFG_INSRC |	              // pin input
 			  FLEXIO_SHIFTCFG_SSTOP(0) |			        // stop bit disabled
 			  FLEXIO_SHIFTCFG_SSTART(0);					    // start bit disabled
-  
+
+  // Set Shifter Control Register (P2926)
+  FLEXIO2_SHIFTCTL1	= FLEXIO_SHIFTCTL_TIMSEL(0) |	// select timer0 as input. Multiple shifters can share a timer input.
+			  // FLEXIO_SHIFTCTL_TIMPOL	|			          // on positive edge
+			  FLEXIO_SHIFTCTL_PINCFG(3) |			          // pin output enabled
+			  FLEXIO_SHIFTCTL_PINSEL(29)|			          // FLEXIO PIN 29
+			  // FLEXIO_SHIFTCTL_PINPOL	|			          // active high
+			  FLEXIO_SHIFTCTL_SMOD(2);					        // transmit mode
+
+  // Set Shifter Config Register (P2927)
+  FLEXIO2_SHIFTCFG1	= FLEXIO_SHIFTCFG_PWIDTH(0)	|	// single bit
+			  // FLEXIO_SHIFTCFG_INSRC |	              // pin input
+			  FLEXIO_SHIFTCFG_SSTOP(0) |			        // stop bit disabled
+			  FLEXIO_SHIFTCFG_SSTART(0);					    // start bit disabled
+
   // -- Configure Timer --
 
   // Set Timer0 Compare Register
@@ -76,5 +93,9 @@ void loop() {
   // digitalWrite(PIN_HARDCODE_OUT, LOW);
   // delayMicroseconds(1);
   delay(10);
-  FLEXIO2_SHIFTBUF0 = 0b11111110011111100111110011110;
+  // FLEXIO2_SHIFTBUF1 = 0xFFFFFFFF;
+  // FLEXIO2_SHIFTBUF1 = 0x55555555;
+  FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
+  FLEXIO2_SHIFTBUF0 = 0b1111111001111110011111001111000; //WRITE LAST... this triggers the transmit
+
 }
