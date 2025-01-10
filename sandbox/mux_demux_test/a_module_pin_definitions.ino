@@ -1,0 +1,32 @@
+// --- WHEELPRINT ---
+// THE 3D PRINTING POTTERY WHEEL
+//
+// PIN DEFINITIONS FOR STANDARD WHEELPRINT MODULE, WHICH WE USE FOR NOW.
+//
+
+// -- INPUT CHANNELS --
+#define PIN_INPUT_A_STEP    3
+#define PIN_INPUT_A_DIR     2
+#define PIN_INPUT_B_STEP    5
+#define PIN_INPUT_B_DIR     4
+#define PIN_INPUT_C_STEP    7
+#define PIN_INPUT_C_DIR     6
+#define PIN_INPUT_D_STEP    9
+#define PIN_INPUT_D_DIR     8
+
+// -- OUTPUT CHANNELS --
+#define PIN_OUTPUT_A_STEP   23
+#define PIN_OUTPUT_A_DIR    22
+#define PIN_OUTPUT_B_STEP   21
+#define PIN_OUTPUT_B_DIR    20
+#define PIN_OUTPUT_C_STEP   17
+#define PIN_OUTPUT_C_DIR    10
+#define PIN_OUTPUT_D_STEP   11
+#define PIN_OUTPUT_D_DIR    12
+
+// -- BUTTON / ANALOG INPUTS --
+#define PIN_GENERAL_INPUT_A   16  //A2
+#define PIN_GENERAL_INPUT_B   15  //A1
+#define PIN_GENERAL_INPUT_C   14  //A0
+#define PIN_GENERAL_INPUT_D   41  //A17
+#define PIN_GENERAL_INPUT_E   40  //A16
