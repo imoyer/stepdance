@@ -1,13 +1,31 @@
 #define PIN_HARDCODE_OUT  20 //this is just a simple test as a baseline
 
-// ---- FLEXIO STUFF BELOW ----
+// ---- PIN DEFINITIONS ----
 #define PIN_STEP_OUT    35  //Teensy Pin 35, Pad B1_12, FlexIO Pin 2:28
 #define PIN_DIR_OUT     34  //Teensy Pin 34, Pad B1_13, FlexIO Pin 2:29
+
+#define PIN_STEP_IN     24  //Teensy Pin 24, Pad AD_B0_12, PWM1 2X
+#define PIN_DIR_IN      25  //Teensy Pin 25, Pad AD_B0_13, PWM1 3X
+
+// ---- FLEXPWM MODULE DEFINITIONS ----
+#define PIN_STEP_MUX    4   //ALT4
+IMXRT_FLEXPWM_t *PIN_STEP_FLEXPWM = &IMXRT_FLEXPWM1; //This structure maps into the register memory map, and is defined in imxrt.h
+#define PIN_STEP_SUBMODULE 2
+#define PIN_STEP_SUBMODULE_MASK 1 << PIN_STEP_SUBMODULE
+#define PIN_STEP_CHANNEL 0 //X:0, A:1, B:2
+const uint8_t PIN_STEP_IRQ = IRQ_FLEXPWM1_2;
+
+// ---- STATE MEMORY ----
+volatile uint16_t capture_0;
+volatile uint16_t capture_1;
+volatile uint16_t capture_difference;
 
 void setup() {
   pinMode(PIN_HARDCODE_OUT, OUTPUT);
   pinMode(PIN_STEP_OUT, OUTPUT);
   pinMode(PIN_DIR_OUT, OUTPUT);
+  pinMode(PIN_STEP_IN, INPUT);
+  pinMode(PIN_DIR_IN, INPUT);
 
   // --- CONFIG FLEXIO ---
   // I'm heavily referencing this post: https://forum.pjrc.com/index.php?threads/teensy-4-1-how-to-start-using-flexio.66201/
@@ -84,6 +102,62 @@ void setup() {
 			  FLEXIO_TIMCFG_TIMENA(2)	|			            // enable timer on trigger high
 			  FLEXIO_TIMCFG_TSTOP(0);			              // stop bit disabled
 			  //FLEXIO_TIMCFG_TSTART					          // start bit disabled
+
+
+  // ---- CONFIG FLEXPWM ----
+  // We'll use the "e-capture" feature of the PWM module to precisely capture and time our multiplexed input signals.
+  // For this I'm referencing the manual, as well as the Teensy FreqMeasureMultiIMXRT library.
+  //
+  // I'll follow a similar pattern to the FlexIO: configure the clock, then the pins, then the registers.
+  // What's new are the interrupts, which will be fun/interesting to tackle.
+  // We have STEP on FLEXPWM1 2X, and DIR on FLEXPWM1 3X
+
+
+  // -- Enable Clock --
+  // We'll do this through CCGR4, which gates the clock to FLEXPWM1
+  CCM_CCGR4 |= CCM_CCGR4_PWM1(CCM_CCGR_ON);
+  
+  // -- MUX the STEP PIN --
+  *(portConfigRegister(PIN_STEP_IN)) = PIN_STEP_MUX;
+  
+  // -- CONFIGURE THE FLEXPWM MODULE ---
+  PIN_STEP_FLEXPWM->FCTRL0 |= FLEXPWM_FCTRL0_FLVL(PIN_STEP_SUBMODULE_MASK);
+	PIN_STEP_FLEXPWM->FSTS0 = PIN_STEP_SUBMODULE_MASK;
+	PIN_STEP_FLEXPWM->MCTRL |= FLEXPWM_MCTRL_CLDOK(PIN_STEP_SUBMODULE_MASK);
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CTRL2 = FLEXPWM_SMCTRL2_INDEP;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CTRL = FLEXPWM_SMCTRL_HALF;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].INIT = 0;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].VAL0 = 0;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].VAL1 = 65535; //used to capture overflow, this is the X register
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].VAL2 = 0;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].VAL3 = 0;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].VAL4 = 0;
+	PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].VAL5 = 0;
+	PIN_STEP_FLEXPWM->MCTRL |= FLEXPWM_MCTRL_LDOK(PIN_STEP_SUBMODULE_MASK) | FLEXPWM_MCTRL_RUN(PIN_STEP_SUBMODULE_MASK);
+
+  // Configure the capture functionality
+  uint16_t capture_mode = FLEXPWM_SMCAPTCTRLX_EDGX0(2) | FLEXPWM_SMCAPTCTRLX_EDGX1(1); //capture time between rising and falling edges
+  PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CAPTCTRLX = capture_mode | FLEXPWM_SMCAPTCTRLX_ARMX;
+
+  // Configure and Enable Interrupts
+  uint16_t interrupt_enable_flags = FLEXPWM_SMINTEN_CX1IE; //interrupt on second capture
+  PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].INTEN |= interrupt_enable_flags;
+
+  // Attach interrupts
+  __disable_irq(); //disable interrupts
+  attachInterruptVector((IRQ_NUMBER_t) PIN_STEP_IRQ, &flexpwm_interrupt);
+  NVIC_SET_PRIORITY(PIN_STEP_IRQ, 48);
+  NVIC_ENABLE_IRQ(PIN_STEP_IRQ);
+  __enable_irq(); //re-enable interrupts
+  Serial.begin(115200);
+}
+
+void flexpwm_interrupt(){
+  capture_1 = PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CVAL1;
+  capture_0 = PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CVAL0;
+  capture_difference = capture_1 - capture_0;
+
+  PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].STS = FLEXPWM_SMSTS_CFX1; //this is important! Otherwise it hangs.
 }
 
 void loop() {
@@ -92,10 +166,20 @@ void loop() {
   // delayMicroseconds(1);
   // digitalWrite(PIN_HARDCODE_OUT, LOW);
   // delayMicroseconds(1);
-  delay(10);
+  // FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
+  // FLEXIO2_SHIFTBUF0 = 0b1111111001111110011111001111000; //WRITE LAST... this triggers the transmit
+  FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
+  FLEXIO2_SHIFTBUF0 = 0b00000000000000000000000011111000; //WRITE LAST... this triggers the transmit
+  delay(100);
+  // Serial.print("CAPT0: ");
+  // Serial.println(capture_0);
+  // Serial.print("CAPT1: ");
+  // Serial.println(capture_1);
+  Serial.print("PULSE LENGTH: ");
+  Serial.print((float)capture_difference * 1000000.0f / (float)F_BUS_ACTUAL);
+  Serial.println("us");
   // FLEXIO2_SHIFTBUF1 = 0xFFFFFFFF;
   // FLEXIO2_SHIFTBUF1 = 0x55555555;
-  FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
-  FLEXIO2_SHIFTBUF0 = 0b1111111001111110011111001111000; //WRITE LAST... this triggers the transmit
+
 
 }
