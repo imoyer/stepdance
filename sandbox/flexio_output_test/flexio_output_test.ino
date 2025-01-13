@@ -19,6 +19,14 @@ const uint8_t PIN_STEP_IRQ = IRQ_FLEXPWM1_2;
 volatile uint16_t capture_0;
 volatile uint16_t capture_1;
 volatile uint16_t capture_difference;
+volatile uint32_t fire_count = 0;
+volatile int32_t capture_x_count = 0;
+volatile int32_t capture_y_count = 0;
+volatile int32_t capture_r_count = 0;
+volatile int32_t capture_t_count = 0;
+volatile int32_t capture_z_count = 0;
+volatile int32_t capture_e_count = 0;
+
 
 void setup() {
   pinMode(PIN_HARDCODE_OUT, OUTPUT);
@@ -153,11 +161,30 @@ void setup() {
 }
 
 void flexpwm_interrupt(){
-  capture_1 = PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CVAL1;
-  capture_0 = PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CVAL0;
-  capture_difference = capture_1 - capture_0;
-
+  int8_t dir = digitalReadFast(PIN_DIR_IN);
+  // The following line is important. If we don't clear the status flag, the interrupt gets called constantly and the program hangs.
+  // If we set it too late in the program, the interrupt gets triggered multiple times.
+  // If we set it too early though, then things also behave weirdly.
   PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].STS = FLEXPWM_SMSTS_CFX1; //this is important! Otherwise it hangs.
+
+  if(dir == 0){
+    dir = -1;
+  }
+  capture_difference = PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CVAL1 - PIN_STEP_FLEXPWM->SM[PIN_STEP_SUBMODULE].CVAL0;
+  fire_count ++;
+  if (capture_difference < 375){
+    capture_x_count += dir;
+  }else if (capture_difference < 525) {
+    capture_y_count += dir;
+  }else if (capture_difference < 675){
+    capture_r_count += dir;
+  }else if (capture_difference < 825) {
+    capture_t_count += dir;
+  }else if (capture_difference < 975) {
+    capture_z_count += dir;
+  }else if (capture_difference < 1125){
+    capture_e_count += dir;
+  }
 }
 
 void loop() {
@@ -168,18 +195,46 @@ void loop() {
   // delayMicroseconds(1);
   // FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
   // FLEXIO2_SHIFTBUF0 = 0b1111111001111110011111001111000; //WRITE LAST... this triggers the transmit
-  FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
-  FLEXIO2_SHIFTBUF0 = 0b00000000000000000000000011111000; //WRITE LAST... this triggers the transmit
-  delay(100);
-  // Serial.print("CAPT0: ");
-  // Serial.println(capture_0);
-  // Serial.print("CAPT1: ");
-  // Serial.println(capture_1);
-  Serial.print("PULSE LENGTH: ");
-  Serial.print((float)capture_difference * 1000000.0f / (float)F_BUS_ACTUAL);
-  Serial.println("us");
-  // FLEXIO2_SHIFTBUF1 = 0xFFFFFFFF;
-  // FLEXIO2_SHIFTBUF1 = 0x55555555;
 
+  uint32_t itercount = 0;
+  for( itercount = 0; itercount < 10000000; itercount ++){
+    transmit();
+    delayMicroseconds(40); //fastest frame rate is 25 khz
+    if(itercount%1000 == 0){
+      Serial.println(itercount);
+    }
+  }
+  Serial.print("TOTAL INTERRUPT FIRES: ");
+  Serial.println(fire_count);
+  Serial.print("X COUNT: ");
+  Serial.println(capture_x_count);
+  Serial.print("Y COUNT: ");
+  Serial.println(capture_y_count);
+  Serial.print("R COUNT: ");
+  Serial.println(capture_r_count);
+  Serial.print("T COUNT: ");
+  Serial.println(capture_t_count);
+  Serial.print("Z COUNT: ");
+  Serial.println(capture_z_count);
+  Serial.print("E COUNT: ");
+  Serial.println(capture_e_count);
+  capture_x_count = 0;
+  capture_y_count = 0;
+  capture_r_count = 0;
+  capture_t_count = 0;
+  capture_z_count = 0;
+  capture_e_count = 0;
+  fire_count = 0;
+  delay(1000);
+  // Serial.print("PULSE LENGTH: ");
+  // Serial.print((float)capture_difference * 1000000.0f / (float)F_BUS_ACTUAL);
+  // Serial.println("us");
+  // // FLEXIO2_SHIFTBUF1 = 0xFFFFFFFF;
+  // // FLEXIO2_SHIFTBUF1 = 0x55555555;
+  // digitalReadFast(28);
+}
 
+void transmit(){
+  FLEXIO2_SHIFTBUF1 = 0b00000000000000111111110000011110;
+  FLEXIO2_SHIFTBUF0 = 0b00000011111110011111100111001100;  //WRITE LAST... this triggers the transmit
 }
