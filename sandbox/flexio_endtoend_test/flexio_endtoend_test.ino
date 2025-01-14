@@ -96,7 +96,7 @@ void setup() {
 
   // Set Timer0 Compare Register
   FLEXIO3_TIMCMP0 = (63 <<8) | //According to the datasheet this should give us 32 bits of output. We'll see... 
-        ((240/2)-1); // We want an output every us, so we need CLK/120
+        ((120/2)-1); // We want an output every us, so we need CLK/120
 
   // Set Timer0 Control Register (P2933)
   FLEXIO3_TIMCTL0	= FLEXIO_TIMCTL_TRGSEL(1)|			  // Trigger on Shifter 0 Status Flag
