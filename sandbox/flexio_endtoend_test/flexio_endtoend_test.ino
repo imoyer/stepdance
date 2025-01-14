@@ -7,6 +7,9 @@
 #define PIN_STEP_IN     3  //Teensy Pin 3, Pad EMC_05, PWM4 2B
 #define PIN_DIR_IN      2  //Teensy Pin 2, Pad EMC_04, PWM4 2A
 
+#define PIN_BUTTON_START 16 //BTN A
+#define PIN_BUTTON_RESET 15 //BTN B
+
 // ---- FLEXPWM MODULE DEFINITIONS ----
 #define PIN_STEP_MUX    1   //ALT1
 IMXRT_FLEXPWM_t *PIN_STEP_FLEXPWM = &IMXRT_FLEXPWM4; //This structure maps into the register memory map, and is defined in imxrt.h
@@ -27,6 +30,9 @@ volatile int32_t capture_t_count = 0;
 volatile int32_t capture_z_count = 0;
 volatile int32_t capture_e_count = 0;
 
+const uint32_t max_output_count = 1000000;
+volatile uint32_t output_count = max_output_count; //when not equal, we'll send
+volatile uint8_t releasing_output_set = 0; //if 1, indicates that currently working towards sending all the pulses.
 
 void setup() {
   pinMode(PIN_HARDCODE_OUT, OUTPUT);
@@ -34,6 +40,9 @@ void setup() {
   pinMode(PIN_DIR_OUT, OUTPUT);
   pinMode(PIN_STEP_IN, INPUT);
   pinMode(PIN_DIR_IN, INPUT);
+
+  pinMode(PIN_BUTTON_START, INPUT_PULLDOWN);
+  pinMode(PIN_BUTTON_RESET, INPUT_PULLDOWN);
 
   // --- CONFIG FLEXIO ---
   // I'm heavily referencing this post: https://forum.pjrc.com/index.php?threads/teensy-4-1-how-to-start-using-flexio.66201/
@@ -191,6 +200,7 @@ void flexpwm_interrupt(){
     capture_e_count += dir;
   }
 }
+uint32_t loopcount = 0;
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -200,42 +210,42 @@ void loop() {
   // delayMicroseconds(1);
   // FLEXIO2_SHIFTBUF1 = 0b1111111100000001111110;
   // FLEXIO2_SHIFTBUF0 = 0b1111111001111110011111001111000; //WRITE LAST... this triggers the transmit
-  delay(1000);
-  uint32_t itercount = 0;
-  for( itercount = 0; itercount < 1000000; itercount ++){
-    transmit();
-    delayMicroseconds(40); //fastest frame rate is 25 khz
-    if(itercount%1000 == 0){
-      Serial.println(itercount);
-    }
+
+  if(digitalReadFast(PIN_BUTTON_RESET)){
+    capture_x_count = 0;
+    capture_y_count = 0;
+    capture_r_count = 0;
+    capture_t_count = 0;
+    capture_z_count = 0;
+    capture_e_count = 0;
+    fire_count = 0;
   }
-  Serial.print("TOTAL INTERRUPT FIRES: ");
-  Serial.println(fire_count);
-  Serial.print("X COUNT: ");
-  Serial.println(capture_x_count);
-  Serial.print("Y COUNT: ");
-  Serial.println(capture_y_count);
-  Serial.print("R COUNT: ");
-  Serial.println(capture_r_count);
-  Serial.print("T COUNT: ");
-  Serial.println(capture_t_count);
-  Serial.print("Z COUNT: ");
-  Serial.println(capture_z_count);
-  Serial.print("E COUNT: ");
-  Serial.println(capture_e_count);
-  capture_x_count = 0;
-  capture_y_count = 0;
-  capture_r_count = 0;
-  capture_t_count = 0;
-  capture_z_count = 0;
-  capture_e_count = 0;
-  fire_count = 0;
-  // Serial.print("PULSE LENGTH: ");
-  // Serial.print((float)capture_difference * 1000000.0f / (float)F_BUS_ACTUAL);
-  // Serial.println("us");
-  // // FLEXIO2_SHIFTBUF1 = 0xFFFFFFFF;
-  // // FLEXIO2_SHIFTBUF1 = 0x55555555;
-  // digitalReadFast(28);
+  if(digitalReadFast(PIN_BUTTON_START) && output_count == max_output_count){
+    output_count = 0;
+  }
+  
+  delayMicroseconds(40); //fastest frame rate is 25 khz
+  if(output_count < max_output_count){
+    transmit();
+    output_count ++;
+  }
+  if(loopcount%25000 == 0){
+    Serial.print("TOTAL INTERRUPT FIRES: ");
+    Serial.println(fire_count);
+    Serial.print("X COUNT: ");
+    Serial.println(capture_x_count);
+    Serial.print("Y COUNT: ");
+    Serial.println(capture_y_count);
+    Serial.print("R COUNT: ");
+    Serial.println(capture_r_count);
+    Serial.print("T COUNT: ");
+    Serial.println(capture_t_count);
+    Serial.print("Z COUNT: ");
+    Serial.println(capture_z_count);
+    Serial.print("E COUNT: ");
+    Serial.println(capture_e_count);  
+  }
+  loopcount ++;
 }
 
 void transmit(){
