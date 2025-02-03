@@ -1,3 +1,4 @@
+#include <sys/_stdint.h>
 /*
 Output Ports Module of the StepDance Control System
 
@@ -17,8 +18,8 @@ A part of the Mixing Metaphors Project
 struct output_port_info_struct{ //we use this structure to store hardware-specific information for each available port
   
   // Physical IO
-  uint8_t STEP_ARDUINO_PIN; //Arduino Pin #s
-  uint8_t DIR_ARDUINO_PIN;
+  uint8_t STEP_TEENSY_PIN; //TEENSY Pin #s
+  uint8_t DIR_TEENSY_PIN;
   
   // Connecting FlexIO to Physical IO
   uint8_t STEP_FLEXIO_PIN; //FlexIO Module Pin #s (remember, IMXRT modules have pins, which attach to physical "pads" on the chip)
@@ -33,16 +34,27 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
   volatile uint32_t *DIR_SHIFTCTRL_REGISTER; //step shifter control register pointer
   volatile uint32_t *STEP_SHIFTCFG_REGISTER; //step shifter config register pointer
   volatile uint32_t *DIR_SHIFTCFG_REGISTER; //step shifter config register pointer
-
+  volatile uint32_t *STEP_SHIFTBUF; //step shift output buffer
+  volatile uint32_t *DIR_SHIFTBUF; //dir shift output buffer
   uint8_t TIMER_ID; //0-3 to identify the timer being used for this output port
   volatile uint32_t *TIMCMP_REGISTER; //timer compare register pointer, sets the output length and frequency
   volatile uint32_t *TIMCTL_REGISTER; //timer control register pointer
   volatile uint32_t *TIMCFG_REGISTER; //timer config register
 };
 
-class OutputPort{
+#define OUTPUT_FORMAT_STEPDANCE 0 //outputting a pulse-length encoded step stream, which supports multiple signals over a single stream
+#define OUTPUT_FORMAT_DRIVER    1 //outputting a standard stepper driver stream.
+
+class output_port{
+  public:
+    output_port();
+    void begin(uint8_t port_number, uint8_t output_format); //initializer
+    void transmit(uint32_t step_sequence, uint32_t dir_sequence);
+
   private:
-    static const struct output_port_info_struct output_port_info[]; //stores setup information for all four output ports
+    static const struct output_port_info_struct port_info[]; //stores setup information for all four output ports
+    uint8_t port_number; //the output port ID number
+    uint8_t output_format; //either standard or driver mode
 };
 
 #endif //output_ports_h
