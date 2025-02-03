@@ -1,3 +1,4 @@
+#include <sys/_stdint.h>
 #include "core_pins.h"
 #include "imxrt.h"
 #include "output_ports.hpp"
@@ -103,6 +104,10 @@ const struct output_port_info_struct output_port::port_info[] = {
 
 output_port::output_port(){};
 
+void output_port::begin(uint8_t port_number){
+  begin(port_number, OUTPUT_FORMAT_STEPDANCE);
+}
+
 void output_port::begin(uint8_t port_number, uint8_t output_format){
   // Configures the output port.
   //
@@ -204,7 +209,72 @@ void output_port::begin(uint8_t port_number, uint8_t output_format){
 		//FLEXIO_TIMCFG_TSTART					          // start bit disabled  
 }
 
-void output_port::transmit(uint32_t step_sequence, uint32_t dir_sequence){
-  *port_info[port_number].DIR_SHIFTBUF = dir_sequence;
-  *port_info[port_number].STEP_SHIFTBUF = step_sequence; //writing to the step shift buffer triggers transmission, so we do it last.
+void output_port::transmit_frame(){
+  encode();
+  transmit();
+}
+
+void output_port::transmit(){
+  // Transmits raw step and direction sequences over the output pins
+  *port_info[port_number].DIR_SHIFTBUF = active_encoded_frame_dir;
+  *port_info[port_number].STEP_SHIFTBUF = active_encoded_frame_step; //writing to the step shift buffer triggers transmission, so we do it last.
+}
+
+void output_port::clear_all_signals(){
+  // Clears all active signal flags
+  // We only bother clearing the step signal flags, because direction doesn't matter if the step flag is clear.
+
+  for(uint8_t i = 0; i < NUM_SIGNALS; i++){
+    active_signals[i] = 0;
+  }
+}
+
+void output_port::add_signal(uint8_t signal_index, uint8_t signal_direction){
+  // Adds a specific signal within the frame.
+  // When the signal is added, a corresponding width pulse will be generated on transmit
+  //
+  // signal_index -- the index of the target signal within active_signals. We provide a bunch of defines to make it
+  //                  easier to keep track of these... i.e. SIGNAL_X, SIGNAL_Y, etc...
+  // signal_direction -- 0 for reverse, 1 for forward
+  active_signals[signal_index] = 1;
+  active_signal_directions[signal_index] = signal_direction;
+}
+
+void output_port::encode(){
+  // Encodes the active_signals and _directions arrays into active_encoded_frame_step and _dir
+
+  // First, initialize the active_encoded_frame registers
+  active_encoded_frame_step = 0;
+  active_encoded_frame_dir = 0;
+
+  // Initialize framing state
+  uint8_t step_pulse_bit_position = 2; // leading edge of first signal pulse is left-shifted two bits.
+  uint8_t dir_pulse_bit_position = 1; // leading edge of first direction pulse is left-shifted one bit.
+
+  uint32_t step_pulse;
+  uint8_t step_pulse_length;
+  uint32_t dir_pulse;
+  uint8_t dir_pulse_length;
+
+  for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index ++){
+    if(active_signals[signal_index]){ //only bother to process active signals
+      //synthesize step and direction pulses
+      step_pulse_length = signal_index + SIGNAL_MIN_WIDTH_US;
+      step_pulse = (1<<step_pulse_length) - 1;
+      dir_pulse_length = step_pulse_length + SIGNAL_GAP_US;
+      if(active_signal_directions[signal_index]){ //direction is forwards, need a pulse
+        dir_pulse = (1<<dir_pulse_length) - 1;
+      }else{
+        dir_pulse = 0;
+      }
+
+      // overlay on encoded frame
+      active_encoded_frame_step |= (step_pulse << step_pulse_bit_position);
+      active_encoded_frame_dir |= (dir_pulse << dir_pulse_bit_position);
+
+      // update bit positions
+      step_pulse_bit_position += step_pulse_length + SIGNAL_GAP_US;
+      dir_pulse_bit_position += dir_pulse_length;
+    }
+  }
 }
