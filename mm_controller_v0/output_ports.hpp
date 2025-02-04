@@ -60,6 +60,9 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
 #define DIRECTION_FORWARD 1
 #define DIRECTION_REVERSE 0
 
+#define NUM_AVAILABLE_OUTPUT_PORTS 4 // max available output ports. NOTE: Should make this dynamic based on TEENSY version
+
+// Main Output Port Class
 class output_port{
   public:
     output_port();
@@ -84,6 +87,9 @@ class output_port{
     void encode();// encodes the active_signal arrays into the active_encoded_frames
     void transmit(); //transmits the active encoded frame
     void clear_all_signals(); //clears all signals in the current active frame
+    void register_output_port(); //registers the output port
 };
+
+void transmit_frames_on_all_output_ports(); //transmits across all output ports
 
 #endif //output_ports_h

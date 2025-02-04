@@ -15,6 +15,12 @@ A part of the Mixing Metaphors Project
 (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
 */
 
+// ---- STATE VARIABLES ---
+
+// Registration
+output_port* registered_output_ports[NUM_AVAILABLE_OUTPUT_PORTS]; //stores all registered ports
+uint8_t num_registered_output_ports = 0; //tracks the number of registered output ports 
+
 // ---- MCU-LEVEL OUTPUT PORT CONFIGURATION INFO ----
 const struct output_port_info_struct output_port::port_info[] = {
   // This structure contains an indexed list of available output ports from 0-3.
@@ -207,6 +213,9 @@ void output_port::begin(uint8_t port_number, uint8_t output_format){
 		FLEXIO_TIMCFG_TIMENA(2)	|			            // enable timer on trigger high
 		FLEXIO_TIMCFG_TSTOP(0);			              // stop bit disabled
 		//FLEXIO_TIMCFG_TSTART					          // start bit disabled  
+
+  // register the output port
+  register_output_port();
 }
 
 void output_port::transmit_frame(){
@@ -276,5 +285,18 @@ void output_port::encode(){
       step_pulse_bit_position += step_pulse_length + SIGNAL_GAP_US;
       dir_pulse_bit_position += dir_pulse_length;
     }
+  }
+}
+
+void output_port::register_output_port(){
+  if(num_registered_output_ports < NUM_AVAILABLE_OUTPUT_PORTS){
+    registered_output_ports[num_registered_output_ports] = this;
+    num_registered_output_ports ++;
+  } // NOTE: should add a return value if it works
+}
+
+void transmit_frames_on_all_output_ports(){
+  for(uint8_t output_port_index = 0; output_port_index < num_registered_output_ports; output_port_index++){
+    registered_output_ports[output_port_index]->transmit_frame();
   }
 }
