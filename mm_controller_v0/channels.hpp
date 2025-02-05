@@ -1,4 +1,6 @@
+#include <sys/_stdint.h>
 #include "output_ports.hpp"
+#include "core.hpp"
 
 /*
 Channels Module of the StepDance Control System
@@ -14,6 +16,9 @@ A part of the Mixing Metaphors Project
 
 #define MAX_NUM_CHANNELS 10 //just to start with, until we need more.
 
+void drive_all_registered_channels(); //drives all registered channels to their target positions
+void activate_channels(); //adds channels to the frame interrupt routine
+
 class channel{
   public:
     // Public State
@@ -27,12 +32,12 @@ class channel{
     void begin(output_port* target_output_port, uint8_t output_signal); //channel with an output port
     void set_max_pulse_rate(float max_pulses_per_sec); // sets the maximum allowable pulse rate
     void drive_to_target(); //Drives the current position to the target position by one pulse, and generates a signal
-
+    void pulse(int8_t direction); // generates a step pulse and releases a signal on the output port
+  
   private:
     // Constants
     const uint32_t ACCUMULATOR_THRESHOLD = 1000000;
-    const int SIGNAL_FRAME_PERIOD_US = 40; //microseconds. This yields a max output step rate of 25k steps/sec.
-    const uint32_t PULSE_MAX_RATE = 1000000 / SIGNAL_FRAME_PERIOD_US;
+    const uint32_t PULSE_MAX_RATE = 1000000 / CORE_FRAME_PERIOD_US;
 
     // Configuration
     int has_output = 0; //1 if channel has an output port, otherwise 0.

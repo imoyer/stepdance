@@ -2,6 +2,7 @@
 #include <sys/_stdint.h>
 #include <sys/types.h>
 #include "channels.hpp"
+#include "core.hpp"
 /*
 Channels Module of the StepDance Control System
 
@@ -14,6 +15,18 @@ A part of the Mixing Metaphors Project
 // -- Registration --
 channel* registered_channels[MAX_NUM_CHANNELS]; //stores all registered channels
 uint8_t num_registered_channels = 0; //tracks the number of registered channels
+
+// -- General Functions --
+void drive_all_registered_channels(){
+  for(uint8_t channel_index = 0; channel_index < num_registered_channels; channel_index ++){
+    registered_channels[channel_index] ->drive_to_target();
+  }
+}
+
+void activate_channels(){
+  add_function_to_frame(drive_all_registered_channels);
+  add_function_to_frame(transmit_frames_on_all_output_ports);
+};
 
 // -- Channel Object Methods --
 channel::channel(){};
@@ -30,7 +43,7 @@ void channel::initialize_state(){
 
 void channel::set_max_pulse_rate(float max_pulses_per_sec){
   // sets the maximum pulse rate permissible on a channel.
-  const float tick_time_seconds = (float) SIGNAL_FRAME_PERIOD_US / 1000000.0; //seconds per tick
+  const float tick_time_seconds = (float) CORE_FRAME_PERIOD_US / 1000000.0; //seconds per tick
   float pulses_per_tick = max_pulses_per_sec * tick_time_seconds; //steps per tick
   if(pulses_per_tick>1.0){
     //cap the velocity at 1 step per tick
@@ -71,10 +84,21 @@ void channel::register_channel(){
 }
 
 void channel::drive_to_target(){
-  // 1. Calculate pulse distance between target and current position. Both target positions contribute.
+  // This function should be called every signal frame period.
+  // It attempts to drive the channel's current position to the target position,
+  // by generating a signal if a) there is a non-zero distance to the target, and
+  // b) doing so would not violate the maximum pulse rate for the channel.
+
+  // 1. Increment the accumulator. This is used to determine if generating a pulse
+  //    signal would exceed the maximum pulse frequency on the channel. 
+  if(accumulator < 2*ACCUMULATOR_THRESHOLD){ //only bother incrementing if meaningful (avoids overruns)
+    accumulator += accumulator_velocity;
+  }
+  
+  // 2. Calculate pulse distance between target and current position. Both target positions contribute.
   int32_t delta_position = target_position + target_position_2 - current_position;
 
-  // 2. Determine direction of motion
+  // 3. Determine direction of motion
   int direction;
   if(delta_position > 0){
     direction = DIRECTION_FORWARD;
@@ -84,14 +108,34 @@ void channel::drive_to_target(){
     direction = last_direction;
   }
 
-  // 3. Try to close pulse distance
+  // 4. Try to close pulse distance
   if(delta_position != 0){
-    // calculate active accumulator threshold
+
+    // calculate active accumulator threshold. This catches the case where we reverse direction.
     float accumulator_active_threshold;
     if(direction != last_direction){
       accumulator_active_threshold = ACCUMULATOR_THRESHOLD * 2;
     }else{
       accumulator_active_threshold = ACCUMULATOR_THRESHOLD;
     }
+
+    // check if we're taking a pulse
+    if(accumulator >= accumulator_active_threshold){
+      pulse(direction);
+      accumulator = 0;
+    }
+  }
+}
+
+void channel::pulse(int8_t direction){
+  // Generates a step pulse, and releases a signal on the output channel
+  if(direction == DIRECTION_FORWARD){
+    current_position ++;
+    last_direction = DIRECTION_FORWARD;
+    target_output_port->add_signal(output_signal, DIRECTION_FORWARD);
+  }else{
+    current_position --;
+    last_direction = DIRECTION_REVERSE;
+    target_output_port->add_signal(output_signal, DIRECTION_REVERSE);
   }
 }

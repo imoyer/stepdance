@@ -127,6 +127,8 @@ void output_port::begin(uint8_t port_number, uint8_t output_format){
   // -- Configure Teensy Output Pins --
   pinMode(port_info[port_number].STEP_TEENSY_PIN, OUTPUT);
   pinMode(port_info[port_number].DIR_TEENSY_PIN, OUTPUT);
+  digitalWrite(port_info[port_number].STEP_TEENSY_PIN, LOW);
+  digitalWrite(port_info[port_number].DIR_TEENSY_PIN, LOW);
 
   // --- CONFIG FLEXIO ---
   // I'm heavily referencing this post: https://forum.pjrc.com/index.php?threads/teensy-4-1-how-to-start-using-flexio.66201/
@@ -221,6 +223,7 @@ void output_port::begin(uint8_t port_number, uint8_t output_format){
 void output_port::transmit_frame(){
   encode();
   transmit();
+  clear_all_signals();
 }
 
 void output_port::transmit(){
