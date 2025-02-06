@@ -28,7 +28,7 @@ const struct output_port_info_struct output_port::port_info[] = {
   // for two outputs on a Teensy 4, and four outputs on a Teensy 4.1. This is because we intend to
   // use the Teensy 4.1 for connecting to stepper motor drivers using the same output ports.
   // For the Teensy 4, two output ports gives possibilities for splitting signals, and should be adequate for normal use.
-  { .STEP_TEENSY_PIN = 23, // OUTPUT PORT 0
+  { .STEP_TEENSY_PIN = 23, // OUTPUT PORT A
     .DIR_TEENSY_PIN = 22,
     .STEP_FLEXIO_PIN = 9,
     .DIR_FLEXIO_PIN = 8,
@@ -47,7 +47,7 @@ const struct output_port_info_struct output_port::port_info[] = {
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL0,
     .TIMCFG_REGISTER = &FLEXIO3_TIMCFG0
   },
-  { .STEP_TEENSY_PIN = 21, // OUTPUT PORT 1
+  { .STEP_TEENSY_PIN = 21, // OUTPUT PORT B
     .DIR_TEENSY_PIN = 20,
     .STEP_FLEXIO_PIN = 11,
     .DIR_FLEXIO_PIN = 10,
@@ -66,7 +66,7 @@ const struct output_port_info_struct output_port::port_info[] = {
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL1,
     .TIMCFG_REGISTER = &FLEXIO3_TIMCFG1
   },
-  { .STEP_TEENSY_PIN = 37, // OUTPUT PORT 2
+  { .STEP_TEENSY_PIN = 37, // OUTPUT PORT C
     .DIR_TEENSY_PIN = 36,
     .STEP_FLEXIO_PIN = 19,
     .DIR_FLEXIO_PIN = 18,
@@ -85,7 +85,7 @@ const struct output_port_info_struct output_port::port_info[] = {
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL2,
     .TIMCFG_REGISTER = &FLEXIO3_TIMCFG2
   },
-  { .STEP_TEENSY_PIN = 35, // OUTPUT PORT 3
+  { .STEP_TEENSY_PIN = 35, // OUTPUT PORT D
     .DIR_TEENSY_PIN = 34,
     .STEP_FLEXIO_PIN = 28,
     .DIR_FLEXIO_PIN = 29,

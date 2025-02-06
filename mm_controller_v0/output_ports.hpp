@@ -45,10 +45,10 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
 #define OUTPUT_FORMAT_STEPDANCE 0 //outputting a pulse-length encoded step stream, which supports multiple signals over a single stream
 #define OUTPUT_FORMAT_DRIVER    1 //outputting a standard stepper driver stream.
 
-#define OUTPUT_PORT_0   0
-#define OUTPUT_PORT_1   1
-#define OUTPUT_PORT_2   2
-#define OUTPUT_PORT_3   3
+#define OUTPUT_A   0
+#define OUTPUT_B   1
+#define OUTPUT_C   2
+#define OUTPUT_D   3
 
 #define NUM_SIGNALS 6 //total number of signal types
 #define SIGNAL_MIN_WIDTH_US 2 //pulse width in microseconds of shortest signal (index = 0)
