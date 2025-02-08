@@ -116,17 +116,17 @@ const struct input_port_info_struct input_port::port_info[] = {
 // -- INPUT PORT CLASS FUNCTIONS --
 input_port::input_port(){};
 
-void input_port::begin(uint8_t port_number, channel *x_signal_channel, channel *y_signal_channel, channel *r_signal_channel, channel *t_signal_channel, channel *z_signal_channel, channel *e_signal_channel){
+void input_port::begin(uint8_t port_number, IntegerPosition* x_signal_target, IntegerPosition* y_signal_target, IntegerPosition* r_signal_target, IntegerPosition* t_signal_target, IntegerPosition* z_signal_target, IntegerPosition* e_signal_target){
   // store port number
   this->port_number = port_number;
 
   // Set up target channels
-  signal_target_channels[SIGNAL_X] = x_signal_channel;
-  signal_target_channels[SIGNAL_Y] = y_signal_channel;
-  signal_target_channels[SIGNAL_R] = r_signal_channel;
-  signal_target_channels[SIGNAL_T] = t_signal_channel;
-  signal_target_channels[SIGNAL_Z] = z_signal_channel;
-  signal_target_channels[SIGNAL_E] = e_signal_channel;
+  signal_position_targets[SIGNAL_X] = x_signal_target;
+  signal_position_targets[SIGNAL_Y] = y_signal_target;
+  signal_position_targets[SIGNAL_R] = r_signal_target;
+  signal_position_targets[SIGNAL_T] = t_signal_target;
+  signal_position_targets[SIGNAL_Z] = z_signal_target;
+  signal_position_targets[SIGNAL_E] = e_signal_target;
   enable_all_signals();
 
   // configure teensy pins
@@ -225,8 +225,11 @@ void input_port::begin(uint8_t port_number, channel *x_signal_channel, channel *
 void input_port::isr(){
   // read the direction pin
   int8_t dir = digitalReadFast(port_info[port_number].DIR_TEENSY_PIN);
+  if(dir == 0){
+    dir = -1;
+  }
 
-  // clear the interrupt flag, otherwise it hangs
+  // clear the interrupt flag (otherwise it hangs) and store pulse duration.
   switch(FLEXPWM_CHANNEL){
     // case FLEXPWM_CHANNEL_X:
     //   FLEXPWM->SM[SUBMODULE].STS = FLEXPWM_SMSTS_CFX1;
@@ -240,9 +243,20 @@ void input_port::isr(){
       last_pulse_width_count = FLEXPWM->SM[SUBMODULE].CVAL5 - FLEXPWM->SM[SUBMODULE].CVAL4;
       break;
   }
-  last_pulse_width_us = ((float)last_pulse_width_count)/FLEXPWM_CLOCK_MHZ;
-  if(last_pulse_width_us > 6 && last_pulse_width_us < 8){
-    fire_count ++;
+  // -- Route signals --
+  // Calculate nearest whole pulse width
+  last_pulse_width_whole_us = last_pulse_width_count / FLEXPWM_CLOCK_MHZ;
+  last_pulse_width_remainder_count = last_pulse_width_count % FLEXPWM_CLOCK_MHZ;
+  if(last_pulse_width_remainder_count > (FLEXPWM_CLOCK_MHZ / 2)){
+    last_pulse_width_whole_us ++;
+  }
+  // Convert into signal index
+  last_signal_index = last_pulse_width_whole_us - SIGNAL_MIN_WIDTH_US;
+
+  if((last_signal_index >= SIGNAL_X) && (last_signal_index <= SIGNAL_E)){ // check if signal index within range
+    if(signal_enable_flags[last_signal_index]){ // check if signal is enabled
+      *signal_position_targets[last_signal_index] += dir; // increment or decrement based on direction
+    }
   }
 }
 
@@ -257,7 +271,7 @@ void input_port::disable_signal(uint8_t signal_index){
 void input_port::enable_all_signals(){
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
     // only enable signals that have a target channel
-    if(signal_target_channels[signal_index] != nullptr){
+    if(signal_position_targets[signal_index] != nullptr){
       signal_enable_flags[signal_index] = INPUT_ENABLED;
     }else{
       signal_enable_flags[signal_index] = INPUT_DISABLED;

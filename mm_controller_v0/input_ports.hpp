@@ -54,25 +54,27 @@ struct input_port_info_struct{ //we use this structure to store hardware-specifi
 class input_port{
   public:
     input_port();
-    void begin(uint8_t port_number, channel* x_signal_channel, channel* y_signal_channel, channel* r_signal_channel, channel* t_signal_channel, channel* z_signal_channel, channel* e_signal_channel);
+    void begin(uint8_t port_number, IntegerPosition* x_signal_target, IntegerPosition* y_signal_target, IntegerPosition* r_signal_target, IntegerPosition* t_signal_target, IntegerPosition* z_signal_target, IntegerPosition* e_signal_target);
     void enable_all_signals();
     void disable_all_signals();
     void enable_signal(uint8_t signal_index);
     void disable_signal(uint8_t signal_index);
-    volatile float last_pulse_width_us; //stores the last captured pulse 
-    volatile int32_t fire_count;
+    volatile uint8_t last_signal_index;
 
   private:
     // Configuration Parameters
     uint8_t port_number; //the output port ID number
     static const struct input_port_info_struct port_info[]; //stores setup information for all four input ports
     static input_port *indexed_input_ports[NUM_AVAILABLE_INPUT_PORTS]; //keeps pointers to all active input ports, indexed by their port number. Only used for ISR routines.
-    channel *signal_target_channels[NUM_SIGNALS]; //pointers to target channels for each signal, e.g. a passthru might do X -> channel_x, Y-> channel_y
+    IntegerPosition *signal_position_targets[NUM_SIGNALS]; //pointers to target positions for each signal, e.g. a passthru might do X -> channel_x.target_position, Y-> channel_y
     IMXRT_FLEXPWM_t *FLEXPWM;
     uint8_t SUBMODULE;
     uint8_t SUBMODULE_BIT;
     uint8_t FLEXPWM_CHANNEL;
+    // The following variables are used within the pulse detection and routing ISR, but we declare them here to save ISR run time.
     volatile uint16_t last_pulse_width_count; //important that this is UINT16_T to calculate rollover correctly.
+    volatile int16_t last_pulse_width_whole_us;
+    volatile uint8_t last_pulse_width_remainder_count;
 
     // State Parameters
     volatile uint8_t signal_enable_flags[NUM_SIGNALS]; // for each signal, 1 == enabled, and 0 == disabled

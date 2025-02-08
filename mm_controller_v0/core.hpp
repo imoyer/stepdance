@@ -9,6 +9,7 @@ A part of the Mixing Metaphors Project
 #ifndef core_h //prevent importing twice
 #define core_h
 
+typedef volatile int32_t IntegerPosition; //used to store positions across the system
 typedef void (*frame_function_pointer)(); //defines function pointers that can be called at each frame
 
 #define CORE_FRAME_PERIOD_US 40 //microseconds. This yields a max output step rate of 25k steps/sec.
