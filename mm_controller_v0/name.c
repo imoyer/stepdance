@@ -1,3 +1,7 @@
+// https://medium.com/@j0hnm4r5/changing-teensy-serial-name-and-port-name-2ca76552d26d
+// https://pyserial.readthedocs.io/en/latest/tools.html#serial.tools.list_ports.ListPortInfo
+// https://github.com/TeensyUser/doc/wiki/Serial
+// https://learn.adafruit.com/welcome-to-circuitpython/advanced-serial-console-on-mac-and-linux
 
 #include <usb_names.h>
 #define EIBOTBOARD //changes USB descriptor to mimic EIBOTBOARD

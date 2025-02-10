@@ -2,6 +2,7 @@
 #include "output_ports.hpp"
 #include "channels.hpp"
 #include "core.hpp"
+#include "interface_ebb.hpp"
 
 input_port input_b;
 output_port output_a;
@@ -10,6 +11,8 @@ channel channel_x;
 channel channel_y;
 channel channel_z;
 channel channel_e;
+
+eibotboard axidraw;
 
 void setup() {
 
@@ -23,21 +26,13 @@ void setup() {
 
   input_b.begin(INPUT_B_LEGACY, &channel_y.target_position, nullptr, nullptr, nullptr, nullptr, nullptr);
 
+  axidraw.begin();
   activate_channels();
   stepdance_start();
-
-  Serial.begin(115200);
 }
 
 void loop() {
-  while(SerialUSB1.available() > 0){
-    uint8_t byte_in = SerialUSB1.read();
-    Serial.write(byte_in);
-  }
-  while(Serial.available() > 0){
-    uint8_t byte_in2 = Serial.read();
-    SerialUSB1.write(byte_in2);
-  }
+  axidraw.loop();
   // channel_x.target_position -= 100;
   // // channel_y.target_position += -100;
   // // channel_z.target_position += 100;
