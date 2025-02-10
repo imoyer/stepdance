@@ -30,11 +30,21 @@ void setup() {
 }
 
 void loop() {
-  channel_x.target_position += 100;
-  // channel_y.target_position += -100;
-  // channel_z.target_position += 100;
-  // channel_e.target_position -= 1000;
-  delay(500);
-  Serial.print("SIGNAL INDEX:");
-  Serial.println(channel_y.current_position);
+  while(SerialUSB1.available() > 0){
+    uint8_t byte_in = SerialUSB1.read();
+    Serial.write(byte_in);
+  }
+  while(Serial.available() > 0){
+    uint8_t byte_in2 = Serial.read();
+    SerialUSB1.write(byte_in2);
+  }
+  // channel_x.target_position -= 100;
+  // // channel_y.target_position += -100;
+  // // channel_z.target_position += 100;
+  // // channel_e.target_position -= 1000;
+  // delay(500);
+  // // Serial.print("INTERRUPT CYCLES");
+  // // Serial.println(input_b.input_interrupt_cycles);
+  // Serial.print("Y POSITION: ");
+  // Serial.println(channel_y.current_position);
 }
