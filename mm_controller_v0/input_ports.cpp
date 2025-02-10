@@ -223,11 +223,13 @@ void input_port::begin(uint8_t port_number, IntegerPosition* x_signal_target, In
 }
 
 void input_port::isr(){
+  uint32_t interrupt_entry_cycle_count = ARM_DWT_CYCCNT;
   // read the direction pin
   int8_t dir = digitalReadFast(port_info[port_number].DIR_TEENSY_PIN);
   if(dir == 0){
     dir = -1;
   }
+
 
   // clear the interrupt flag (otherwise it hangs) and store pulse duration.
   switch(FLEXPWM_CHANNEL){
@@ -245,19 +247,20 @@ void input_port::isr(){
   }
   // -- Route signals --
   // Calculate nearest whole pulse width
-  last_pulse_width_whole_us = last_pulse_width_count / FLEXPWM_CLOCK_MHZ;
-  last_pulse_width_remainder_count = last_pulse_width_count % FLEXPWM_CLOCK_MHZ;
+  uint16_t last_pulse_width_whole_us = last_pulse_width_count / FLEXPWM_CLOCK_MHZ;
+  uint8_t last_pulse_width_remainder_count = last_pulse_width_count % FLEXPWM_CLOCK_MHZ;
   if(last_pulse_width_remainder_count > (FLEXPWM_CLOCK_MHZ / 2)){
     last_pulse_width_whole_us ++;
   }
   // Convert into signal index
-  last_signal_index = last_pulse_width_whole_us - SIGNAL_MIN_WIDTH_US;
+  uint8_t last_signal_index = last_pulse_width_whole_us - SIGNAL_MIN_WIDTH_US;
 
   if((last_signal_index >= SIGNAL_X) && (last_signal_index <= SIGNAL_E)){ // check if signal index within range
     if(signal_enable_flags[last_signal_index]){ // check if signal is enabled
       *signal_position_targets[last_signal_index] += dir; // increment or decrement based on direction
     }
   }
+  input_interrupt_cycles = ARM_DWT_CYCCNT - interrupt_entry_cycle_count;
 }
 
 void input_port::enable_signal(uint8_t signal_index){

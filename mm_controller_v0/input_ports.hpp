@@ -59,7 +59,7 @@ class input_port{
     void disable_all_signals();
     void enable_signal(uint8_t signal_index);
     void disable_signal(uint8_t signal_index);
-    volatile uint8_t last_signal_index;
+    volatile uint32_t input_interrupt_cycles; //measures the number of cycles spent in each input interrupt routine.
 
   private:
     // Configuration Parameters
@@ -73,8 +73,6 @@ class input_port{
     uint8_t FLEXPWM_CHANNEL;
     // The following variables are used within the pulse detection and routing ISR, but we declare them here to save ISR run time.
     volatile uint16_t last_pulse_width_count; //important that this is UINT16_T to calculate rollover correctly.
-    volatile int16_t last_pulse_width_whole_us;
-    volatile uint8_t last_pulse_width_remainder_count;
 
     // State Parameters
     volatile uint8_t signal_enable_flags[NUM_SIGNALS]; // for each signal, 1 == enabled, and 0 == disabled
