@@ -58,3 +58,18 @@ void stepdance_metrics_reset(){
   stepdance_max_cpu_usage = 0;
 }
 
+// -- PLUGINS --
+uint8_t Plugin::num_registered_plugins = MAX_NUM_PLUGINS;
+
+void Plugin::register_plugin(){
+  if(num_registered_plugins < MAX_NUM_PLUGINS){
+    registered_plugins[num_registered_plugins] = this;
+    num_registered_plugins ++;
+  } // NOTE: should add a return value if it works
+}
+
+void Plugin::run_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_plugins; plugin_index++){
+    registered_plugins[plugin_index]->run();
+  }
+}

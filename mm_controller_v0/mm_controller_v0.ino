@@ -3,6 +3,7 @@
 #include "channels.hpp"
 #include "core.hpp"
 #include "interface_ebb.hpp"
+#include "interpreters.hpp"
 
 InputPort input_b;
 OutputPort output_a;
