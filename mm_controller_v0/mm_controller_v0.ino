@@ -34,12 +34,12 @@ void setup() {
 void loop() {
   axidraw.loop();
   // channel_x.target_position -= 100;
-  // // channel_y.target_position += -100;
-  // // channel_z.target_position += 100;
-  // // channel_e.target_position -= 1000;
+  // channel_y.target_position += -100;
+  // channel_z.target_position += 100;
+  // channel_e.target_position -= 1000;
   // delay(500);
-  // // Serial.print("INTERRUPT CYCLES");
-  // // Serial.println(input_b.input_interrupt_cycles);
+  // Serial.print("CPU USAGE ");
+  // Serial.println(stepdance_get_cpu_usage());
   // Serial.print("Y POSITION: ");
   // Serial.println(channel_y.current_position);
 }

@@ -223,7 +223,7 @@ void input_port::begin(uint8_t port_number, IntegerPosition* x_signal_target, In
 }
 
 void input_port::isr(){
-  uint32_t interrupt_entry_cycle_count = ARM_DWT_CYCCNT;
+  // uint32_t interrupt_entry_cycle_count = ARM_DWT_CYCCNT; //UNCOMMENT FOR INSTRUMENTATION
   // read the direction pin
   int8_t dir = digitalReadFast(port_info[port_number].DIR_TEENSY_PIN);
   if(dir == 0){
@@ -260,7 +260,7 @@ void input_port::isr(){
       *signal_position_targets[last_signal_index] += dir; // increment or decrement based on direction
     }
   }
-  input_interrupt_cycles = ARM_DWT_CYCCNT - interrupt_entry_cycle_count;
+  // input_interrupt_cycles = ARM_DWT_CYCCNT - interrupt_entry_cycle_count;
 }
 
 void input_port::enable_signal(uint8_t signal_index){
