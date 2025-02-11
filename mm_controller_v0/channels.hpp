@@ -19,7 +19,7 @@ A part of the Mixing Metaphors Project
 void drive_all_registered_channels(); //drives all registered channels to their target positions
 void activate_channels(); //adds channels to the frame interrupt routine
 
-class channel{
+class Channel{
   public:
     // Public State
     volatile IntegerPosition target_position; //primary target position, in pulses.
@@ -27,9 +27,9 @@ class channel{
     volatile IntegerPosition current_position; //tracks the current position, in pulses.
 
     // Public Methods
-    channel();
+    Channel();
     void begin(); //channel with no output port
-    void begin(output_port* target_output_port, uint8_t output_signal); //channel with an output port
+    void begin(OutputPort* target_output_port, uint8_t output_signal); //channel with an output port
     void set_max_pulse_rate(float max_pulses_per_sec); // sets the maximum allowable pulse rate
     void drive_to_target(); //Drives the current position to the target position by one pulse, and generates a signal
     void pulse(int8_t direction); // generates a step pulse and releases a signal on the output port
@@ -41,7 +41,7 @@ class channel{
 
     // Configuration
     int has_output = 0; //1 if channel has an output port, otherwise 0.
-    output_port* target_output_port; //stores the target output port
+    OutputPort* target_output_port; //stores the target output port
     uint8_t output_signal = SIGNAL_X; //default to signal X
     
     // Private State

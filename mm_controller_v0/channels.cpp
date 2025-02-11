@@ -13,7 +13,7 @@ A part of the Mixing Metaphors Project
 */
 
 // -- Registration --
-channel* registered_channels[MAX_NUM_CHANNELS]; //stores all registered channels
+Channel* registered_channels[MAX_NUM_CHANNELS]; //stores all registered channels
 uint8_t num_registered_channels = 0; //tracks the number of registered channels
 
 // -- General Functions --
@@ -29,9 +29,9 @@ void activate_channels(){
 };
 
 // -- Channel Object Methods --
-channel::channel(){};
+Channel::Channel(){};
 
-void channel::initialize_state(){
+void Channel::initialize_state(){
   // Initializes the state of the channel.
   target_position = 0;
   target_position_2 = 0;
@@ -41,7 +41,7 @@ void channel::initialize_state(){
   set_max_pulse_rate((float)PULSE_MAX_RATE);
 }
 
-void channel::set_max_pulse_rate(float max_pulses_per_sec){
+void Channel::set_max_pulse_rate(float max_pulses_per_sec){
   // sets the maximum pulse rate permissible on a channel.
   const float tick_time_seconds = (float) CORE_FRAME_PERIOD_US / 1000000.0; //seconds per tick
   float pulses_per_tick = max_pulses_per_sec * tick_time_seconds; //steps per tick
@@ -52,13 +52,13 @@ void channel::set_max_pulse_rate(float max_pulses_per_sec){
   accumulator_velocity = (float)((float)ACCUMULATOR_THRESHOLD * pulses_per_tick);
 }
 
-void channel::begin(){
+void Channel::begin(){
   // Initializes the channel without an output.
   // This is useful in cases where we are using the channel as an intermediary.
   begin(nullptr, -1);
 }
 
-void channel::begin(output_port* target_output_port, uint8_t output_signal){
+void Channel::begin(OutputPort* target_output_port, uint8_t output_signal){
   // Initializes the channel object
   //
   // target_output_port -- a pointer to an output port on which this channel will generate signals.
@@ -75,7 +75,7 @@ void channel::begin(output_port* target_output_port, uint8_t output_signal){
   }
 }
 
-void channel::register_channel(){
+void Channel::register_channel(){
   // Registers the channel with the pulse generator routine
   if(num_registered_channels < MAX_NUM_CHANNELS){
     registered_channels[num_registered_channels] = this;
@@ -83,7 +83,7 @@ void channel::register_channel(){
   } // NOTE: should add a return value if it works
 }
 
-void channel::drive_to_target(){
+void Channel::drive_to_target(){
   // This function should be called every signal frame period.
   // It attempts to drive the channel's current position to the target position,
   // by generating a signal if a) there is a non-zero distance to the target, and
@@ -127,7 +127,7 @@ void channel::drive_to_target(){
   }
 }
 
-void channel::pulse(int8_t direction){
+void Channel::pulse(int8_t direction){
   // Generates a step pulse, and releases a signal on the output channel
   if(direction == DIRECTION_FORWARD){
     current_position ++;

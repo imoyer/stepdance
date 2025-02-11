@@ -18,11 +18,11 @@ A part of the Mixing Metaphors Project
 // ---- STATE VARIABLES ---
 
 // Registration
-output_port* registered_output_ports[NUM_AVAILABLE_OUTPUT_PORTS]; //stores all registered ports
+OutputPort* registered_output_ports[NUM_AVAILABLE_OUTPUT_PORTS]; //stores all registered ports
 uint8_t num_registered_output_ports = 0; //tracks the number of registered output ports 
 
 // ---- MCU-LEVEL OUTPUT PORT CONFIGURATION INFO ----
-const struct output_port_info_struct output_port::port_info[] = {
+const struct output_port_info_struct OutputPort::port_info[] = {
   // This structure contains an indexed list of available output ports from 0-3.
   // Note that the specific pin and register assignments are chosen to maintain compatibility
   // for two outputs on a Teensy 4, and four outputs on a Teensy 4.1. This is because we intend to
@@ -108,13 +108,13 @@ const struct output_port_info_struct output_port::port_info[] = {
 
 // ---- OUTPUT_PORT CLASS FUNCTIONS ----
 
-output_port::output_port(){};
+OutputPort::OutputPort(){};
 
-void output_port::begin(uint8_t port_number){
+void OutputPort::begin(uint8_t port_number){
   begin(port_number, OUTPUT_FORMAT_STEPDANCE);
 }
 
-void output_port::begin(uint8_t port_number, uint8_t output_format){
+void OutputPort::begin(uint8_t port_number, uint8_t output_format){
   // Configures the output port.
   //
   // port_number -- the port ID number, from 0-3.
@@ -220,19 +220,19 @@ void output_port::begin(uint8_t port_number, uint8_t output_format){
   register_output_port();
 }
 
-void output_port::transmit_frame(){
+void OutputPort::transmit_frame(){
   encode();
   transmit();
   clear_all_signals();
 }
 
-void output_port::transmit(){
+void OutputPort::transmit(){
   // Transmits raw step and direction sequences over the output pins
   *port_info[port_number].DIR_SHIFTBUF = active_encoded_frame_dir;
   *port_info[port_number].STEP_SHIFTBUF = active_encoded_frame_step; //writing to the step shift buffer triggers transmission, so we do it last.
 }
 
-void output_port::clear_all_signals(){
+void OutputPort::clear_all_signals(){
   // Clears all active signal flags
   // We only bother clearing the step signal flags, because direction doesn't matter if the step flag is clear.
 
@@ -241,7 +241,7 @@ void output_port::clear_all_signals(){
   }
 }
 
-void output_port::add_signal(uint8_t signal_index, uint8_t signal_direction){
+void OutputPort::add_signal(uint8_t signal_index, uint8_t signal_direction){
   // Adds a specific signal within the frame.
   // When the signal is added, a corresponding width pulse will be generated on transmit
   //
@@ -252,7 +252,7 @@ void output_port::add_signal(uint8_t signal_index, uint8_t signal_direction){
   active_signal_directions[signal_index] = signal_direction;
 }
 
-void output_port::encode(){
+void OutputPort::encode(){
   // Encodes the active_signals and _directions arrays into active_encoded_frame_step and _dir
 
   // First, initialize the active_encoded_frame registers
@@ -291,7 +291,7 @@ void output_port::encode(){
   }
 }
 
-void output_port::register_output_port(){
+void OutputPort::register_output_port(){
   if(num_registered_output_ports < NUM_AVAILABLE_OUTPUT_PORTS){
     registered_output_ports[num_registered_output_ports] = this;
     num_registered_output_ports ++;

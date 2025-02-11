@@ -51,9 +51,9 @@ struct input_port_info_struct{ //we use this structure to store hardware-specifi
   void (*STATIC_ISR)(); // interrupt service routine. This needs to be a static function. We do some acrobatics to be able to call class methods as ISRs.
 };
 
-class input_port{
+class InputPort{
   public:
-    input_port();
+    InputPort();
     void begin(uint8_t port_number, IntegerPosition* x_signal_target, IntegerPosition* y_signal_target, IntegerPosition* r_signal_target, IntegerPosition* t_signal_target, IntegerPosition* z_signal_target, IntegerPosition* e_signal_target);
     void enable_all_signals();
     void disable_all_signals();
@@ -65,7 +65,7 @@ class input_port{
     // Configuration Parameters
     uint8_t port_number; //the output port ID number
     static const struct input_port_info_struct port_info[]; //stores setup information for all four input ports
-    static input_port *indexed_input_ports[NUM_AVAILABLE_INPUT_PORTS]; //keeps pointers to all active input ports, indexed by their port number. Only used for ISR routines.
+    static InputPort *indexed_input_ports[NUM_AVAILABLE_INPUT_PORTS]; //keeps pointers to all active input ports, indexed by their port number. Only used for ISR routines.
     IntegerPosition *signal_position_targets[NUM_SIGNALS]; //pointers to target positions for each signal, e.g. a passthru might do X -> channel_x.target_position, Y-> channel_y
     IMXRT_FLEXPWM_t *FLEXPWM;
     uint8_t SUBMODULE;

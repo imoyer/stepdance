@@ -68,9 +68,9 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
 #define NUM_AVAILABLE_OUTPUT_PORTS 4 // max available output ports. NOTE: Should make this dynamic based on TEENSY version
 
 // Main Output Port Class
-class output_port{
+class OutputPort{
   public:
-    output_port();
+    OutputPort();
     void begin(uint8_t port_number, uint8_t output_format); //complete initializer
     void begin(uint8_t port_number); // initialize using only port number
     void add_signal(uint8_t signal_index, uint8_t signal_direction); //adds a signal to the current active frame

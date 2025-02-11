@@ -4,15 +4,15 @@
 #include "core.hpp"
 #include "interface_ebb.hpp"
 
-input_port input_b;
-output_port output_a;
+InputPort input_b;
+OutputPort output_a;
 
-channel channel_x;
-channel channel_y;
-channel channel_z;
-channel channel_e;
+Channel channel_x;
+Channel channel_y;
+Channel channel_z;
+Channel channel_e;
 
-eibotboard axidraw;
+Eibotboard axidraw;
 
 void setup() {
 

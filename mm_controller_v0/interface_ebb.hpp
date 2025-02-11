@@ -18,9 +18,9 @@ A part of the Mixing Metaphors Project
 */
 #define EBB_COMMAND_SIZE  2 //the command portion of the input block is up to two characters long
 
-class eibotboard{
+class Eibotboard{
   public:
-    eibotboard();
+    Eibotboard();
     void begin(); // setup routine
     void loop(); // should be run inside loop
   
@@ -39,7 +39,7 @@ class eibotboard{
     struct command{
       char command_string[EBB_COMMAND_SIZE + 1]; //two-character string
       uint16_t command_value; //the command string, converted into a command value during initialization.
-      void (eibotboard::*command_function)(); //pointer to the command function to execute when this command value shows up.
+      void (Eibotboard::*command_function)(); //pointer to the command function to execute when this command value shows up.
     };
     char input_buffer[255]; //pre-allocate a string buffer to store the serial input stream.
     uint8_t input_buffer_write_index; //stores the current index of the write buffer

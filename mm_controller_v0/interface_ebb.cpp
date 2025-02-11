@@ -18,23 +18,23 @@ A part of the Mixing Metaphors Project
 #define EBB_INPUT_IN_STRING 2 //reading the remaining string
 
 // DEFINE ALL COMMANDS
-struct eibotboard::command eibotboard::all_commands[] = {
-  {.command_string = "V", .command_function = &eibotboard::command_version}, //Version Query
-  {.command_string = "QC", .command_function = &eibotboard::command_query_current},
-  {.command_string = "QB", .command_function = &eibotboard::command_query_button},
-  {.command_string = "QL", .command_function = &eibotboard::command_query_variable}
+struct Eibotboard::command Eibotboard::all_commands[] = {
+  {.command_string = "V", .command_function = &Eibotboard::command_version}, //Version Query
+  {.command_string = "QC", .command_function = &Eibotboard::command_query_current},
+  {.command_string = "QB", .command_function = &Eibotboard::command_query_button},
+  {.command_string = "QL", .command_function = &Eibotboard::command_query_variable}
 };
 
 
-eibotboard::eibotboard(){};
+Eibotboard::Eibotboard(){};
 
-void eibotboard::begin(){
+void Eibotboard::begin(){
   Serial.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
 }
 
-void eibotboard::loop(){
+void Eibotboard::loop(){
   if(debug_port_identified == 0){ // identify the debug port based on the first port with an available character.
     if(Serial.available() > 0){
       uint8_t character = Serial.read();
@@ -64,7 +64,7 @@ void eibotboard::loop(){
   }
 }
 
-void eibotboard::process_character(uint8_t character){
+void Eibotboard::process_character(uint8_t character){
   if(character == 13){ //carriage return; done receiving the entire command string
     input_buffer[input_buffer_write_index] = 0; //indicate end of string
     process_command(input_command_value); //process the command
@@ -88,11 +88,11 @@ void eibotboard::process_character(uint8_t character){
   }
 }
 
-void eibotboard::process_command(uint16_t command_value){
+void Eibotboard::process_command(uint16_t command_value){
   // Find and call the command.
-  uint8_t num_commands = sizeof(eibotboard::all_commands) / sizeof(eibotboard::all_commands[0]);
+  uint8_t num_commands = sizeof(Eibotboard::all_commands) / sizeof(Eibotboard::all_commands[0]);
   for(uint8_t command_index = 0; command_index < num_commands; command_index++){ //iterate over all commands
-    if(command_value == eibotboard::all_commands[command_index].command_value){
+    if(command_value == Eibotboard::all_commands[command_index].command_value){
       (this->*all_commands[command_index].command_function)(); //call the function
       return;
     }   
@@ -101,44 +101,44 @@ void eibotboard::process_command(uint16_t command_value){
   command_generic();
 }
 
-void eibotboard::reset_input_buffer(){
+void Eibotboard::reset_input_buffer(){
   input_buffer_write_index = 0;
   input_state = EBB_INPUT_IDLE;
   input_command_value = 0;
 }
 
-void eibotboard::initialize_all_commands_struct(){
+void Eibotboard::initialize_all_commands_struct(){
   // Initializes the all_commands structure by pre-populating the command values for each entry. This saves processing time
   // when finding and calling functions for actual moves.
-  uint8_t num_commands = sizeof(eibotboard::all_commands) / sizeof(eibotboard::all_commands[0]);
+  uint8_t num_commands = sizeof(Eibotboard::all_commands) / sizeof(Eibotboard::all_commands[0]);
   for(uint8_t command_index = 0; command_index < num_commands; command_index++){ //iterate over all commands
     for(uint8_t char_index = 0; char_index < EBB_COMMAND_SIZE; char_index ++){ //iterate over all characters
-      uint8_t this_char = eibotboard::all_commands[command_index].command_string[char_index];
+      uint8_t this_char = Eibotboard::all_commands[command_index].command_string[char_index];
       if(this_char){
-        eibotboard::all_commands[command_index].command_value <<= 8;
-        eibotboard::all_commands[command_index].command_value += this_char;
+        Eibotboard::all_commands[command_index].command_value <<= 8;
+        Eibotboard::all_commands[command_index].command_value += this_char;
       }
     }
   }
 }
 
 // -- COMMANDS --
-void eibotboard::command_version(){
+void Eibotboard::command_version(){
   ebb_serial_port->print("EBBv13_and_above EB Firmware Version 2.7.4\r\n");
 }
 
-void eibotboard::command_query_current(){
+void Eibotboard::command_query_current(){
   ebb_serial_port->print("0800,0800\r\nOK\r\n"); //just making some stuff up here
 }
 
-void eibotboard::command_query_button(){
+void Eibotboard::command_query_button(){
   ebb_serial_port->print("0\r\nOK\r\n"); //just making some stuff up here
 }
 
-void eibotboard::command_query_variable(){
+void Eibotboard::command_query_variable(){
   ebb_serial_port->print("000\r\nOK\r\n"); //temporary for now
 }
 
-void eibotboard::command_generic(){
+void Eibotboard::command_generic(){
   ebb_serial_port->print("OK\r\n");
 }

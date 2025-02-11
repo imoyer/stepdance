@@ -20,17 +20,17 @@ A part of the Mixing Metaphors Project
 // ISR functions need to be static, rather than class methods. So we define a unique static method for each of the
 // input ports, and then have _those_ call the bound class method isr().
 
-input_port * input_port::indexed_input_ports[NUM_AVAILABLE_INPUT_PORTS] = {nullptr, nullptr, nullptr};
+InputPort * InputPort::indexed_input_ports[NUM_AVAILABLE_INPUT_PORTS] = {nullptr, nullptr, nullptr};
 
-void input_port::input_A_isr(){indexed_input_ports[INPUT_A]->isr();};
-void input_port::input_B_isr(){indexed_input_ports[INPUT_B]->isr();};
-void input_port::input_C_isr(){indexed_input_ports[INPUT_C]->isr();};
-void input_port::input_D_isr(){indexed_input_ports[INPUT_D]->isr();};
-void input_port::input_B_legacy_isr(){indexed_input_ports[INPUT_B_LEGACY]->isr();};
-void input_port::input_C_legacy_isr(){indexed_input_ports[INPUT_C_LEGACY]->isr();};
+void InputPort::input_A_isr(){indexed_input_ports[INPUT_A]->isr();};
+void InputPort::input_B_isr(){indexed_input_ports[INPUT_B]->isr();};
+void InputPort::input_C_isr(){indexed_input_ports[INPUT_C]->isr();};
+void InputPort::input_D_isr(){indexed_input_ports[INPUT_D]->isr();};
+void InputPort::input_B_legacy_isr(){indexed_input_ports[INPUT_B_LEGACY]->isr();};
+void InputPort::input_C_legacy_isr(){indexed_input_ports[INPUT_C_LEGACY]->isr();};
 
 // ---- MCU-LEVEL INPUT PORT CONFIGURATION INFO ----
-const struct input_port_info_struct input_port::port_info[] = {
+const struct input_port_info_struct InputPort::port_info[] = {
   // This structure contains an indexed list of available input ports.
   // Besides the four input ports available on the new StepDance modules, we also provide legacy configurations
   // for input Ports B and C on the original wheelprint modules. THESE LEGACY CONFIGURATIONS ARE MUTUALLY EXCLUSIVE
@@ -49,7 +49,7 @@ const struct input_port_info_struct input_port::port_info[] = {
     .SELECT_INPUT_REGISTER = &IOMUXC_FLEXPWM2_PWMA0_SELECT_INPUT,
     .SELECT_REGISTER_VALUE = 0,
     .IRQ = IRQ_FLEXPWM2_0,
-    .STATIC_ISR = &input_port::input_A_isr
+    .STATIC_ISR = &InputPort::input_A_isr
   },
   { .STEP_TEENSY_PIN = 5, // INPUT_B
     .DIR_TEENSY_PIN = 7,
@@ -61,7 +61,7 @@ const struct input_port_info_struct input_port::port_info[] = {
     .SELECT_INPUT_REGISTER = &IOMUXC_FLEXPWM2_PWMA1_SELECT_INPUT,
     .SELECT_REGISTER_VALUE = 0,
     .IRQ = IRQ_FLEXPWM2_1,
-    .STATIC_ISR = &input_port::input_B_isr
+    .STATIC_ISR = &InputPort::input_B_isr
   },
   { .STEP_TEENSY_PIN = 8, // INPUT_C
     .DIR_TEENSY_PIN = 10,
@@ -73,7 +73,7 @@ const struct input_port_info_struct input_port::port_info[] = {
     .SELECT_INPUT_REGISTER = &IOMUXC_FLEXPWM1_PWMA3_SELECT_INPUT,
     .SELECT_REGISTER_VALUE = 4,
     .IRQ = IRQ_FLEXPWM1_3,
-    .STATIC_ISR = &input_port::input_C_isr
+    .STATIC_ISR = &InputPort::input_C_isr
   },
   { .STEP_TEENSY_PIN = 9, // INPUT_D
     .DIR_TEENSY_PIN = 11,
@@ -85,7 +85,7 @@ const struct input_port_info_struct input_port::port_info[] = {
     .SELECT_INPUT_REGISTER = &IOMUXC_FLEXPWM2_PWMB2_SELECT_INPUT,
     .SELECT_REGISTER_VALUE = 1,
     .IRQ = IRQ_FLEXPWM2_2,
-    .STATIC_ISR = &input_port::input_D_isr
+    .STATIC_ISR = &InputPort::input_D_isr
   },
   { .STEP_TEENSY_PIN = 5, // INPUT_B_LEGACY
     .DIR_TEENSY_PIN = 4,
@@ -97,7 +97,7 @@ const struct input_port_info_struct input_port::port_info[] = {
     .SELECT_INPUT_REGISTER = &IOMUXC_FLEXPWM2_PWMA1_SELECT_INPUT,
     .SELECT_REGISTER_VALUE = 0,
     .IRQ =IRQ_FLEXPWM2_1,
-    .STATIC_ISR = &input_port::input_B_legacy_isr
+    .STATIC_ISR = &InputPort::input_B_legacy_isr
   },
   { .STEP_TEENSY_PIN = 7, // INPUT_C_LEGACY
     .DIR_TEENSY_PIN = 6,
@@ -109,14 +109,14 @@ const struct input_port_info_struct input_port::port_info[] = {
     .SELECT_INPUT_REGISTER = &IOMUXC_FLEXPWM1_PWMB3_SELECT_INPUT,
     .SELECT_REGISTER_VALUE = 4,
     .IRQ = IRQ_FLEXPWM1_3,
-    .STATIC_ISR = &input_port::input_C_legacy_isr
+    .STATIC_ISR = &InputPort::input_C_legacy_isr
   },
 };
 
 // -- INPUT PORT CLASS FUNCTIONS --
-input_port::input_port(){};
+InputPort::InputPort(){};
 
-void input_port::begin(uint8_t port_number, IntegerPosition* x_signal_target, IntegerPosition* y_signal_target, IntegerPosition* r_signal_target, IntegerPosition* t_signal_target, IntegerPosition* z_signal_target, IntegerPosition* e_signal_target){
+void InputPort::begin(uint8_t port_number, IntegerPosition* x_signal_target, IntegerPosition* y_signal_target, IntegerPosition* r_signal_target, IntegerPosition* t_signal_target, IntegerPosition* z_signal_target, IntegerPosition* e_signal_target){
   // store port number
   this->port_number = port_number;
 
@@ -222,7 +222,7 @@ void input_port::begin(uint8_t port_number, IntegerPosition* x_signal_target, In
   __enable_irq(); //re-enable interrupts
 }
 
-void input_port::isr(){
+void InputPort::isr(){
   // uint32_t interrupt_entry_cycle_count = ARM_DWT_CYCCNT; //UNCOMMENT FOR INSTRUMENTATION
   // read the direction pin
   int8_t dir = digitalReadFast(port_info[port_number].DIR_TEENSY_PIN);
@@ -263,15 +263,15 @@ void input_port::isr(){
   // input_interrupt_cycles = ARM_DWT_CYCCNT - interrupt_entry_cycle_count;
 }
 
-void input_port::enable_signal(uint8_t signal_index){
+void InputPort::enable_signal(uint8_t signal_index){
   signal_enable_flags[signal_index] = INPUT_ENABLED;
 }
 
-void input_port::disable_signal(uint8_t signal_index){
+void InputPort::disable_signal(uint8_t signal_index){
   signal_enable_flags[signal_index] = INPUT_DISABLED;
 }
 
-void input_port::enable_all_signals(){
+void InputPort::enable_all_signals(){
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
     // only enable signals that have a target channel
     if(signal_position_targets[signal_index] != nullptr){
@@ -282,7 +282,7 @@ void input_port::enable_all_signals(){
   }
 }
 
-void input_port::disable_all_signals(){
+void InputPort::disable_all_signals(){
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
     signal_enable_flags[signal_index] = INPUT_DISABLED;
   }
