@@ -43,6 +43,9 @@ void on_frame(){
 // -- OVERALL SYSTEM --
 
 void stepdance_start(){
+  // activate all plugins
+  add_function_to_frame(Plugin::run_plugins);
+
   // Starts all core timers etc
   core_frame_timer.priority(128);
   core_frame_timer.begin(on_frame, CORE_FRAME_PERIOD_US);
@@ -59,7 +62,10 @@ void stepdance_metrics_reset(){
 }
 
 // -- PLUGINS --
-uint8_t Plugin::num_registered_plugins = MAX_NUM_PLUGINS;
+Plugin::Plugin(){};
+
+uint8_t Plugin::num_registered_plugins = 0;
+Plugin* Plugin::registered_plugins[MAX_NUM_PLUGINS];
 
 void Plugin::register_plugin(){
   if(num_registered_plugins < MAX_NUM_PLUGINS){
@@ -67,6 +73,8 @@ void Plugin::register_plugin(){
     num_registered_plugins ++;
   } // NOTE: should add a return value if it works
 }
+
+void Plugin::run(){};
 
 void Plugin::run_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_plugins; plugin_index++){

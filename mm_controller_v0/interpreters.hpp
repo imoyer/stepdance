@@ -1,5 +1,8 @@
 #include "core.hpp"
 
+#ifndef interpreters_h //prevent importing twice
+#define interpreters_h
+
 #define TIME_BASED_INTERPRETER_BLOCK_QUEUE_SIZE   100 //we'll start here. Each block currently requires 33 bytes of RAM
 
 class TimeBasedInterpreter : public Plugin{
@@ -23,10 +26,13 @@ class TimeBasedInterpreter : public Plugin{
     };
 
     uint16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
-
+    volatile struct motion_block active_block;
+    volatile uint8_t in_block = 0; //1 if actively reading a block
+    volatile uint16_t next_read_index; //next read index in the block queue 
+    void begin();
+    
   private:
     struct motion_block block_queue[TIME_BASED_INTERPRETER_BLOCK_QUEUE_SIZE]; // stores all pending motion blocks
-    volatile uint16_t next_read_index; //next read index in the block queue 
     volatile uint16_t next_write_index; //next write index in the block queue
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
     void advance_head(volatile uint16_t* target_head); //handles roll-overs etc
@@ -35,3 +41,5 @@ class TimeBasedInterpreter : public Plugin{
   protected:
     void run();
 };
+
+#endif

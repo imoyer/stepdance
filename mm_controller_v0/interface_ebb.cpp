@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <cstring>
 #include <sys/_stdint.h>
 /*
 EiBotBoard Interface Module of the StepDance Control System
@@ -12,13 +14,16 @@ A part of the Mixing Metaphors Project
 */
 
 #include "interface_ebb.hpp"
+#include "interpreters.hpp"
 
 #define EBB_INPUT_IDLE 0 //waiting on a new line
 #define EBB_INPUT_IN_COMMAND 1 //reading the one or two-character command
 #define EBB_INPUT_IN_STRING 2 //reading the remaining string
 
 // DEFINE ALL COMMANDS
+// We put high-frequency commands such as "SM" first, to improve search time.
 struct Eibotboard::command Eibotboard::all_commands[] = {
+  {.command_string = "SM", .command_function = &Eibotboard::command_stepper_move}, 
   {.command_string = "V", .command_function = &Eibotboard::command_version}, //Version Query
   {.command_string = "QC", .command_function = &Eibotboard::command_query_current},
   {.command_string = "QB", .command_function = &Eibotboard::command_query_button},
@@ -28,7 +33,8 @@ struct Eibotboard::command Eibotboard::all_commands[] = {
 
 Eibotboard::Eibotboard(){};
 
-void Eibotboard::begin(){
+void Eibotboard::begin(TimeBasedInterpreter* interpreter){
+  target_interpreter = interpreter;
   Serial.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
@@ -101,6 +107,15 @@ void Eibotboard::process_command(uint16_t command_value){
   command_generic();
 }
 
+void Eibotboard::process_string_int32(){
+  // Processes the input buffer into the parameter array. This version treats all parameters as int32 values.
+  char *token = strtok(input_buffer, ","); //splits a string along a comma
+  num_input_parameters = 0;
+  while(token != nullptr && num_input_parameters < EBB_MAX_NUM_INPUT_PARAMETERS){
+    input_parameters[num_input_parameters++] = static_cast<int32_t>(strtol(token, nullptr, 10)); //converts the token string into an int32_t
+  }
+}
+
 void Eibotboard::reset_input_buffer(){
   input_buffer_write_index = 0;
   input_state = EBB_INPUT_IDLE;
@@ -137,6 +152,53 @@ void Eibotboard::command_query_button(){
 
 void Eibotboard::command_query_variable(){
   ebb_serial_port->print("000\r\nOK\r\n"); //temporary for now
+}
+
+void Eibotboard::command_stepper_move(){
+  //debug
+  debug_serial_port->print("READ HEAD: ");
+  debug_serial_port->println(target_interpreter->next_read_index);
+  debug_serial_port->print("BLOCK ID: ");
+  debug_serial_port->println(target_interpreter->active_block.block_id);
+  debug_serial_port->print("MOVE TIME: ");
+  debug_serial_port->println(target_interpreter->active_block.block_time_s);
+  debug_serial_port->print("X POS: ");
+  debug_serial_port->println(target_interpreter->active_block.block_position.x_mm);
+  debug_serial_port->print("Y POS: ");
+  debug_serial_port->println(target_interpreter->active_block.block_position.y_mm);
+  debug_serial_port->print("CPU USAGE: ");
+  debug_serial_port->println(stepdance_get_cpu_usage());
+  
+  
+  float move_time;
+  float axis_steps_1;
+  float axis_steps_2;
+
+  process_string_int32();
+
+  if(num_input_parameters > 0){
+    move_time = static_cast<float>(input_parameters[0]);
+  }else{
+    return;
+  }
+
+  if(num_input_parameters > 1){
+    axis_steps_1 = static_cast<float>(input_parameters[1]);
+  }else{
+    axis_steps_1 = 0.0;
+  }
+
+  if(num_input_parameters > 2){
+    axis_steps_2 = static_cast<float>(input_parameters[2]);
+  }else{
+    axis_steps_2 = 0.0;
+  }
+
+  TimeBasedInterpreter::motion_block this_block = {.block_id = block_id++, .block_time_s = move_time, .block_position = {.x_mm = axis_steps_1, .y_mm = axis_steps_2}};
+  // need to somehow check if the buffer has available blocks
+  target_interpreter->add_block(&this_block);
+  target_interpreter->in_block = 0; //temp - release active block
+  ebb_serial_port->print("OK\r\n");
 }
 
 void Eibotboard::command_generic(){
