@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include "Arduino.h"
 /*
 Core Module of the StepDance Control System
@@ -10,7 +11,9 @@ A part of the Mixing Metaphors Project
 #ifndef core_h //prevent importing twice
 #define core_h
 
-typedef volatile int32_t IntegerPosition; //used to store positions across the system
+typedef volatile float64_t DecimalPosition; //used to store positions across the system. We are using double-precision to allow incremental moves with acceptable error (~0.05 steps/day at 25khz)
+typedef volatile int32_t IntegerPosition; //previously used to store positions
+
 typedef void (*frame_function_pointer)(); //defines function pointers that can be called at each frame
 
 #define CORE_FRAME_PERIOD_US 40 //microseconds. This yields a max output step rate of 25k steps/sec.
@@ -41,6 +44,23 @@ class Plugin{
   protected: //these need to be accessed from derived classes
     void register_plugin(); //registers the plugin
     virtual void run(); //this should be overridden in the derived class. Runs each frame.
+};
+
+// -- Mechanism Class --
+// Mechanisms are a one-dimensional means of converting units from one domain (e.g. steps) to another (e.g. mm).
+
+class Mechanism{
+  public:
+    Mechanism();
+    void begin(float input_units, float output_units); //configures to convert from input to output
+    void begin(float input_units, float output_units, DecimalPosition *output_position); //enables interacting with the target output position in mechanism units
+    void set(float64_t input_value); //set the output position
+    float64_t get(); //gets the output position
+    float64_t convert(float64_t input_value); //converts from input to output values
+    float64_t convert_reverse(float64_t output_value); //converts from output to input values
+
+  private:
+
 };
 
 #endif

@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include <cstdint>
 #include <sys/_stdint.h>
 #include <sys/types.h>
@@ -96,13 +97,13 @@ void Channel::drive_to_target(){
   }
   
   // 2. Calculate pulse distance between target and current position. Both target positions contribute.
-  int32_t delta_position = target_position + target_position_2 - current_position;
+  float64_t delta_position = target_position + target_position_2 - current_position;
 
   // 3. Determine direction of motion
   int direction;
-  if(delta_position > 0){
+  if(delta_position >= 0.5){
     direction = DIRECTION_FORWARD;
-  }else if (delta_position < 0){
+  }else if (delta_position < 0.5){
     direction = DIRECTION_REVERSE;
   }else{
     direction = last_direction;

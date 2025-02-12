@@ -116,7 +116,7 @@ const struct input_port_info_struct InputPort::port_info[] = {
 // -- INPUT PORT CLASS FUNCTIONS --
 InputPort::InputPort(){};
 
-void InputPort::begin(uint8_t port_number, IntegerPosition* x_signal_target, IntegerPosition* y_signal_target, IntegerPosition* r_signal_target, IntegerPosition* t_signal_target, IntegerPosition* z_signal_target, IntegerPosition* e_signal_target){
+void InputPort::begin(uint8_t port_number, DecimalPosition* x_signal_target, DecimalPosition* y_signal_target, DecimalPosition* z_signal_target, DecimalPosition* e_signal_target, DecimalPosition* r_signal_target, DecimalPosition* t_signal_target){
   // store port number
   this->port_number = port_number;
 

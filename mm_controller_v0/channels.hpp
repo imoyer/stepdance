@@ -22,9 +22,9 @@ void activate_channels(); //adds channels to the frame interrupt routine
 class Channel{
   public:
     // Public State
-    volatile IntegerPosition target_position; //primary target position, in pulses.
-    volatile IntegerPosition target_position_2; // secondary target position, used for coordinate transforms.
-    volatile IntegerPosition current_position; //tracks the current position, in pulses.
+    volatile DecimalPosition target_position; //primary target position, in pulses.
+    volatile DecimalPosition target_position_2; // secondary target position, used for coordinate transforms.
+    volatile DecimalPosition current_position; //tracks the current position, in pulses.
 
     // Public Methods
     Channel();
