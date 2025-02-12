@@ -113,6 +113,7 @@ void Eibotboard::process_string_int32(){
   num_input_parameters = 0;
   while(token != nullptr && num_input_parameters < EBB_MAX_NUM_INPUT_PARAMETERS){
     input_parameters[num_input_parameters++] = static_cast<int32_t>(strtol(token, nullptr, 10)); //converts the token string into an int32_t
+    token = strtok(nullptr, ",");
   }
 }
 
@@ -167,7 +168,8 @@ void Eibotboard::command_stepper_move(){
   debug_serial_port->print("Y POS: ");
   debug_serial_port->println(target_interpreter->active_block.block_position.y_mm);
   debug_serial_port->print("CPU USAGE: ");
-  debug_serial_port->println(stepdance_get_cpu_usage());
+  debug_serial_port->print(stepdance_get_cpu_usage()*100);
+  debug_serial_port->println("%");
   
   
   float move_time;
