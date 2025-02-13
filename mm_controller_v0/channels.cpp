@@ -74,6 +74,10 @@ void Channel::begin(OutputPort* target_output_port, uint8_t output_signal){
     this->output_signal = output_signal;
     register_channel(); //register channel with pulse generator
   }
+
+  // Initialize transmissions
+  target_transmission.begin(&target_position);
+  target_transmission_2.begin(&target_position_2);
 }
 
 void Channel::register_channel(){

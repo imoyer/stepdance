@@ -1,3 +1,5 @@
+#include <cstddef>
+#include "arm_math.h"
 #include "imxrt.h"
 #include "core_pins.h"
 #include <functional>
@@ -80,4 +82,55 @@ void Plugin::run_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_plugins; plugin_index++){
     registered_plugins[plugin_index]->run();
   }
+}
+
+// -- TRANSMISSION --
+Transmission::Transmission(){};
+
+void Transmission::begin(){
+  begin(1, 1, nullptr);
+}
+
+void Transmission::begin(DecimalPosition *output_position){
+  begin(1, 1, output_position);
+}
+
+void Transmission::begin(float input_units, float output_units){
+  begin(input_units, output_units, nullptr);
+}
+
+void Transmission::begin(float input_units, float output_units, DecimalPosition *output_position){
+  set_ratio(input_units, output_units);
+  target = output_position;
+}
+
+void Transmission::set_ratio(float input_units, float output_units){
+  transfer_ratio = output_units / input_units;
+}
+
+void Transmission::set(float64_t input_value){
+  if(target != nullptr){
+    *target = input_value * transfer_ratio;
+  }
+}
+
+float64_t Transmission::get(){
+  if(target != nullptr){
+    return *target / transfer_ratio;
+  }else{
+    return 0.0;
+  }
+}
+
+void Transmission::increment(float64_t input_value){
+  if(target != nullptr){
+    *target += (input_value * transfer_ratio);
+  }
+}
+
+float64_t Transmission::convert(float64_t input_value){
+  return input_value * transfer_ratio;
+}
+float64_t Transmission::convert_reverse(float64_t output_value){
+  return output_value / transfer_ratio;
 }

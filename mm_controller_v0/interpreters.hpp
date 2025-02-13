@@ -1,3 +1,14 @@
+/*
+Interpreter Module of the StepDance Control System
+
+This module provides buffered motion interpretation.
+
+[More Details to be Added]
+
+A part of the Mixing Metaphors Project
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+*/
+
 #include "core.hpp"
 
 #ifndef interpreters_h //prevent importing twice

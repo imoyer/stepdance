@@ -46,21 +46,26 @@ class Plugin{
     virtual void run(); //this should be overridden in the derived class. Runs each frame.
 };
 
-// -- Mechanism Class --
-// Mechanisms are a one-dimensional means of converting units from one domain (e.g. steps) to another (e.g. mm).
+// -- Transmission Class --
+// Transmissions are a one-dimensional means of converting units from one domain (e.g. steps) to another (e.g. mm).
 
-class Mechanism{
+class Transmission{
   public:
-    Mechanism();
+    Transmission();
+    void begin();
+    void begin(DecimalPosition *output_position);
     void begin(float input_units, float output_units); //configures to convert from input to output
     void begin(float input_units, float output_units, DecimalPosition *output_position); //enables interacting with the target output position in mechanism units
+    void set_ratio(float input_units, float output_units); //sets the transmission ratio
     void set(float64_t input_value); //set the output position
+    void increment(float64_t input_value);
     float64_t get(); //gets the output position
     float64_t convert(float64_t input_value); //converts from input to output values
     float64_t convert_reverse(float64_t output_value); //converts from output to input values
 
   private:
-
+    float64_t transfer_ratio = 1.0; // output_units/input_units. Initialize with a unity transfer ratio
+    DecimalPosition *target;
 };
 
 #endif
