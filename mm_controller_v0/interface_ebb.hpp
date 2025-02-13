@@ -20,12 +20,17 @@ A part of the Mixing Metaphors Project
 */
 #define EBB_COMMAND_SIZE  2 //the command portion of the input block is up to two characters long
 #define EBB_MAX_NUM_INPUT_PARAMETERS 10 //maximum allowable number of parameters in an input string
+#define EBB_EXECUTE_IMMEDIATE 0 //command to be executed on receipt, if no other command is pending
+#define EBB_EXECUTE_EMERGENCY 1 //command to be executed on receipt, regardless of whether a command is pending
+#define EBB_EXECUTE_TO_QUEUE 2 //command to be added to the queue
+#define EBB_BLOCK_PENDING 1 //block is pending
 
 class Eibotboard{
   public:
     Eibotboard();
     void begin(TimeBasedInterpreter* interpreter); // setup routine
     void loop(); // should be run inside loop
+    void set_steps_to_mm(float steps, float mm); //sets the conversion between steps and mm
   
   private:
     // Serial Debug State
@@ -33,8 +38,12 @@ class Eibotboard{
     Stream *ebb_serial_port; //stores a pointer to the ebb serial port
     Stream *debug_serial_port; //pointer to the debug port
 
+    // Transmission
+    Transmission transmission_xy_steps_to_mm;
+
     // Interpreter
-    TimeBasedInterpreter *target_interpreter;
+    TimeBasedInterpreter* target_interpreter;
+
     // Command Processing
     void process_character(uint8_t character);
     void reset_input_buffer(); //resets the input buffer state
@@ -46,6 +55,7 @@ class Eibotboard{
       char command_string[EBB_COMMAND_SIZE + 1]; //two-character string
       uint16_t command_value; //the command string, converted into a command value during initialization.
       void (Eibotboard::*command_function)(); //pointer to the command function to execute when this command value shows up.
+      uint8_t execution; //0 -- immediate execution, 1 -- emergency execution, 2 -- add to queue
     };
     char input_buffer[255]; //pre-allocate a string buffer to store the serial input stream.
     uint8_t input_buffer_write_index; //stores the current index of the write buffer
@@ -54,6 +64,10 @@ class Eibotboard{
     int32_t input_parameters[EBB_MAX_NUM_INPUT_PARAMETERS]; // parameters that have been parsed from the input string
     uint8_t num_input_parameters; // number of parameters in the string
     uint16_t block_id = 0; //stores the current block ID, which simply increments each time a new motion-containing block is received
+    TimeBasedInterpreter::motion_block pending_block; //stores motion block information that is pending being added to the queue
+    uint8_t block_pending_flag = 0; //1 if a block is pending addition to the queue
+    uint8_t debug_buffer_full_flag = 0; //1 if already sent a debug message
+    void (Eibotboard::*pending_block_function)(); //pointer to the command function whose block is pending
     static struct command all_commands[]; //stores all available commands
 
     // -- COMMANDS --

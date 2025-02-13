@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include <cstdlib>
 #include <cstring>
 #include <sys/_stdint.h>
@@ -23,11 +24,11 @@ A part of the Mixing Metaphors Project
 // DEFINE ALL COMMANDS
 // We put high-frequency commands such as "SM" first, to improve search time.
 struct Eibotboard::command Eibotboard::all_commands[] = {
-  {.command_string = "SM", .command_function = &Eibotboard::command_stepper_move}, 
-  {.command_string = "V", .command_function = &Eibotboard::command_version}, //Version Query
-  {.command_string = "QC", .command_function = &Eibotboard::command_query_current},
-  {.command_string = "QB", .command_function = &Eibotboard::command_query_button},
-  {.command_string = "QL", .command_function = &Eibotboard::command_query_variable}
+  {.command_string = "SM", .command_function = &Eibotboard::command_stepper_move, .execution = EBB_EXECUTE_TO_QUEUE}, 
+  {.command_string = "V", .command_function = &Eibotboard::command_version, .execution = EBB_EXECUTE_IMMEDIATE}, //Version Query
+  {.command_string = "QC", .command_function = &Eibotboard::command_query_current, .execution = EBB_EXECUTE_IMMEDIATE},
+  {.command_string = "QB", .command_function = &Eibotboard::command_query_button, .execution = EBB_EXECUTE_IMMEDIATE},
+  {.command_string = "QL", .command_function = &Eibotboard::command_query_variable, .execution = EBB_EXECUTE_IMMEDIATE}
 };
 
 
@@ -38,6 +39,10 @@ void Eibotboard::begin(TimeBasedInterpreter* interpreter){
   Serial.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
+}
+
+void Eibotboard::set_steps_to_mm(float steps, float mm){
+  transmission_xy_steps_to_mm.begin(steps, mm);
 }
 
 void Eibotboard::loop(){
@@ -59,6 +64,9 @@ void Eibotboard::loop(){
       debug_serial_port = &Serial;
     }
   }else{
+    if(block_pending_flag){ // if a block is pending, call that function first
+      (this->*pending_block_function)();
+    }
     while(ebb_serial_port->available() > 0){
       uint8_t character = ebb_serial_port->read();
       debug_serial_port->write(character);
@@ -99,8 +107,13 @@ void Eibotboard::process_command(uint16_t command_value){
   uint8_t num_commands = sizeof(Eibotboard::all_commands) / sizeof(Eibotboard::all_commands[0]);
   for(uint8_t command_index = 0; command_index < num_commands; command_index++){ //iterate over all commands
     if(command_value == Eibotboard::all_commands[command_index].command_value){
-      (this->*all_commands[command_index].command_function)(); //call the function
-      return;
+      if((block_pending_flag == 0) || (Eibotboard::all_commands[command_index].execution == EBB_EXECUTE_EMERGENCY)){
+        //we run the command if either nothing is waiting to get into the queue, or the command will execute immediately under emergency status
+        (this->*all_commands[command_index].command_function)(); //call the function
+        return;
+      }else{ //a block is pending and it is not an emergency, so we'll ignore the command
+        return;
+      }
     }   
   }
   // didn't find the requested command
@@ -156,51 +169,82 @@ void Eibotboard::command_query_variable(){
 }
 
 void Eibotboard::command_stepper_move(){
+  if(block_pending_flag == 0){ //let's load up a block
+    // Step 1:  Convert motion block string into parameters
+    //          These get placed in the input_parameters array
+    process_string_int32();
+
+    // Step 2:  Read in parameters, and set defaults when needed
+    float64_t move_time_ms;
+    float64_t motor_1_delta_steps;
+    float64_t motor_2_delta_steps;
+
+    if(num_input_parameters > 0){
+      move_time_ms = static_cast<float64_t>(input_parameters[0]);
+    }else{
+      return;
+    }
+
+    if(num_input_parameters > 1){
+      motor_1_delta_steps = static_cast<float64_t>(input_parameters[1]);
+    }else{
+      motor_1_delta_steps = 0.0;
+    }
+
+    if(num_input_parameters > 2){
+      motor_2_delta_steps = static_cast<float64_t>(input_parameters[2]);
+    }else{
+      motor_2_delta_steps = 0.0;
+    }
+
+    // Step 3: Convert parameters from command space (motor steps, move time in ms) to standard space (xy mm, move time in sec)
+    //          NOTE: We assume an h-bot transform, which we hardcode here rather than use the kinematics module, for simplicity.
+    float64_t move_time_s = move_time_ms / 1000;
+    float64_t motor_1_delta_mm = transmission_xy_steps_to_mm.convert(motor_1_delta_steps);
+    float64_t motor_2_delta_mm = transmission_xy_steps_to_mm.convert(motor_2_delta_steps);
+    float64_t x_delta_mm = 0.5*(motor_1_delta_mm + motor_2_delta_mm);
+    float64_t y_delta_mm = 0.5*(motor_1_delta_mm - motor_2_delta_mm);
+
+    // Step 4:  Load parameters into a motion block
+    pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = x_delta_mm, .y_mm = y_delta_mm}};
+    block_pending_flag = EBB_BLOCK_PENDING;
+    pending_block_function = &Eibotboard::command_stepper_move; // tag this function as having originated the pending block
+  }
+  
+  // Step 5:  Try adding the pending block to queue.
+  int16_t available_slots = target_interpreter->add_block(&pending_block);
+
+  // Step 6: Check if block was added, and respond
+  if(available_slots >= 0){ //move successfully added
+    ebb_serial_port->print("OK\r\n");
+    block_pending_flag = 0; //release the hold on the pending block
+    debug_buffer_full_flag = 0;
+    // debug
+    // debug_serial_port->print("READ HEAD: ");
+    // debug_serial_port->println(target_interpreter->next_read_index);
+    debug_serial_port->print("QUEUED BLOCK ");
+    debug_serial_port->println(pending_block.block_id);
+    debug_serial_port->print("  MOVE TIME: ");
+    debug_serial_port->println(pending_block.block_time_s);
+    debug_serial_port->print("  X DELTA: ");
+    debug_serial_port->println(pending_block.block_position_delta.x_mm);
+    debug_serial_port->print("  Y DELTA: ");
+    debug_serial_port->println(pending_block.block_position_delta.y_mm);
+    debug_serial_port->print("  CPU USAGE: ");
+    debug_serial_port->print(stepdance_get_cpu_usage()*100);
+    debug_serial_port->println("%");
+    debug_serial_port->print("  SLOTS REMAINING: ");
+    debug_serial_port->println(available_slots);
+  }else if(debug_buffer_full_flag == 0){ //message once that buffer is full
+    debug_serial_port->print("QUEUE FULL; BLOCK ");
+    debug_serial_port->print(pending_block.block_id);
+    debug_serial_port->print(" PENDING");
+    debug_buffer_full_flag = 1;
+  }
+  
+
   //debug
-  debug_serial_port->print("READ HEAD: ");
-  debug_serial_port->println(target_interpreter->next_read_index);
-  debug_serial_port->print("BLOCK ID: ");
-  debug_serial_port->println(target_interpreter->active_block.block_id);
-  debug_serial_port->print("MOVE TIME: ");
-  debug_serial_port->println(target_interpreter->active_block.block_time_s);
-  debug_serial_port->print("X POS: ");
-  debug_serial_port->println(target_interpreter->active_block.block_position.x_mm);
-  debug_serial_port->print("Y POS: ");
-  debug_serial_port->println(target_interpreter->active_block.block_position.y_mm);
-  debug_serial_port->print("CPU USAGE: ");
-  debug_serial_port->print(stepdance_get_cpu_usage()*100);
-  debug_serial_port->println("%");
-  
-  
-  float move_time;
-  float axis_steps_1;
-  float axis_steps_2;
 
-  process_string_int32();
-
-  if(num_input_parameters > 0){
-    move_time = static_cast<float>(input_parameters[0]);
-  }else{
-    return;
-  }
-
-  if(num_input_parameters > 1){
-    axis_steps_1 = static_cast<float>(input_parameters[1]);
-  }else{
-    axis_steps_1 = 0.0;
-  }
-
-  if(num_input_parameters > 2){
-    axis_steps_2 = static_cast<float>(input_parameters[2]);
-  }else{
-    axis_steps_2 = 0.0;
-  }
-
-  TimeBasedInterpreter::motion_block this_block = {.block_id = block_id++, .block_time_s = move_time, .block_position = {.x_mm = axis_steps_1, .y_mm = axis_steps_2}};
-  // need to somehow check if the buffer has available blocks
-  target_interpreter->add_block(&this_block);
-  target_interpreter->in_block = 0; //temp - release active block
-  ebb_serial_port->print("OK\r\n");
 }
 
 void Eibotboard::command_generic(){

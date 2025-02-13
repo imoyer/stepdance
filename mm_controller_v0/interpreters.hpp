@@ -1,3 +1,4 @@
+#include "arm_math.h"
 /*
 Interpreter Module of the StepDance Control System
 
@@ -21,22 +22,22 @@ class TimeBasedInterpreter : public Plugin{
     TimeBasedInterpreter();
     
     struct position{
-      float x_mm; // X
-      float y_mm; // Y
-      float z_mm; // Z
-      float e_mm; // Extruder
-      float r_mm; // Radial
-      float t_rad; // Theta
+      float64_t x_mm; // X
+      float64_t y_mm; // Y
+      float64_t z_mm; // Z
+      float64_t e_mm; // Extruder
+      float64_t r_mm; // Radial
+      float64_t t_rad; // Theta
     };
 
     struct motion_block{
       uint8_t block_type; //specifies which type of block this is (e.g. delay, absolute, relative, set position, etc...)
       uint32_t block_id; //an ID # for the motion block
-      float block_time_s; //total time for the block, in seconds. We'll later convert this to frames, but keep it in seconds here for legibility.
-      struct position block_position;
+      float64_t block_time_s; //total time for the block, in seconds. We'll later convert this to frames, but keep it in seconds here for legibility.
+      struct position block_position_delta;
     };
 
-    uint16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
+    int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
     volatile struct motion_block active_block;
     volatile uint8_t in_block = 0; //1 if actively reading a block
     volatile uint16_t next_read_index; //next read index in the block queue 

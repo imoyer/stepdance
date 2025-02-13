@@ -27,16 +27,15 @@ void setup() {
   channel_e.begin(&output_a, SIGNAL_E);
 
   input_b.begin(INPUT_B_LEGACY, &channel_y.target_position, &channel_z.target_position, &channel_e.target_position, nullptr, nullptr, nullptr);
-
   axidraw.begin(&interpreter);
+  axidraw.set_steps_to_mm(2874, 25.4);
   interpreter.begin();
-  activate_channels();
   stepdance_start();
 }
 
 uint16_t test_block_id = 0;
 void loop() {
-  // axidraw.loop();
+  axidraw.loop();
   // struct TimeBasedInterpreter::motion_block this_block = {.block_id = test_block_id, .block_position = {.x_mm = 100, .y_mm = 200, .z_mm = 300}};
   // interpreter.add_block(&this_block);
   // delay(500);
@@ -50,13 +49,13 @@ void loop() {
   // Serial.println(stepdance_get_cpu_usage());
   // test_block_id ++;
   // interpreter.in_block = 0;
-  channel_x.target_position -= 100;
-  channel_y.target_position += -100;
-  channel_z.target_position += 100;
-  channel_e.target_position -= 1000;
-  delay(500);
-  Serial.print("CPU USAGE ");
-  Serial.println(stepdance_get_cpu_usage()*100);
-  Serial.print("Y POSITION: ");
-  Serial.println(channel_y.current_position);
+  // channel_x.target_position -= 100;
+  // channel_y.target_position += -100;
+  // channel_z.target_position += 100;
+  // channel_e.target_position -= 1000;
+  // delay(500);
+  // Serial.print("CPU USAGE ");
+  // Serial.println(stepdance_get_cpu_usage()*100);
+  // Serial.print("Y POSITION: ");
+  // Serial.println(channel_y.current_position);
 }

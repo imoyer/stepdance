@@ -6,6 +6,8 @@
 #include <sys/_stdint.h>
 #include "core.hpp"
 #include "IntervalTimer.h"
+#include "channels.hpp"
+
 /*
 Core Module of the StepDance Control System
 
@@ -47,7 +49,8 @@ void on_frame(){
 void stepdance_start(){
   // activate all plugins
   add_function_to_frame(Plugin::run_plugins);
-
+  // activate channels
+  activate_channels();
   // Starts all core timers etc
   core_frame_timer.priority(128);
   core_frame_timer.begin(on_frame, CORE_FRAME_PERIOD_US);
@@ -105,7 +108,7 @@ void Transmission::begin(float input_units, float output_units, DecimalPosition 
 }
 
 void Transmission::set_ratio(float input_units, float output_units){
-  transfer_ratio = output_units / input_units;
+  transfer_ratio = static_cast<float64_t>(output_units / input_units);
 }
 
 void Transmission::set(float64_t input_value){
