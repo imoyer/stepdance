@@ -175,12 +175,12 @@ void Eibotboard::command_stepper_move(){
     process_string_int32();
 
     // Step 2:  Read in parameters, and set defaults when needed
-    float64_t move_time_ms;
+    float32_t move_time_ms;
     float64_t motor_1_delta_steps;
     float64_t motor_2_delta_steps;
 
     if(num_input_parameters > 0){
-      move_time_ms = static_cast<float64_t>(input_parameters[0]);
+      move_time_ms = static_cast<float32_t>(input_parameters[0]);
     }else{
       return;
     }
@@ -199,14 +199,14 @@ void Eibotboard::command_stepper_move(){
 
     // Step 3: Convert parameters from command space (motor steps, move time in ms) to standard space (xy mm, move time in sec)
     //          NOTE: We assume an h-bot transform, which we hardcode here rather than use the kinematics module, for simplicity.
-    float64_t move_time_s = move_time_ms / 1000;
+    float32_t move_time_s = move_time_ms / 1000;
     float64_t motor_1_delta_mm = transmission_xy_steps_to_mm.convert(motor_1_delta_steps);
     float64_t motor_2_delta_mm = transmission_xy_steps_to_mm.convert(motor_2_delta_steps);
     float64_t x_delta_mm = 0.5*(motor_1_delta_mm + motor_2_delta_mm);
     float64_t y_delta_mm = 0.5*(motor_1_delta_mm - motor_2_delta_mm);
 
     // Step 4:  Load parameters into a motion block
-    pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = x_delta_mm, .y_mm = y_delta_mm}};
+    pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = x_delta_mm, .y_mm = y_delta_mm, .z_mm = 0, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
     block_pending_flag = EBB_BLOCK_PENDING;
     pending_block_function = &Eibotboard::command_stepper_move; // tag this function as having originated the pending block
   }
@@ -241,10 +241,7 @@ void Eibotboard::command_stepper_move(){
     debug_serial_port->print(" PENDING");
     debug_buffer_full_flag = 1;
   }
-  
-
   //debug
-
 }
 
 void Eibotboard::command_generic(){
