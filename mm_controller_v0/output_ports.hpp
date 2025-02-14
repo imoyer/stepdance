@@ -54,14 +54,6 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
 #define SIGNAL_MIN_WIDTH_US 2 //pulse width in microseconds of shortest signal (index = 0)
 #define SIGNAL_GAP_US 2 //gap in microseconds between signals
 
-// Signal Indices
-#define SIGNAL_X  0 //index of the X signal in the active_signal and signal_directions arrrays
-#define SIGNAL_Y  1
-#define SIGNAL_R  2 // Polar Radial Axis
-#define SIGNAL_T  3 // Polar Theta Axis
-#define SIGNAL_Z  4
-#define SIGNAL_E  5 // Extruder
-
 #define DIRECTION_FORWARD 1
 #define DIRECTION_REVERSE 0
 

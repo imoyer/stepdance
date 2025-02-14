@@ -17,9 +17,18 @@ typedef volatile int32_t IntegerPosition; //previously used to store positions
 typedef void (*frame_function_pointer)(); //defines function pointers that can be called at each frame
 
 #define CORE_FRAME_PERIOD_US 40 //microseconds. This yields a max output step rate of 25k steps/sec.
-#define CORE_FRAME_PERIOD_S = CORE_FRAME_PERIOD_US / 1000000 //duration of each frame in seconds
+#define CORE_FRAME_PERIOD_S CORE_FRAME_PERIOD_US / 1000000 //duration of each frame in seconds
 #define CORE_FRAME_FREQ_HZ 1000000 / CORE_FRAME_PERIOD_US //framerate in Hz. This is 25k
 #define MAX_NUM_FRAME_FUNCTIONS 10 //maximum number of functions that can be called on the frame interrupt
+
+// Signal Indices
+// This is ordered by pulse length.
+#define SIGNAL_X  0 //index of the X signal in the active_signal and signal_directions arrrays
+#define SIGNAL_Y  1
+#define SIGNAL_R  2 // Polar Radial Axis
+#define SIGNAL_T  3 // Polar Theta Axis
+#define SIGNAL_Z  4
+#define SIGNAL_E  5 // Extruder
 
 void add_function_to_frame(frame_function_pointer target_function);
 void stepdance_start();

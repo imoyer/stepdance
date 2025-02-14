@@ -116,17 +116,21 @@ const struct input_port_info_struct InputPort::port_info[] = {
 // -- INPUT PORT CLASS FUNCTIONS --
 InputPort::InputPort(){};
 
+void InputPort::begin(uint8_t port_number){
+  begin(port_number, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+}
+
 void InputPort::begin(uint8_t port_number, DecimalPosition* x_signal_target, DecimalPosition* y_signal_target, DecimalPosition* z_signal_target, DecimalPosition* e_signal_target, DecimalPosition* r_signal_target, DecimalPosition* t_signal_target){
   // store port number
   this->port_number = port_number;
 
   // Set up target channels
-  signal_position_targets[SIGNAL_X] = x_signal_target;
-  signal_position_targets[SIGNAL_Y] = y_signal_target;
-  signal_position_targets[SIGNAL_R] = r_signal_target;
-  signal_position_targets[SIGNAL_T] = t_signal_target;
-  signal_position_targets[SIGNAL_Z] = z_signal_target;
-  signal_position_targets[SIGNAL_E] = e_signal_target;
+  map(SIGNAL_X, x_signal_target);
+  map(SIGNAL_Y, y_signal_target);
+  map(SIGNAL_Z, z_signal_target);
+  map(SIGNAL_E, e_signal_target);
+  map(SIGNAL_R, r_signal_target);
+  map(SIGNAL_T, t_signal_target);
   enable_all_signals();
 
   // configure teensy pins
@@ -220,6 +224,15 @@ void InputPort::begin(uint8_t port_number, DecimalPosition* x_signal_target, Dec
   NVIC_SET_PRIORITY(port_info[port_number].IRQ, 48); //we give it a high priority (low number), so we don't miss anything!
   NVIC_ENABLE_IRQ(port_info[port_number].IRQ);
   __enable_irq(); //re-enable interrupts
+}
+
+void InputPort::map(uint8_t signal_index, DecimalPosition* signal_target){
+  signal_position_targets[signal_index] = signal_target;
+  if(signal_target != nullptr){
+    signal_enable_flags[signal_index] = INPUT_ENABLED;
+  }else{
+    signal_enable_flags[signal_index] = INPUT_DISABLED;
+  }
 }
 
 void InputPort::isr(){

@@ -18,6 +18,10 @@ A part of the Mixing Metaphors Project
 
 TimeBasedInterpreter::TimeBasedInterpreter(){};
 
+void TimeBasedInterpreter::map(uint8_t output_index, Transmission* target_transmission){
+  output_transmissions[output_index] = target_transmission;
+}
+
 int16_t TimeBasedInterpreter::add_block(struct motion_block* block_to_add){
   // Adds a motion block to the interpreter
   //
@@ -62,34 +66,32 @@ void TimeBasedInterpreter::pull_block(){
   //Pulls a block from the queue and configures active registers for a move
 
   float32_t block_time_s = block_queue[next_read_index].block_time_s;
-  active_block_id = block_queue[next_read_index].block_id;
-  active_block_type = block_queue[next_read_index].block_type;
+  if(block_time_s>0){ //catch case where a 0 or negative-time block gets issued
+    active_block_id = block_queue[next_read_index].block_id;
+    active_block_type = block_queue[next_read_index].block_type;
 
-  //manually populate target distances
-  active_axes_remaining_distance_mm[TBI_AXIS_X] = block_queue[next_read_index].block_position_delta.x_mm;
-  active_axes_remaining_distance_mm[TBI_AXIS_Y] = block_queue[next_read_index].block_position_delta.y_mm;
-  active_axes_remaining_distance_mm[TBI_AXIS_Z] = block_queue[next_read_index].block_position_delta.z_mm;
-  active_axes_remaining_distance_mm[TBI_AXIS_E] = block_queue[next_read_index].block_position_delta.e_mm;
-  active_axes_remaining_distance_mm[TBI_AXIS_R] = block_queue[next_read_index].block_position_delta.r_mm;
-  active_axes_remaining_distance_mm[TBI_AXIS_T] = block_queue[next_read_index].block_position_delta.t_rad;
-  active_axes_remaining_distance_mm[TBI_AXIS_V] = 1; //virtual axis, always set to 1mm
+    //manually populate target distances
+    active_axes_remaining_distance_mm[TBI_AXIS_X] = block_queue[next_read_index].block_position_delta.x_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_Y] = block_queue[next_read_index].block_position_delta.y_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_Z] = block_queue[next_read_index].block_position_delta.z_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_E] = block_queue[next_read_index].block_position_delta.e_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_R] = block_queue[next_read_index].block_position_delta.r_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_T] = block_queue[next_read_index].block_position_delta.t_rad;
+    active_axes_remaining_distance_mm[TBI_AXIS_V] = 1; //virtual axis, always set to 1mm
 
-  // configure the other active move registers
-  for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes
-    float64_t axis_distance_mm = active_axes_remaining_distance_mm[axis_index];
-    if(axis_distance_mm != 0){
-      active_axes[axis_index] = TBI_AXIS_ACTIVE; //flag active axes
-      active_axes_velocity_mm_per_frame[active_index] = (axis_distance_mm / block_time_s) * CORE_FRAME_PERIOD_S; //set velocity of each axis, in mm/frame
-      active_axes_current_distance_mm[axis_index] = 0; //clear current distances
-    }else{
-      active_axes[axis_index] = TBI_AXIS_INACTIVE; //clear active flag
+    // configure the other active move registers
+    for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes
+      float64_t axis_distance_mm = active_axes_remaining_distance_mm[axis_index];
+      if(axis_distance_mm != 0){
+        active_axes[axis_index] = TBI_AXIS_ACTIVE; //flag active axes
+        active_axes_velocity_mm_per_frame[axis_index] = (axis_distance_mm / block_time_s) * CORE_FRAME_PERIOD_S; //set velocity of each axis, in mm/frame
+      }else{
+        active_axes[axis_index] = TBI_AXIS_INACTIVE; //clear active flag
+      }
     }
-  }
 
-  slots_remaining ++; //increment slots remaining
-  advance_head(&next_read_index); //advance read head
-
-  if(active_frames){
+    slots_remaining ++; //increment slots remaining
+    advance_head(&next_read_index); //advance read head
     in_block = 1; //flag that we are now in a block
   }
 }
@@ -98,12 +100,25 @@ void TimeBasedInterpreter::run_frame_on_active_block(){
   //Run a frame of the active block
   
   //check for end of move
-  active_axes_remaining_distance_mm[TBI_AXIS_V] -= active_axes_velocity_mm_per_frame[TBI_AXIS_V];
-  if(fabs(active_axes_remaining_distance_mm[TBI_AXIS_V]) < (fabs(active_axes_remaining_distance_mm[TBI_AXIS_V]) * 0.1)) //<--- HERE
+  uint8_t end_of_move = 0;
+  active_axes_remaining_distance_mm[TBI_AXIS_V] -= (speed_overide*active_axes_velocity_mm_per_frame[TBI_AXIS_V]);
+  if((active_axes_remaining_distance_mm[TBI_AXIS_V]) < (0.5*active_axes_velocity_mm_per_frame[TBI_AXIS_V])){ //end of move
+    end_of_move = 1;
+  }
 
   for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes
     if(active_axes[axis_index] == TBI_AXIS_ACTIVE){
-      
+      if(end_of_move){
+        if(output_transmissions[axis_index] != nullptr){
+          output_transmissions[axis_index]->increment(active_axes_remaining_distance_mm[axis_index]); //send out whatever is remaining
+        }
+        in_block = 0; //exit block
+      }else{
+        if(output_transmissions[axis_index] != nullptr){
+          output_transmissions[axis_index]->increment(speed_overide*active_axes_velocity_mm_per_frame[axis_index]); //move by the frame velocity
+        }
+        active_axes_remaining_distance_mm[axis_index] -= (speed_overide*active_axes_velocity_mm_per_frame[axis_index]);
+      }
     }
   }  
 }

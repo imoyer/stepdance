@@ -19,7 +19,6 @@ A part of the Mixing Metaphors Project
 // TBI stands for "TIME_BASED_INTERPRETER"
 #define TBI_BLOCK_QUEUE_SIZE   100 //we'll start here. Each block currently requires 33 bytes of RAM
 #define TBI_NUM_AXES  7 //number of axes to support in the interpreter
-#define TBI_END_MOVE_THRESHOLD 0.1 //
 
 #define TBI_AXIS_INACTIVE 0
 #define TBI_AXIS_ACTIVE 1
@@ -53,14 +52,17 @@ class TimeBasedInterpreter : public Plugin{
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
-    volatile float speed_overide = 1; //modifier for the interpreter speed.
+    volatile float32_t speed_overide = 1; //modifier for the interpreter speed.
     void begin();
+    void map(uint8_t output_index, Transmission* target_transmission);
+    volatile uint16_t slots_remaining; //number of slots remaining in block queue
     
   private:
+    Transmission* output_transmissions[TBI_NUM_AXES]; 
     struct motion_block block_queue[TBI_BLOCK_QUEUE_SIZE]; // stores all pending motion blocks
     volatile uint16_t next_write_index; //next write index in the block queue
     volatile uint16_t next_read_index; //next read index in the block queue 
-    volatile uint16_t slots_remaining; //number of slots remaining in block queue
+
     void advance_head(volatile uint16_t* target_head); //handles roll-overs etc
     void reset_block_queue();
     void pull_block(); //pulls a block from the queue and into the active buffer

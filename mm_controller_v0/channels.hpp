@@ -33,10 +33,12 @@ class Channel{
     void set_max_pulse_rate(float max_pulses_per_sec); // sets the maximum allowable pulse rate
     void drive_to_target(); //Drives the current position to the target position by one pulse, and generates a signal
     void pulse(int8_t direction); // generates a step pulse and releases a signal on the output port
+    void set_transmission_ratio(float input_units, float output_units); //sets the transmission ratio for all target and current position transmissions
 
     // Public Objects
-    Transmission target_transmission; //provides a dimensional (i.e. with units) interface to target_position
-    Transmission target_transmission_2; //dimensional interface to target_position_2
+    Transmission target_position_transmission; //provides a dimensional (i.e. with units) interface to target_position
+    Transmission target_position_2_transmission; //dimensional interface to target_position_2
+    Transmission current_position_transmission; //dimensional interface to current position
   
   private:
     // Constants

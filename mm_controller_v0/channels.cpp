@@ -53,6 +53,12 @@ void Channel::set_max_pulse_rate(float max_pulses_per_sec){
   accumulator_velocity = (float)((float)ACCUMULATOR_THRESHOLD * pulses_per_tick);
 }
 
+void Channel::set_transmission_ratio(float input_units, float output_units){
+  target_position_transmission.set_ratio(input_units, output_units);
+  target_position_2_transmission.set_ratio(input_units, output_units);
+  current_position_transmission.set_ratio(input_units, output_units);
+}
+
 void Channel::begin(){
   // Initializes the channel without an output.
   // This is useful in cases where we are using the channel as an intermediary.
@@ -76,8 +82,9 @@ void Channel::begin(OutputPort* target_output_port, uint8_t output_signal){
   }
 
   // Initialize transmissions
-  target_transmission.begin(&target_position);
-  target_transmission_2.begin(&target_position_2);
+  target_position_transmission.begin(&target_position);
+  target_position_2_transmission.begin(&target_position_2);
+  current_position_transmission.begin(&current_position);
 }
 
 void Channel::register_channel(){
@@ -107,14 +114,14 @@ void Channel::drive_to_target(){
   int direction;
   if(delta_position >= 0.5){
     direction = DIRECTION_FORWARD;
-  }else if (delta_position < 0.5){
+  }else if (delta_position < -0.5){
     direction = DIRECTION_REVERSE;
   }else{
     direction = last_direction;
   }
 
   // 4. Try to close pulse distance
-  if(delta_position != 0){
+  if(delta_position > 0.5 || delta_position < -0.5){
 
     // calculate active accumulator threshold. This catches the case where we reverse direction.
     float accumulator_active_threshold;

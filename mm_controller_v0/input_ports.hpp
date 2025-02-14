@@ -11,7 +11,6 @@ A part of the Mixing Metaphors Project
 (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
 */
 #include "channels.hpp"
-#include "output_ports.hpp"
 #include "imxrt.h"
 
 #ifndef input_ports_h //prevent importing twice
@@ -54,7 +53,9 @@ struct input_port_info_struct{ //we use this structure to store hardware-specifi
 class InputPort{
   public:
     InputPort();
+    void begin(uint8_t port_number);
     void begin(uint8_t port_number, DecimalPosition* x_signal_target, DecimalPosition* y_signal_target, DecimalPosition* z_signal_target, DecimalPosition* e_signal_target, DecimalPosition* r_signal_target, DecimalPosition* t_signal_target);
+    void map(uint8_t signal_index, DecimalPosition* signal_target); //maps a signal to a target DecimalPosition
     void enable_all_signals();
     void disable_all_signals();
     void enable_signal(uint8_t signal_index);
@@ -66,7 +67,7 @@ class InputPort{
     uint8_t port_number; //the output port ID number
     static const struct input_port_info_struct port_info[]; //stores setup information for all four input ports
     static InputPort *indexed_input_ports[NUM_AVAILABLE_INPUT_PORTS]; //keeps pointers to all active input ports, indexed by their port number. Only used for ISR routines.
-    DecimalPosition *signal_position_targets[NUM_SIGNALS]; //pointers to target positions for each signal, e.g. a passthru might do X -> channel_x.target_position, Y-> channel_y
+
     IMXRT_FLEXPWM_t *FLEXPWM;
     uint8_t SUBMODULE;
     uint8_t SUBMODULE_BIT;
@@ -75,6 +76,7 @@ class InputPort{
     volatile uint16_t last_pulse_width_count; //important that this is UINT16_T to calculate rollover correctly.
 
     // State Parameters
+    DecimalPosition *signal_position_targets[NUM_SIGNALS]; //pointers to target positions for each signal, e.g. a passthru might do X -> channel_x.target_position, Y-> channel_y
     volatile uint8_t signal_enable_flags[NUM_SIGNALS]; // for each signal, 1 == enabled, and 0 == disabled
 
     // Private Methods

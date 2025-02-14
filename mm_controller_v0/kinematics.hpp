@@ -25,6 +25,10 @@ A part of the Mixing Metaphors Project
 #define KINEMATICS_MODE_INCREMENTAL   0
 #define KINEMATICS_MODE_ABSOLUTE      1
 
+#define HBOT_NUM_OUTPUTS 2
+#define HBOT_OUTPUT_A   0
+#define HBOT_OUTPUT_B   1
+
 class KinematicsHBot : public Plugin{
   public:
     KinematicsHBot();
@@ -33,6 +37,7 @@ class KinematicsHBot : public Plugin{
     void begin(Transmission *output_transmission_a, Transmission *output_transmission_b);
     void begin(uint8_t mode, Transmission *output_transmission_a, Transmission *output_transmission_b);
     void reset(); //resets the internal state
+    void map(uint8_t output_index, Transmission* target_transmission); //maps an output to a target transmission
     Transmission input_transmission_x; //transmissions to work externally with internal x and y positions
     Transmission input_transmission_y;
 
@@ -41,8 +46,7 @@ class KinematicsHBot : public Plugin{
     volatile DecimalPosition input_position_x; //internal registers to store target x and y positions
     volatile DecimalPosition input_position_y;
 
-    Transmission *output_transmission_a; //pointers to the output transmissions
-    Transmission *output_transmission_b;
+    Transmission* output_transmissions[HBOT_NUM_OUTPUTS]; //pointers to the output transmissions
 
   protected:
     void run();
