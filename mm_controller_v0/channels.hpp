@@ -34,6 +34,8 @@ class Channel{
     void drive_to_target(); //Drives the current position to the target position by one pulse, and generates a signal
     void pulse(int8_t direction); // generates a step pulse and releases a signal on the output port
     void set_transmission_ratio(float input_units, float output_units); //sets the transmission ratio for all target and current position transmissions
+    void invert_output(); //inverts the channel output direction
+    void invert_output(bool invert);
 
     // Public Objects
     Transmission target_position_transmission; //provides a dimensional (i.e. with units) interface to target_position
@@ -49,6 +51,7 @@ class Channel{
     int has_output = 0; //1 if channel has an output port, otherwise 0.
     OutputPort* target_output_port; //stores the target output port
     uint8_t output_signal = SIGNAL_X; //default to signal X
+    uint8_t output_inverted = 0; //if 1, will invert the output direction of the channel
     
     // Private State
     volatile float accumulator;

@@ -144,10 +144,18 @@ void Channel::pulse(int8_t direction){
   if(direction == DIRECTION_FORWARD){
     current_position ++;
     last_direction = DIRECTION_FORWARD;
-    target_output_port->add_signal(output_signal, DIRECTION_FORWARD);
+    target_output_port->add_signal(output_signal, (DIRECTION_FORWARD^output_inverted));
   }else{
     current_position --;
     last_direction = DIRECTION_REVERSE;
-    target_output_port->add_signal(output_signal, DIRECTION_REVERSE);
+    target_output_port->add_signal(output_signal, (DIRECTION_REVERSE^output_inverted));
   }
+}
+
+void Channel::invert_output(){
+  output_inverted = 1;
+}
+
+void Channel::invert_output(bool invert){
+  output_inverted = static_cast<bool>(invert);
 }

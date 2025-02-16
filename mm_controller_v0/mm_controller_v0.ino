@@ -8,11 +8,11 @@
 
 InputPort input_b;
 OutputPort output_a;
+OutputPort output_b;
 
 Channel channel_x;
 Channel channel_y;
-Channel channel_z;
-Channel channel_e;
+
 
 Eibotboard axidraw;
 TimeBasedInterpreter interpreter;
@@ -21,18 +21,18 @@ KinematicsHBot axidraw_kinematics;
 void setup() {
   // put your setup code here, to run once:
   output_a.begin(OUTPUT_A);
+  output_b.begin(OUTPUT_B);
 
   channel_x.begin(&output_a, SIGNAL_X);
   channel_x.set_transmission_ratio(25.4, 2874); //axidraw: 1" == 2874 steps
+  channel_x.invert_output();
 
-  channel_y.begin(&output_a, SIGNAL_Y);
+  channel_y.begin(&output_b, SIGNAL_X);
   channel_y.set_transmission_ratio(25.4, 2874); //axidraw: 1" == 2874 steps
-
-  channel_z.begin(&output_a, SIGNAL_Z);
-  channel_e.begin(&output_a, SIGNAL_E);
+  channel_y.invert_output();
 
   input_b.begin(INPUT_B_LEGACY);
-  input_b.map(SIGNAL_X, &channel_y.target_position);
+  input_b.map(SIGNAL_X, &channel_x.target_position);
   // input_b.map(SIGNAL_Y, &channel_z.target_position);
   // input_b.map(SIGNAL_Z, &channel_e.target_position);
 
@@ -54,15 +54,15 @@ void setup() {
 uint64_t reporting_count = 0;
 void loop() {
   axidraw.loop();
-  reporting_count++;
-  if(reporting_count%5000000 == 0){
-    SerialUSB1.print("X POSITION: ");
-    SerialUSB1.println(channel_x.current_position); 
-    SerialUSB1.print("Y POSITION: ");
-    SerialUSB1.println(channel_y.current_position);
-    SerialUSB1.print("SLOTS AVAILABLE: ");
-    SerialUSB1.println(interpreter.slots_remaining);    
-  }
+  // reporting_count++;
+  // if(reporting_count%5000000 == 0){
+  //   SerialUSB1.print("X POSITION: ");
+  //   SerialUSB1.println(channel_x.current_position); 
+  //   SerialUSB1.print("Y POSITION: ");
+  //   SerialUSB1.println(channel_y.current_position);
+  //   SerialUSB1.print("SLOTS AVAILABLE: ");
+  //   SerialUSB1.println(interpreter.slots_remaining);    
+  // }
   // struct TimeBasedInterpreter::motion_block this_block = {.block_id = test_block_id, .block_position = {.x_mm = 100, .y_mm = 200, .z_mm = 300}};
   // interpreter.add_block(&this_block);
   // delay(500);
