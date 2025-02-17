@@ -49,6 +49,8 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
 #define OUTPUT_B   1
 #define OUTPUT_C   2
 #define OUTPUT_D   3
+#define OUTPUT_A_LEGACY 0
+#define OUTPUT_B_LEGACY 1
 
 #define NUM_SIGNALS 6 //total number of signal types
 #define SIGNAL_MIN_WIDTH_US 2 //pulse width in microseconds of shortest signal (index = 0)

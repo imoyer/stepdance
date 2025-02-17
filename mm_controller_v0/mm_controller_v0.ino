@@ -9,9 +9,11 @@
 InputPort input_b;
 OutputPort output_a;
 OutputPort output_b;
+OutputPort output_d;
 
 Channel channel_x;
 Channel channel_y;
+Channel channel_z;
 
 
 Eibotboard axidraw;
@@ -20,16 +22,20 @@ KinematicsHBot axidraw_kinematics;
 
 void setup() {
   // put your setup code here, to run once:
-  output_a.begin(OUTPUT_A);
-  output_b.begin(OUTPUT_B);
+  output_a.begin(OUTPUT_A_LEGACY);
+  output_b.begin(OUTPUT_B_LEGACY);
+  output_d.begin(OUTPUT_C);
 
-  channel_x.begin(&output_a, SIGNAL_E);
+  channel_x.begin(&output_a, SIGNAL_Z);
   channel_x.set_transmission_ratio(25.4, 2874); //axidraw: 1" == 2874 steps
   channel_x.invert_output();
 
-  channel_y.begin(&output_b, SIGNAL_X);
+  channel_y.begin(&output_b, SIGNAL_Z);
   channel_y.set_transmission_ratio(25.4, 2874); //axidraw: 1" == 2874 steps
   channel_y.invert_output();
+
+  channel_z.begin(&output_d, SIGNAL_E); //servo motor, so we use a long pulse width
+  channel_z.set_transmission_ratio(1, 1); //straight step pass-thru.
 
   input_b.begin(INPUT_B_LEGACY);
   input_b.map(SIGNAL_X, &channel_x.target_position);
@@ -43,6 +49,7 @@ void setup() {
   interpreter.begin();
   interpreter.map(TBI_AXIS_X, &axidraw_kinematics.input_transmission_x);
   interpreter.map(TBI_AXIS_Y, &axidraw_kinematics.input_transmission_y);
+  interpreter.map(TBI_AXIS_Z, &channel_z.target_position_transmission); //pass this straight thru to the channel
 
   axidraw_kinematics.begin();
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "Stream.h"
 #include "Arduino.h"
 #include "core.hpp"
@@ -25,6 +26,10 @@ A part of the Mixing Metaphors Project
 #define EBB_EXECUTE_TO_QUEUE 2 //command to be added to the queue
 #define EBB_BLOCK_PENDING 1 //block is pending
 
+#define EBB_SERVO_MAX_POSITION_STEPS 500 // +500us from neutral position (1500us pulse width)
+#define EBB_SERVO_MIN_POSITION_STEPS -500 // -500us from neutral position (1500us pulse width)
+#define EBB_SERVO_MIDPOINT_PULSE_DURATION_US  1500 //pulse duration for the servo midpoint.
+
 class Eibotboard{
   public:
     Eibotboard();
@@ -50,7 +55,6 @@ class Eibotboard{
     void process_command(uint16_t command_value);
     void process_string_int32(); //processes the block string (after the command word) into the input_parameters array.
     static void initialize_all_commands_struct(); //initializes the all_commands struct by pre-calculating the command values.
-
     struct command{
       char command_string[EBB_COMMAND_SIZE + 1]; //two-character string
       uint16_t command_value; //the command string, converted into a command value during initialization.
@@ -63,20 +67,37 @@ class Eibotboard{
     uint16_t input_command_value; //tracks the value of the current command
     int32_t input_parameters[EBB_MAX_NUM_INPUT_PARAMETERS]; // parameters that have been parsed from the input string
     uint8_t num_input_parameters; // number of parameters in the string
+
+    // Block Generation
     uint16_t block_id = 0; //stores the current block ID, which simply increments each time a new motion-containing block is received
     TimeBasedInterpreter::motion_block pending_block; //stores motion block information that is pending being added to the queue
     uint8_t block_pending_flag = 0; //1 if a block is pending addition to the queue
     uint8_t debug_buffer_full_flag = 0; //1 if already sent a debug message
     void (Eibotboard::*pending_block_function)(); //pointer to the command function whose block is pending
-    static struct command all_commands[]; //stores all available commands
+    
+    // Servo State
+    int32_t servo_position_steps = 0; //tracks the current servo position. Unlike other moves, this one is provided in absolute coordinates.
+    int32_t servo_pen_up_position_steps = 0; //absolute position of servo when the pen is up
+    int32_t servo_pen_down_position_steps = 0; //absolute position of the servo when the pen is down
+    float servo_rate_up_steps_per_sec = 100; //slew rate of the pen up in steps/sec
+    float servo_rate_down_steps_per_sec = 100; //slew rate of the pen down in steps/sec
 
     // -- COMMANDS --
+    static struct command all_commands[]; //stores all available commands
     void command_query_current(); //'QC' returns the supply voltage and motor currents
     void command_query_button(); //'QB' returns whether the PRG button has been pressed
     void command_query_variable(); //'QL' returns the value of a variable stored in memory
+    void command_stepper_servo_configure(); //'SC' configures the stepper and servo motors
     void command_stepper_move(); //'SM' moves the stepper motors
+    void command_set_pen(); //'SP' sets pen position
     void command_version(); //'V' returns the version of the EBB Board
     void command_generic(); //simply returns an OK
+
+    // -- UTILITY FUNCTIONS --
+    static void set_servo_position(uint16_t pulse_duration_83_3_ns, int32_t *servo_position_register); //sets a servo position register based on the pulse duration in increments of 83.3nS
+    static void set_servo_rate(uint16_t pulse_rate_us_per_ms, float *servo_rate_register); //sets a servo rate register, see S2 command for units
+    void debug_report_pending_block(bool waiting_for_slot); // outputs a report on the pending block to the debug port
+
 };
 
 #endif

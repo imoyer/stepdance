@@ -103,7 +103,7 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .TIMCMP_REGISTER = &FLEXIO3_TIMCMP3,
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL3,
     .TIMCFG_REGISTER = &FLEXIO3_TIMCFG3
-  }
+  },
 };
 
 // ---- OUTPUT_PORT CLASS FUNCTIONS ----

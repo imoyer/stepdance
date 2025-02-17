@@ -1,3 +1,4 @@
+#include "core_pins.h"
 #include "arm_math.h"
 #include <cstdlib>
 #include <cstring>
@@ -24,11 +25,13 @@ A part of the Mixing Metaphors Project
 // DEFINE ALL COMMANDS
 // We put high-frequency commands such as "SM" first, to improve search time.
 struct Eibotboard::command Eibotboard::all_commands[] = {
-  {.command_string = "SM", .command_function = &Eibotboard::command_stepper_move, .execution = EBB_EXECUTE_TO_QUEUE}, 
+  {.command_string = "SM", .command_function = &Eibotboard::command_stepper_move, .execution = EBB_EXECUTE_TO_QUEUE},
+  {.command_string = "SP", .command_function = &Eibotboard::command_set_pen, .execution = EBB_EXECUTE_TO_QUEUE},
   {.command_string = "V", .command_function = &Eibotboard::command_version, .execution = EBB_EXECUTE_IMMEDIATE}, //Version Query
   {.command_string = "QC", .command_function = &Eibotboard::command_query_current, .execution = EBB_EXECUTE_IMMEDIATE},
   {.command_string = "QB", .command_function = &Eibotboard::command_query_button, .execution = EBB_EXECUTE_IMMEDIATE},
-  {.command_string = "QL", .command_function = &Eibotboard::command_query_variable, .execution = EBB_EXECUTE_IMMEDIATE}
+  {.command_string = "QL", .command_function = &Eibotboard::command_query_variable, .execution = EBB_EXECUTE_IMMEDIATE},
+  {.command_string = "SC", .command_function = &Eibotboard::command_stepper_servo_configure, .execution = EBB_EXECUTE_IMMEDIATE}
 };
 
 
@@ -122,6 +125,13 @@ void Eibotboard::process_command(uint16_t command_value){
 
 void Eibotboard::process_string_int32(){
   // Processes the input buffer into the parameter array. This version treats all parameters as int32 values.
+  
+  // reset the buffer
+  for(uint8_t buffer_index = 0; buffer_index < EBB_MAX_NUM_INPUT_PARAMETERS; buffer_index ++){
+    input_parameters[buffer_index] = 0;
+  }
+
+  // process the string
   char *token = strtok(input_buffer, ","); //splits a string along a comma
   num_input_parameters = 0;
   while(token != nullptr && num_input_parameters < EBB_MAX_NUM_INPUT_PARAMETERS){
@@ -166,6 +176,111 @@ void Eibotboard::command_query_button(){
 
 void Eibotboard::command_query_variable(){
   ebb_serial_port->print("000\r\nOK\r\n"); //temporary for now
+}
+
+void Eibotboard::set_servo_position(uint16_t pulse_duration_83_3_ns, int32_t *servo_position_register){
+  // sets a servo position register (e.g. top and bottom positions) based on eibotboard protocol units.
+  //  pulse_duration_83_3_ns -- the pulse duration, in units of 83.3 ns
+  //  servo_position_register -- target register to write result to.
+  float pulse_duration_us = 0.0833 * pulse_duration_83_3_ns;
+  *servo_position_register = static_cast<int32_t>((pulse_duration_us - EBB_SERVO_MIDPOINT_PULSE_DURATION_US));
+}
+
+void Eibotboard::set_servo_rate(uint16_t pulse_rate_us_per_ms, float *servo_rate_register){
+  // sets a servo rate register (e.g. pen up and down slew rates) based on eibotboard protocol units.
+  //  pulse_rate_us_per_ms -- this is in units of 1/12000ms per 24ms, or 3.4722us/S == 3.4722 steps/sec
+  *servo_rate_register = 3.4722 * static_cast<float>(pulse_rate_us_per_ms);
+}
+
+void Eibotboard::command_stepper_servo_configure(){
+  process_string_int32(); //parse string into integers in input_parameters
+  uint8_t parameter_index = static_cast<uint8_t>(input_parameters[0]);
+  uint16_t parameter_value = static_cast<uint16_t>(input_parameters[1]);
+  switch(parameter_index){
+    case 4: //set servo minimum value / pen up position
+      set_servo_position(parameter_value, &servo_pen_up_position_steps);
+      break;
+    case 5: //set servo maximum value / pen down position
+      set_servo_position(parameter_value, &servo_pen_down_position_steps);
+      break;
+    case 10: //set both servo rates
+      set_servo_rate(parameter_value, &servo_rate_up_steps_per_sec);
+      set_servo_rate(parameter_value, &servo_rate_down_steps_per_sec);
+      break;
+    case 11: //set servo up rate
+      set_servo_rate(parameter_value, &servo_rate_up_steps_per_sec);
+      break;
+    case 12: //set servo down rate
+      set_servo_rate(parameter_value, &servo_rate_down_steps_per_sec);
+      break;
+  }
+  ebb_serial_port->print("OK\r\n"); 
+}
+
+void Eibotboard::command_set_pen(){
+  static uint8_t loading_delay_flag = 0; // 0 -- loading actual move into buffer, 1 -- loading delay into buffer
+  static uint16_t delay_ms = 0;
+
+  if(block_pending_flag == 0){ //lets load a position block
+    process_string_int32();
+    uint8_t command_value = static_cast<uint8_t>(input_parameters[0]);
+    delay_ms = static_cast<uint16_t>(input_parameters[1]);
+    
+    float64_t servo_delta_steps = 0;
+    float move_time_s = 0;
+
+    switch(command_value){
+      case 0: //servo max, pen down
+        servo_delta_steps = static_cast<float64_t>(servo_pen_down_position_steps - servo_position_steps);
+        move_time_s = fabs(servo_delta_steps) / servo_rate_down_steps_per_sec;
+        break;
+
+      case 1: //servo min, pen up
+        servo_delta_steps = static_cast<float64_t>(servo_pen_up_position_steps - servo_position_steps);
+        move_time_s = fabs(servo_delta_steps) / servo_rate_up_steps_per_sec;
+        break;   
+    }
+    servo_position_steps += servo_delta_steps;
+
+    if(move_time_s == 0){
+      //we're already in position, do nothing
+      ebb_serial_port->print("OK\r\n");
+      return;
+    }else{ //load up the pending block
+      pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = 0, .y_mm = 0, .z_mm = servo_delta_steps, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
+      block_pending_flag = EBB_BLOCK_PENDING;
+      pending_block_function = &Eibotboard::command_set_pen; // tag this function as having originated the pending block
+    }
+  }
+
+  // Try adding the pending block to queue.
+  int16_t available_slots = target_interpreter->add_block(&pending_block);
+
+  if(available_slots >= 0){ //move successfully added
+    if(delay_ms == 0){ //we don't need to add a delay
+      ebb_serial_port->print("OK\r\n");
+      block_pending_flag = 0; //release the hold on the pending block
+      debug_buffer_full_flag = 0;
+      debug_serial_port->println("PEN MOVE");
+      debug_report_pending_block(false);
+    }else{ // a delay was requested
+      if(loading_delay_flag){ //the queued move was the delay move
+        ebb_serial_port->print("OK\r\n");
+        loading_delay_flag = 0;
+        block_pending_flag = 0;
+        debug_serial_port->println("PEN DELAY");
+        debug_report_pending_block(false);
+      }else{ // just loaded a move command, now we we need to load a delay
+        debug_serial_port->println("PEN MOVE");
+        debug_report_pending_block(false);
+        float move_time_s = static_cast<float>(delay_ms) / 1000;
+        pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = 0, .y_mm = 0, .z_mm = 0, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
+        block_pending_flag = EBB_BLOCK_PENDING;
+        pending_block_function = &Eibotboard::command_set_pen; // tag this function as having originated the pending block
+        loading_delay_flag = 1;       
+      }
+    }
+  }
 }
 
 void Eibotboard::command_stepper_move(){
@@ -219,26 +334,9 @@ void Eibotboard::command_stepper_move(){
     ebb_serial_port->print("OK\r\n");
     block_pending_flag = 0; //release the hold on the pending block
     debug_buffer_full_flag = 0;
-    // debug
-    // debug_serial_port->print("READ HEAD: ");
-    // debug_serial_port->println(target_interpreter->next_read_index);
-    debug_serial_port->print("QUEUED BLOCK ");
-    debug_serial_port->println(pending_block.block_id);
-    debug_serial_port->print("  MOVE TIME: ");
-    debug_serial_port->println(pending_block.block_time_s);
-    debug_serial_port->print("  X DELTA: ");
-    debug_serial_port->println(pending_block.block_position_delta.x_mm);
-    debug_serial_port->print("  Y DELTA: ");
-    debug_serial_port->println(pending_block.block_position_delta.y_mm);
-    debug_serial_port->print("  CPU USAGE: ");
-    debug_serial_port->print(stepdance_get_cpu_usage()*100);
-    debug_serial_port->println("%");
-    debug_serial_port->print("  SLOTS REMAINING: ");
-    debug_serial_port->println(available_slots);
+    debug_report_pending_block(false);
   }else if(debug_buffer_full_flag == 0){ //message once that buffer is full
-    debug_serial_port->print("QUEUE FULL; BLOCK ");
-    debug_serial_port->print(pending_block.block_id);
-    debug_serial_port->print(" PENDING");
+    debug_report_pending_block(true);
     debug_buffer_full_flag = 1;
   }
   //debug
@@ -246,4 +344,28 @@ void Eibotboard::command_stepper_move(){
 
 void Eibotboard::command_generic(){
   ebb_serial_port->print("OK\r\n");
+}
+
+void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
+  if(waiting_for_slot){
+    debug_serial_port->print("QUEUE FULL; BLOCK ");
+    debug_serial_port->print(pending_block.block_id);
+    debug_serial_port->println(" PENDING");    
+  }else{
+    debug_serial_port->print("QUEUED BLOCK ");
+    debug_serial_port->println(pending_block.block_id);
+  }
+  debug_serial_port->print("  MOVE TIME: ");
+  debug_serial_port->println(pending_block.block_time_s);
+  debug_serial_port->print("  X DELTA: ");
+  debug_serial_port->println(pending_block.block_position_delta.x_mm);
+  debug_serial_port->print("  Y DELTA: ");
+  debug_serial_port->println(pending_block.block_position_delta.y_mm);
+  debug_serial_port->print("  Z DELTA: ");
+  debug_serial_port->println(pending_block.block_position_delta.z_mm);
+  debug_serial_port->print("  CPU USAGE: ");
+  debug_serial_port->print(stepdance_get_cpu_usage()*100);
+  debug_serial_port->println("%");
+  debug_serial_port->print("  SLOTS REMAINING: ");
+  debug_serial_port->println(target_interpreter->slots_remaining);  
 }

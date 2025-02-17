@@ -23,7 +23,7 @@ void update_servo();
 #define SERVO_PIN	PA5
 
 // ---- SETTINGS ----
-#define PULSE_PERIOD_US 40000 //40ms pulse period
+#define PULSE_PERIOD_US 24000 //24ms pulse period
 #define PULSE_PERIOD_OFFSET 850 //adjustment on time between pulses
 #define PULSE_WIDTH_OFFSET 40 //adjustment to pulse width
 
