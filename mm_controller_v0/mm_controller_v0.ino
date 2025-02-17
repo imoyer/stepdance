@@ -23,7 +23,7 @@ void setup() {
   output_a.begin(OUTPUT_A);
   output_b.begin(OUTPUT_B);
 
-  channel_x.begin(&output_a, SIGNAL_X);
+  channel_x.begin(&output_a, SIGNAL_E);
   channel_x.set_transmission_ratio(25.4, 2874); //axidraw: 1" == 2874 steps
   channel_x.invert_output();
 
