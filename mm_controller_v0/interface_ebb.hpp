@@ -2,7 +2,7 @@
 #include "Stream.h"
 #include "Arduino.h"
 #include "core.hpp"
-#include "interpreters.hpp"
+#include "interpolators.hpp"
 
 #ifndef interface_ebb_h //prevent importing twice
 #define interface_ebb_h
@@ -33,7 +33,7 @@ A part of the Mixing Metaphors Project
 class Eibotboard{
   public:
     Eibotboard();
-    void begin(TimeBasedInterpreter* interpreter); // setup routine
+    void begin(TimeBasedInterpolator* interpolator); // setup routine
     void loop(); // should be run inside loop
     void set_steps_to_mm(float steps, float mm); //sets the conversion between steps and mm
   
@@ -46,8 +46,8 @@ class Eibotboard{
     // Transmission
     Transmission transmission_xy_steps_to_mm;
 
-    // Interpreter
-    TimeBasedInterpreter* target_interpreter;
+    // Interpolator
+    TimeBasedInterpolator* target_interpolator;
 
     // Command Processing
     void process_character(uint8_t character);
@@ -70,7 +70,7 @@ class Eibotboard{
 
     // Block Generation
     uint16_t block_id = 0; //stores the current block ID, which simply increments each time a new motion-containing block is received
-    TimeBasedInterpreter::motion_block pending_block; //stores motion block information that is pending being added to the queue
+    TimeBasedInterpolator::motion_block pending_block; //stores motion block information that is pending being added to the queue
     uint8_t block_pending_flag = 0; //1 if a block is pending addition to the queue
     uint8_t debug_buffer_full_flag = 0; //1 if already sent a debug message
     void (Eibotboard::*pending_block_function)(); //pointer to the command function whose block is pending

@@ -16,7 +16,7 @@ A part of the Mixing Metaphors Project
 */
 
 #include "interface_ebb.hpp"
-#include "interpreters.hpp"
+#include "interpolators.hpp"
 
 #define EBB_INPUT_IDLE 0 //waiting on a new line
 #define EBB_INPUT_IN_COMMAND 1 //reading the one or two-character command
@@ -37,8 +37,8 @@ struct Eibotboard::command Eibotboard::all_commands[] = {
 
 Eibotboard::Eibotboard(){};
 
-void Eibotboard::begin(TimeBasedInterpreter* interpreter){
-  target_interpreter = interpreter;
+void Eibotboard::begin(TimeBasedInterpolator* interpolator){
+  target_interpolator = interpolator;
   Serial.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
@@ -254,7 +254,7 @@ void Eibotboard::command_set_pen(){
   }
 
   // Try adding the pending block to queue.
-  int16_t available_slots = target_interpreter->add_block(&pending_block);
+  int16_t available_slots = target_interpolator->add_block(&pending_block);
 
   if(available_slots >= 0){ //move successfully added
     if(delay_ms == 0){ //we don't need to add a delay
@@ -327,7 +327,7 @@ void Eibotboard::command_stepper_move(){
   }
   
   // Step 5:  Try adding the pending block to queue.
-  int16_t available_slots = target_interpreter->add_block(&pending_block);
+  int16_t available_slots = target_interpolator->add_block(&pending_block);
 
   // Step 6: Check if block was added, and respond
   if(available_slots >= 0){ //move successfully added
@@ -367,5 +367,5 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
   debug_serial_port->print(stepdance_get_cpu_usage()*100);
   debug_serial_port->println("%");
   debug_serial_port->print("  SLOTS REMAINING: ");
-  debug_serial_port->println(target_interpreter->slots_remaining);  
+  debug_serial_port->println(target_interpolator->slots_remaining);  
 }

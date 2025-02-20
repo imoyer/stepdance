@@ -1,7 +1,7 @@
 #include <cmath>
 #include "arm_math.h"
 /*
-Interpreter Module of the StepDance Control System
+Interpolator Module of the StepDance Control System
 
 This module provides buffered motion interpretation.
 
@@ -13,19 +13,19 @@ A part of the Mixing Metaphors Project
 
 #include "core_pins.h"
 #include <sys/_stdint.h>
-#include "interpreters.hpp"
+#include "interpolators.hpp"
 #include "core.hpp"
 
-TimeBasedInterpreter::TimeBasedInterpreter(){};
+TimeBasedInterpolator::TimeBasedInterpolator(){};
 
-void TimeBasedInterpreter::map(uint8_t output_index, Transmission* target_transmission){
+void TimeBasedInterpolator::map(uint8_t output_index, Transmission* target_transmission){
   output_transmissions[output_index] = target_transmission;
 }
 
-int16_t TimeBasedInterpreter::add_block(struct motion_block* block_to_add){
-  // Adds a motion block to the interpreter
+int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
+  // Adds a motion block to the interpolator
   //
-  // block_to_add -- a pointer to a TimeBasedInterpreter::motion_block struct.
+  // block_to_add -- a pointer to a TimeBasedInterpolator::motion_block struct.
   //
   // Returns the number of available slots in the motion queue AFTER the block was added.
   // A return value of -1 indicates that the block was not loaded due to lack of space.
@@ -40,20 +40,20 @@ int16_t TimeBasedInterpreter::add_block(struct motion_block* block_to_add){
   }
 }
 
-void TimeBasedInterpreter::advance_head(volatile uint16_t* target_head){
+void TimeBasedInterpolator::advance_head(volatile uint16_t* target_head){
   (*target_head)++;
   if(*target_head == TBI_BLOCK_QUEUE_SIZE){
     *target_head = 0;
   }
 }
 
-void TimeBasedInterpreter::reset_block_queue(){
+void TimeBasedInterpolator::reset_block_queue(){
   slots_remaining = TBI_BLOCK_QUEUE_SIZE;
   next_read_index = 0;
   next_write_index = 0;
 }
 
-void TimeBasedInterpreter::run(){
+void TimeBasedInterpolator::run(){
   if((in_block == 0) && (slots_remaining < TBI_BLOCK_QUEUE_SIZE)){ //idle, but a new block is available
     pull_block();
   }
@@ -62,7 +62,7 @@ void TimeBasedInterpreter::run(){
   }
 }
 
-void TimeBasedInterpreter::pull_block(){
+void TimeBasedInterpolator::pull_block(){
   //Pulls a block from the queue and configures active registers for a move
 
   float32_t block_time_s = block_queue[next_read_index].block_time_s;
@@ -96,7 +96,7 @@ void TimeBasedInterpreter::pull_block(){
   }
 }
 
-void TimeBasedInterpreter::run_frame_on_active_block(){
+void TimeBasedInterpolator::run_frame_on_active_block(){
   //Run a frame of the active block
   
   //check for end of move
@@ -123,7 +123,7 @@ void TimeBasedInterpreter::run_frame_on_active_block(){
   }  
 }
 
-void TimeBasedInterpreter::begin(){
+void TimeBasedInterpolator::begin(){
   reset_block_queue();
   register_plugin();
 }

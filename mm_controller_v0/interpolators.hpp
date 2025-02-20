@@ -1,7 +1,7 @@
 #include <sys/_stdint.h>
 #include "arm_math.h"
 /*
-Interpreter Module of the StepDance Control System
+Interpolator Module of the StepDance Control System
 
 This module provides buffered motion interpretation.
 
@@ -13,12 +13,12 @@ A part of the Mixing Metaphors Project
 
 #include "core.hpp"
 
-#ifndef interpreters_h //prevent importing twice
-#define interpreters_h
+#ifndef interpolators_h //prevent importing twice
+#define interpolators_h
 
 // TBI stands for "TIME_BASED_INTERPRETER"
 #define TBI_BLOCK_QUEUE_SIZE   100 //we'll start here. Each block currently requires 33 bytes of RAM
-#define TBI_NUM_AXES  7 //number of axes to support in the interpreter
+#define TBI_NUM_AXES  7 //number of axes to support in the interpolator
 
 #define TBI_AXIS_INACTIVE 0
 #define TBI_AXIS_ACTIVE 1
@@ -31,9 +31,9 @@ A part of the Mixing Metaphors Project
 #define TBI_AXIS_T 5
 #define TBI_AXIS_V 6 //virtual axis. we use this for detecting the end of a move
 
-class TimeBasedInterpreter : public Plugin{
+class TimeBasedInterpolator : public Plugin{
   public:
-    TimeBasedInterpreter();
+    TimeBasedInterpolator();
     
     struct position{
       float64_t x_mm; // X
@@ -52,7 +52,7 @@ class TimeBasedInterpreter : public Plugin{
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
-    volatile float32_t speed_overide = 1; //modifier for the interpreter speed.
+    volatile float32_t speed_overide = 1; //modifier for the interpolator speed.
     void begin();
     void map(uint8_t output_index, Transmission* target_transmission);
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
