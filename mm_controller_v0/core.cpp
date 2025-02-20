@@ -19,6 +19,7 @@ A part of the Mixing Metaphors Project
 
 // -- FRAME INTERRUPT --
 IntervalTimer core_frame_timer;
+IntervalTimer kilohertz_timer;
 
 frame_function_pointer frame_functions[MAX_NUM_FRAME_FUNCTIONS];
 uint8_t num_registered_frame_functions = 0;
@@ -47,13 +48,20 @@ void on_frame(){
 // -- OVERALL SYSTEM --
 
 void stepdance_start(){
-  // activate all plugins
-  add_function_to_frame(Plugin::run_plugins);
+  // activate all pre-channel frame plugins
+  add_function_to_frame(Plugin::run_pre_channel_frame_plugins);
   // activate channels
   activate_channels();
-  // Starts all core timers etc
+  // activate all post-channel frame plugins
+  add_function_to_frame(Plugin::run_post_channel_frame_plugins);
+  
+  // Start core frame timer
   core_frame_timer.priority(128);
   core_frame_timer.begin(on_frame, CORE_FRAME_PERIOD_US);
+
+  // Start kilohertz plugin timer
+  kilohertz_timer.priority(130);
+  // kilohertz_timer.begin(Plugin::run_kilohertz_plugins, KILOHERTZ_PLUGIN_PERIOD_US);
 }
 
 // -- METRICS --
@@ -69,21 +77,61 @@ void stepdance_metrics_reset(){
 // -- PLUGINS --
 Plugin::Plugin(){};
 
-uint8_t Plugin::num_registered_plugins = 0;
-Plugin* Plugin::registered_plugins[MAX_NUM_PLUGINS];
+uint8_t Plugin::num_registered_pre_channel_frame_plugins = 0;
+Plugin* Plugin::registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS];
 
-void Plugin::register_plugin(){
-  if(num_registered_plugins < MAX_NUM_PLUGINS){
-    registered_plugins[num_registered_plugins] = this;
-    num_registered_plugins ++;
-  } // NOTE: should add a return value if it works
+uint8_t Plugin::num_registered_post_channel_frame_plugins = 0;
+Plugin* Plugin::registered_post_channel_frame_plugins[MAX_NUM_POST_CHANNEL_FRAME_PLUGINS];
+
+uint8_t Plugin::num_registered_kilohertz_plugins = 0;
+Plugin* Plugin::registered_kilohertz_plugins[MAX_NUM_KILOHERTZ_PLUGINS];
+
+void Plugin::register_plugin(){ //default to pre-channel frame plugin
+  register_plugin(PLUGIN_FRAME_PRE_CHANNEL);
+}
+
+void Plugin::register_plugin(uint8_t execution_target){
+  switch(execution_target){
+    case PLUGIN_FRAME_PRE_CHANNEL:
+      if(num_registered_pre_channel_frame_plugins < MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS){
+        registered_pre_channel_frame_plugins[num_registered_pre_channel_frame_plugins] = this;
+        num_registered_pre_channel_frame_plugins ++;
+      }
+      break;
+
+    case PLUGIN_FRAME_POST_CHANNEL:
+      if(num_registered_post_channel_frame_plugins < MAX_NUM_POST_CHANNEL_FRAME_PLUGINS){
+        registered_post_channel_frame_plugins[num_registered_post_channel_frame_plugins] = this;
+        num_registered_post_channel_frame_plugins ++;
+      }
+      break;
+
+    case PLUGIN_KILOHERTZ:
+      if(num_registered_kilohertz_plugins < MAX_NUM_KILOHERTZ_PLUGINS){
+        registered_kilohertz_plugins[num_registered_kilohertz_plugins] = this;
+        num_registered_kilohertz_plugins ++;
+      }
+      break;   
+  }
 }
 
 void Plugin::run(){};
 
-void Plugin::run_plugins(){
-  for(uint8_t plugin_index = 0; plugin_index < num_registered_plugins; plugin_index++){
-    registered_plugins[plugin_index]->run();
+void Plugin::run_pre_channel_frame_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_pre_channel_frame_plugins; plugin_index++){
+    registered_pre_channel_frame_plugins[plugin_index]->run();
+  }
+}
+
+void Plugin::run_post_channel_frame_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_post_channel_frame_plugins; plugin_index++){
+    registered_post_channel_frame_plugins[plugin_index]->run();
+  }
+}
+
+void Plugin::run_kilohertz_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_kilohertz_plugins; plugin_index++){
+    registered_kilohertz_plugins[plugin_index]->run();
   }
 }
 
