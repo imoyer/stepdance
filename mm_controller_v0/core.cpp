@@ -47,7 +47,7 @@ void on_frame(){
 
 // -- OVERALL SYSTEM --
 
-void stepdance_start(){
+void dance_start(){
   // activate all pre-channel frame plugins
   add_function_to_frame(Plugin::run_pre_channel_frame_plugins);
   // activate channels
@@ -184,4 +184,22 @@ float64_t Transmission::convert(float64_t input_value){
 }
 float64_t Transmission::convert_reverse(float64_t output_value){
   return output_value / transfer_ratio;
+}
+
+// -- STEPDANCE LOOP FUNCTIONS AND CLASSES --
+
+void dance_loop(){
+  stepdance_loop_time_ms = 1000*(float)(ARM_DWT_CYCCNT - stepdance_loop_entry_cycle_count) / (float)(F_CPU);
+  stepdance_loop_entry_cycle_count = ARM_DWT_CYCCNT;
+}
+
+LoopDelay::LoopDelay(){};
+
+void LoopDelay::periodic_call(void (*callback_function)(), float interval_ms){
+  //if the elapsed time since the last call exceeds interval_ms, then the function will be called.
+  time_since_last_call_ms += stepdance_loop_time_ms;
+  if(time_since_last_call_ms >= interval_ms){
+    callback_function();
+    time_since_last_call_ms = 0;
+  }
 }

@@ -37,7 +37,7 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define PLUGIN_KILOHERTZ          2 //runs in an independent 1khz context
 
 void add_function_to_frame(frame_function_pointer target_function);
-void stepdance_start();
+void dance_start();
 
 void stepdance_metrics_reset(); //resets the CPU usage metrics
 float stepdance_get_cpu_usage(); //returns a value from 0-1 indicating the maximum CPU usage.
@@ -92,6 +92,22 @@ class Transmission{
   private:
     float64_t transfer_ratio = 1.0; // output_units/input_units. Initialize with a unity transfer ratio
     DecimalPosition *target;
+};
+
+// -- LOOP FUNCTION AND CLASSES --
+// These allow non-blocking functions to be called within the loop, at an approximately given frequency.
+void dance_loop();
+
+static volatile float stepdance_loop_time_ms; //tracks the time spent in the last loop
+static volatile uint32_t stepdance_loop_entry_cycle_count = 0; //cycle count when dance_loop was last called
+
+class LoopDelay{
+  public:
+    LoopDelay();
+    void periodic_call(void (*callback_function)(), float interval_ms);
+  
+  private:
+    float time_since_last_call_ms; //stores time since the function was last called
 };
 
 #endif

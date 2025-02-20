@@ -56,40 +56,17 @@ void setup() {
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
 
-  stepdance_start();
+  dance_start();
 }
+
+LoopDelay say_hi;
 
 void loop() {
   axidraw.loop();
-  // reporting_count++;
-  // if(reporting_count%5000000 == 0){
-  //   SerialUSB1.print("X POSITION: ");
-  //   SerialUSB1.println(channel_x.current_position); 
-  //   SerialUSB1.print("Y POSITION: ");
-  //   SerialUSB1.println(channel_y.current_position);
-  //   SerialUSB1.print("SLOTS AVAILABLE: ");
-  //   SerialUSB1.println(interpolator.slots_remaining);    
-  // }
-  // struct TimeBasedInterpolator::motion_block this_block = {.block_id = test_block_id, .block_position = {.x_mm = 100, .y_mm = 200, .z_mm = 300}};
-  // interpolator.add_block(&this_block);
-  // delay(500);
-  // Serial.print("READ HEAD: ");
-  // Serial.println(interpolator.next_read_index);
-  // Serial.print("ACTIVE ID: ");
-  // Serial.println(interpolator.active_block.block_id);
-  // Serial.print("X POS: ");
-  // Serial.println(interpolator.active_block.block_position.x_mm);
-  // Serial.print("CPU USAGE: ");
-  // Serial.println(stepdance_get_cpu_usage());
-  // test_block_id ++;
-  // interpolator.in_block = 0;
-  // channel_x.target_position -= 100;
-  // channel_y.target_position += -100;
-  // channel_z.target_position += 100;
-  // channel_e.target_position -= 1000;
-  // delay(500);
-  // Serial.print("CPU USAGE ");
-  // Serial.println(stepdance_get_cpu_usage()*100);
-  // Serial.print("Y POSITION: ");
-  // Serial.println(channel_y.current_position);
+  say_hi.periodic_call(&say_hello, 1000);
+  dance_loop();
+}
+
+void say_hello(){
+  Serial.println("HELLO");
 }
