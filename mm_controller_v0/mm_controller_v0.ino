@@ -5,6 +5,7 @@
 #include "interface_ebb.hpp"
 #include "interpolators.hpp"
 #include "kinematics.hpp"
+#include "analog_in.hpp"
 
 InputPort input_b;
 
@@ -20,6 +21,8 @@ Channel channel_z;
 Eibotboard axidraw;
 TimeBasedInterpolator interpolator;
 KinematicsHBot axidraw_kinematics;
+
+AnalogInput analog_a;
 
 void setup() {
   // put your setup code here, to run once:
@@ -56,6 +59,8 @@ void setup() {
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
 
+  analog_a.begin(INPUT_LEGACY_A);
+
   dance_start();
 }
 
@@ -68,5 +73,5 @@ void loop() {
 }
 
 void say_hello(){
-  Serial.println("HELLO");
+  // Serial.println(analog_a.last_value_raw);
 }

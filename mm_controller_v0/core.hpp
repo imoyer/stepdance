@@ -13,6 +13,7 @@ A part of the Mixing Metaphors Project
 
 typedef volatile float64_t DecimalPosition; //used to store positions across the system. We are using double-precision to allow incremental moves with acceptable error (~0.05 steps/day at 25khz)
 typedef volatile int32_t IntegerPosition; //previously used to store positions
+typedef volatile float32_t ControlParameter; //controls plugin parameters, typically from an analog input value
 
 typedef void (*frame_function_pointer)(); //defines function pointers that can be called at each frame
 

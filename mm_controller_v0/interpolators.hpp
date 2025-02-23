@@ -52,7 +52,7 @@ class TimeBasedInterpolator : public Plugin{
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
-    volatile float32_t speed_overide = 1; //modifier for the interpolator speed.
+    volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
     void begin();
     void map(uint8_t output_index, Transmission* target_transmission);
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
