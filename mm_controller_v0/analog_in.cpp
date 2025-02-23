@@ -6,7 +6,7 @@
 
 // Initialize static variables
 uint8_t AnalogInput::module_num_inputs[NUM_ADC_MODULES] = {0, 0};
-uint8_t AnalogInput::module_current_input_index[NUM_ADC_MODULES] = {0, 0};
+volatile uint8_t AnalogInput::module_current_input_index[NUM_ADC_MODULES] = {0, 0};
 volatile uint8_t AnalogInput::module_calibrating[NUM_ADC_MODULES] = {0, 0}; //flag to indicate that ADC is currently calibrating
 AnalogInput* AnalogInput::adc1_inputs[MAX_NUM_ADC_INPUTS] = {nullptr, nullptr}; //keeps pointers to all instantiated analog inputs on the ADC1 module
 AnalogInput* AnalogInput::adc2_inputs[MAX_NUM_ADC_INPUTS] = {nullptr, nullptr};
@@ -144,10 +144,10 @@ void AnalogInput::configure_adc(){
   }
   if(adc_module == ADC_MODULE_1){
     ADC1_CFG = CFG_temp;
-    ADC1_GC = CFG_temp;
+    ADC1_GC = GC_temp;
   }else{
     ADC2_CFG = CFG_temp;
-    ADC2_GC = CFG_temp;    
+    ADC2_GC = GC_temp;    
   }
 }
 

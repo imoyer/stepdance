@@ -23,6 +23,9 @@ TimeBasedInterpolator interpolator;
 KinematicsHBot axidraw_kinematics;
 
 AnalogInput analog_a;
+AnalogInput analog_b;
+AnalogInput analog_d;
+AnalogInput analog_e;
 
 void setup() {
   // put your setup code here, to run once:
@@ -60,6 +63,9 @@ void setup() {
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
 
   analog_a.begin(INPUT_LEGACY_A);
+  analog_b.begin(INPUT_LEGACY_B);
+  analog_d.begin(INPUT_LEGACY_D);
+  analog_e.begin(INPUT_LEGACY_E);
 
   dance_start();
 }
@@ -73,5 +79,13 @@ void loop() {
 }
 
 void say_hello(){
-  // Serial.println(analog_a.last_value_raw);
+  Serial.print("A: ");
+  Serial.println(analog_a.last_value_raw);
+  Serial.print("B: ");
+  Serial.println(analog_b.last_value_raw);
+  Serial.print("D: ");
+  Serial.println(analog_d.last_value_raw);
+  Serial.print("E: ");
+  Serial.println(analog_e.last_value_raw);
+  Serial.println(ADC1_GC);
 }

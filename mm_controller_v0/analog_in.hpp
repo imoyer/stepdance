@@ -92,7 +92,7 @@ class AnalogInput{
     static AnalogInput *adc1_inputs[MAX_NUM_ADC_INPUTS]; //keeps pointers to all instantiated analog inputs on the ADC1 module
     static AnalogInput *adc2_inputs[MAX_NUM_ADC_INPUTS];
     static uint8_t module_num_inputs[NUM_ADC_MODULES]; //tracks the number of instantiated analog inputs on the ADC module; indexed by ADC module
-    static uint8_t module_current_input_index[NUM_ADC_MODULES]; //current analog input
+    static volatile uint8_t module_current_input_index[NUM_ADC_MODULES]; //current analog input
     void configure_adc(); //changes the ADC configuration to support this AnalogInput
     void begin_conversion(); //begins a conversion on the ADC module
 
