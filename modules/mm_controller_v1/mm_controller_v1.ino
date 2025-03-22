@@ -17,10 +17,10 @@ Eibotboard axidraw;
 TimeBasedInterpolator interpolator;
 KinematicsHBot axidraw_kinematics;
 
-// AnalogInput analog_a;
-// AnalogInput analog_b;
-// AnalogInput analog_d;
-// AnalogInput analog_e;
+AnalogInput analog_a1;
+AnalogInput analog_a2;
+AnalogInput analog_a3;
+AnalogInput analog_a4;
 
 void setup() {
   // put your setup code here, to run once:
@@ -62,15 +62,18 @@ void setup() {
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
 
-  // analog_a.begin(INPUT_LEGACY_A);
-  // analog_b.begin(INPUT_LEGACY_B);
-  // analog_d.begin(INPUT_LEGACY_D);
-  // analog_e.begin(INPUT_LEGACY_E);
+  analog_a1.set_floor(0, 10);
+  analog_a1.set_ceiling(2.0, 1020);
+  analog_a1.map(&interpolator.speed_overide);
+  analog_a1.begin(IO_A1);
+  analog_a2.begin(IO_A2);
+  analog_a3.begin(IO_A3);
+  analog_a4.begin(IO_A4);
 
   dance_start();
 }
 
-// LoopDelay say_hi;
+LoopDelay say_hi;
 
 void loop() {
   axidraw.loop();
@@ -78,14 +81,7 @@ void loop() {
   dance_loop();
 }
 
-void say_hello(){
-  // Serial.print("A: ");
-  // Serial.println(analog_a.last_value_raw);
-  // Serial.print("B: ");
-  // Serial.println(analog_b.last_value_raw);
-  // Serial.print("D: ");
-  // Serial.println(analog_d.last_value_raw);
-  // Serial.print("E: ");
-  // Serial.println(analog_e.last_value_raw);
-  // Serial.println(ADC1_GC);
-}
+// void say_hello(){
+//   Serial.print("A1: ");
+//   Serial.println(a1_temp_value);
+// }

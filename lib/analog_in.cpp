@@ -11,6 +11,8 @@ volatile uint8_t AnalogInput::module_calibrating[NUM_ADC_MODULES] = {0, 0}; //fl
 AnalogInput* AnalogInput::adc1_inputs[MAX_NUM_ADC_INPUTS] = {nullptr, nullptr}; //keeps pointers to all instantiated analog inputs on the ADC1 module
 AnalogInput* AnalogInput::adc2_inputs[MAX_NUM_ADC_INPUTS] = {nullptr, nullptr};
 
+const uint16_t max_adc_values[3] = {255, 1023, 4095}; //8, 10, 12 bit
+
 const struct analog_pin_info_struct AnalogInput::analog_pin_info[] = {
   // We segregate A1 and A2 onto ADC1, and A3 and A4 onto ADC2. This will provide flexibility for running at very different speeds.
   // All of the VREF inputs are on ADC2
@@ -177,18 +179,13 @@ void AnalogInput::calibrate(){
   }
 }
 
-void AnalogInput::begin(uint8_t pin_reference){
-  //initializes the module using just a pin reference
-  begin(pin_reference, nullptr);
-};
 
-void AnalogInput::begin(uint8_t pin_reference, ControlParameter *target_parameter){
+void AnalogInput::begin(uint8_t pin_reference){
   // initialize the module
   // pin_reference -- the StepDance AnalogInput pin ID, e.g. INPUT_A1, etc (defined in analog_in.hpp)
   // *target_parameter -- a pointer to a ControlParameter (i.e. float32_t) that should be updated automatically by this AnalogInput
 
   // Step 1: Load all AnalogInput parameters
-  this->target = target_parameter;
   this->adc_module = analog_pin_info[pin_reference].ADC_MODULE;
   this->adc_input_channel = analog_pin_info[pin_reference].ADC_INPUT_CHANNEL;
   this->teensy_pin = analog_pin_info[pin_reference].TEENSY_PIN;
@@ -220,13 +217,65 @@ void AnalogInput::begin(uint8_t pin_reference, ControlParameter *target_paramete
   }
 }
 
+// Public Utility Methods
+ControlParameter AnalogInput::read(){
+  // Returns the last read value, converted into real-world units.
+  
+  // convert
+  ControlParameter converted_value =  static_cast<ControlParameter>(last_value_raw) * conversion_slope + conversion_intercept;
+
+  // latch value
+  if(converted_value < output_at_floor){
+    return output_at_floor;
+  }else if(converted_value > output_at_ceiling){
+    return output_at_ceiling;
+  }else{
+    return converted_value;
+  }
+}
+
+// Setup Methods
+void AnalogInput::map(ControlParameter *target_parameter){
+  this->target = target_parameter;
+}
+
+void AnalogInput::set_floor(ControlParameter output_at_floor){
+  set_floor(output_at_floor, this->adc_lower_limit);
+}
+
+void AnalogInput::set_floor(ControlParameter output_at_floor, uint16_t adc_lower_limit){
+  // sets the minimum scaled output value
+  // output_at_floor -- the scaled minimum output value
+  // adc_lower_limit -- the adc value at which this minimum applies.
+  this->output_at_floor = output_at_floor;
+  this->adc_lower_limit = adc_lower_limit;
+  this->conversion_slope = (this->output_at_ceiling - this->output_at_floor) / static_cast<ControlParameter>(this->adc_upper_limit - this->adc_lower_limit);
+  this->conversion_intercept = this->output_at_floor - this->conversion_slope * static_cast<ControlParameter>(this->adc_lower_limit);
+}
+
+void AnalogInput::set_ceiling(ControlParameter output_at_ceiling){
+  set_ceiling(output_at_ceiling, this->adc_upper_limit);
+}
+
+void AnalogInput::set_ceiling(ControlParameter output_at_ceiling, uint16_t adc_upper_limit){
+  // sets the maximum scaled output value
+  // output_at_floor -- the maximum scaled output value
+  // adc_lower_limit -- the adc value at which this maximum applies.
+  this->output_at_ceiling = output_at_ceiling;
+  this->adc_upper_limit = adc_upper_limit;
+  this->conversion_slope = (this->output_at_ceiling - this->output_at_floor) / static_cast<ControlParameter>(this->adc_upper_limit - this->adc_lower_limit);
+  this->conversion_intercept = this->output_at_floor - this->conversion_slope * static_cast<ControlParameter>(this->adc_lower_limit);
+}
+
+
+// Interrupt Routines
 void AnalogInput::adc1_on_interrupt(){
   AnalogInput *this_module = AnalogInput::adc1_inputs[AnalogInput::module_current_input_index[ADC_MODULE_1]];
 
   // Read and Store ADC Value
   this_module->last_value_raw = ADC1_R0;
   if(this_module->target != nullptr){
-    *(this_module->target) = this_module->last_value_raw;
+    *(this_module->target) = this_module->read();
   }
 
   // Increment ADC input
@@ -252,7 +301,7 @@ void AnalogInput::adc2_on_interrupt(){
   // Read and Store ADC Value
   this_module->last_value_raw = ADC2_R0;
   if(this_module->target != nullptr){
-    *(this_module->target) = this_module->last_value_raw;
+    *(this_module->target) = this_module->read();
   }
 
   // Increment ADC input

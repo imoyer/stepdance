@@ -17,25 +17,25 @@ A part of the Mixing Metaphors Project
 #define analog_in_h
 
 #ifdef ARDUINO_TEENSY41
-  #define INPUT_A1    0
-  #define INPUT_A2    1
-  #define INPUT_A3    2
-  #define INPUT_A4    3
+  #define IO_A1    0
+  #define IO_A2    2
+  #define IO_A3    3
+  #define IO_A4    1
   #define MOTOR_A_VREF    4
   #define MOTOR_B_VREF    5
   #define MOTOR_C_VREF    6
   #define MOTOR_D_VREF    7
-  #define INPUT_LEGACY_A  12
-  #define INPUT_LEGACY_B  13
-  #define INPUT_LEGACY_C  14
-  #define INPUT_LEGACY_D  15
-  #define INPUT_LEGACY_E  16
+  #define IO_LEGACY_A  12
+  #define IO_LEGACY_B  13
+  #define IO_LEGACY_C  14
+  #define IO_LEGACY_D  15
+  #define IO_LEGACY_E  16
 
 #else //TEENSY 4
-  #define INPUT_A1    8
-  #define INPUT_A2    9
-  #define INPUT_A3    10
-  #define INPUT_A4    11
+  #define IO_A1    8
+  #define IO_A2    9
+  #define IO_A3    10
+  #define IO_A4    11
 #endif
 
 #define ADC_MODULE_1    0
@@ -79,7 +79,6 @@ class AnalogInput{
   public:
     AnalogInput();
     void begin(uint8_t pin_reference);
-    void begin(uint8_t pin_reference, ControlParameter *target_parameter);
     void calibrate();
     void set_averaging(int8_t averaging);
     void set_resolution(int8_t resolution);
@@ -95,9 +94,15 @@ class AnalogInput{
     static volatile uint8_t module_current_input_index[NUM_ADC_MODULES]; //current analog input
     void configure_adc(); //changes the ADC configuration to support this AnalogInput
     void begin_conversion(); //begins a conversion on the ADC module
+    void set_floor(ControlParameter output_at_floor); //sets the scaled output value at the floor
+    void set_floor(ControlParameter output_at_floor, uint16_t adc_lower_limit); //allows the lower limit to be adjusted. ADC values below this will output at the floor
+    void set_ceiling(ControlParameter output_at_ceiling);
+    void set_ceiling(ControlParameter output_at_ceiling, uint16_t adc_upper_limit);
+    ControlParameter read(); //returns the last read value, based on the internal conversion factor
 
   private:
     // Static Parameters and Methods
+    static const uint16_t max_adc_values[3]; //8, 10, 12 bit
     static const struct analog_pin_info_struct analog_pin_info[]; //stores setup information for all analog inputs
     static volatile uint8_t module_calibrating[NUM_ADC_MODULES]; //flag to indicate that ADC is currently calibrating
     static void adc1_on_interrupt();
@@ -116,6 +121,12 @@ class AnalogInput{
     uint8_t adc_module;
     uint8_t adc_input_channel;
     uint8_t teensy_pin;
+    ControlParameter output_at_floor = 0;
+    ControlParameter output_at_ceiling = 1023;
+    uint16_t adc_lower_limit = 0;
+    uint16_t adc_upper_limit = 1023; //10 bit
+    float32_t conversion_slope = 1;
+    float32_t conversion_intercept = 0;
 };
 
 
