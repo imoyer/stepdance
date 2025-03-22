@@ -49,7 +49,7 @@ static volatile uint32_t stepdance_interrupt_entry_cycle_count = 0; //stores the
 //
 // This provides a common interface for any filters, synthesizers, kinematics, etc that need access to the core frame.
 #define MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS   10 //plugins that execute in the frame, before the channels are evaluated
-#define MAX_NUM_POST_CHANNEL_FRAME_PLUGINS  10 //plugins that execute in the frame, after the cahnnels are evaluated
+#define MAX_NUM_POST_CHANNEL_FRAME_PLUGINS  10 //plugins that execute in the frame, after the channels are evaluated
 #define MAX_NUM_KILOHERTZ_PLUGINS 10 //plugins that execute at a 1khz rate, independent of the frame, and with a lower priority
 
 class Plugin{

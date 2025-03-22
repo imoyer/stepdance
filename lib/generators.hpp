@@ -1,0 +1,38 @@
+/*
+Generators Module of the StepDance Control System
+
+This module contains an assortment of motion stream generators
+
+[More Details to be Added]
+
+A part of the Mixing Metaphors Project
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+
+*/
+#include "core.hpp"
+
+#ifndef generators_h //prevent importing twice
+#define generators_h
+
+class CircleGenerator : public Plugin{
+  public:
+    CircleGenerator();
+    volatile ControlParameter rotational_speed_rev_per_sec = 1; // circle generation speed
+    volatile ControlParameter radius = 0; //radius of circle
+    volatile ControlParameter max_radial_speed_mm_per_sec = 10; // maximum radial speed
+    void begin();
+    void map(Transmission* x_target_transmission, Transmission* y_target_transmission);
+
+  private:
+    Transmission* x_output_transmission = nullptr;
+    Transmission* y_output_transmission = nullptr;
+    volatile float32_t current_radius = 0;
+    volatile float64_t current_angle_rad = 0;
+  
+  protected:
+    void run();
+};
+
+
+
+#endif //generators_h

@@ -17,6 +17,8 @@ Eibotboard axidraw;
 TimeBasedInterpolator interpolator;
 KinematicsHBot axidraw_kinematics;
 
+CircleGenerator tiny_circles;
+
 AnalogInput analog_a1;
 AnalogInput analog_a2;
 AnalogInput analog_a3;
@@ -58,6 +60,9 @@ void setup() {
   interpolator.map(TBI_AXIS_Y, &axidraw_kinematics.input_transmission_y);
   interpolator.map(TBI_AXIS_Z, &channel_z.target_position_transmission); //pass this straight thru to the channel
 
+  tiny_circles.begin();
+  tiny_circles.map(&axidraw_kinematics.input_transmission_x, &axidraw_kinematics.input_transmission_y);
+
   axidraw_kinematics.begin();
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
@@ -66,10 +71,17 @@ void setup() {
   analog_a1.set_ceiling(2.0, 1020);
   analog_a1.map(&interpolator.speed_overide);
   analog_a1.begin(IO_A1);
+
+  analog_a2.set_floor(0, 10);
+  analog_a2.set_ceiling(5.0, 1020);
+  analog_a2.map(&tiny_circles.radius);
   analog_a2.begin(IO_A2);
+
+  analog_a3.set_floor(0, 10);
+  analog_a3.set_ceiling(10.0, 1020);
+  analog_a3.map(&tiny_circles.rotational_speed_rev_per_sec);
   analog_a3.begin(IO_A3);
   analog_a4.begin(IO_A4);
-
   dance_start();
 }
 
@@ -77,11 +89,11 @@ LoopDelay say_hi;
 
 void loop() {
   axidraw.loop();
-  // say_hi.periodic_call(&say_hello, 1000);
+  say_hi.periodic_call(&say_hello, 1000);
   dance_loop();
 }
 
-// void say_hello(){
-//   Serial.print("A1: ");
-//   Serial.println(a1_temp_value);
-// }
+void say_hello(){
+  // Serial.print("SPEED OVERRIDE: ");
+  // Serial.println(analog_a1.read());
+}

@@ -1,6 +1,7 @@
 #include "analog_in.hpp"
 #include "channels.hpp"
 #include "core.hpp"
+#include "generators.hpp"
 #include "input_ports.hpp"
 #include "interface_ebb.hpp"
 #include "interpolators.hpp"
