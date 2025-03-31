@@ -1,4 +1,5 @@
 #include "stepdance.hpp"
+#include <QuadEncoder.h>
 
 // First protoype, using legacy hardware
 
@@ -12,7 +13,6 @@ Channel channel_x;
 Channel channel_y;
 Channel channel_z;
 
-
 Eibotboard axidraw;
 TimeBasedInterpolator interpolator;
 KinematicsHBot axidraw_kinematics;
@@ -23,6 +23,9 @@ AnalogInput analog_a1;
 AnalogInput analog_a2;
 AnalogInput analog_a3;
 AnalogInput analog_a4;
+
+Encoder encoder_1;
+Encoder encoder_2;
 
 void setup() {
   // put your setup code here, to run once:
@@ -51,7 +54,6 @@ void setup() {
   // input_b.map(SIGNAL_Y, &channel_z.target_position);
   // input_b.map(SIGNAL_Z, &channel_e.target_position);
 
-
   axidraw.begin(&interpolator);
   axidraw.set_steps_to_mm(2874, 25.4);
 
@@ -62,6 +64,16 @@ void setup() {
 
   tiny_circles.begin();
   tiny_circles.map(&axidraw_kinematics.input_transmission_x, &axidraw_kinematics.input_transmission_y);
+
+  encoder_1.begin(ENCODER_1);
+  encoder_1.set_ratio(2400, 24); //24mm per revolution
+  encoder_1.map(&axidraw_kinematics.input_transmission_x);
+  encoder_1.invert();
+
+  encoder_2.begin(ENCODER_2);
+  encoder_2.set_ratio(2400, 24); //24mm per revolution
+  encoder_2.map(&axidraw_kinematics.input_transmission_y);
+  encoder_2.invert();
 
   axidraw_kinematics.begin();
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
@@ -94,6 +106,5 @@ void loop() {
 }
 
 void say_hello(){
-  // Serial.print("SPEED OVERRIDE: ");
-  // Serial.println(analog_a1.read());
+  // Serial.println(stepdance_max_cpu_usage);
 }
