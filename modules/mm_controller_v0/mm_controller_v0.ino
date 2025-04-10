@@ -12,7 +12,6 @@ Channel channel_x;
 Channel channel_y;
 Channel channel_z;
 
-
 Eibotboard axidraw;
 TimeBasedInterpolator interpolator;
 KinematicsHBot axidraw_kinematics;
@@ -21,6 +20,8 @@ AnalogInput analog_a;
 AnalogInput analog_b;
 AnalogInput analog_d;
 AnalogInput analog_e;
+
+VelocityGenerator velocity_gen;
 
 void setup() {
   // put your setup code here, to run once:
@@ -57,10 +58,16 @@ void setup() {
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
 
-  analog_a.begin(INPUT_LEGACY_A);
-  analog_b.begin(INPUT_LEGACY_B);
-  analog_d.begin(INPUT_LEGACY_D);
-  analog_e.begin(INPUT_LEGACY_E);
+  velocity_gen.begin();
+  velocity_gen.map(&channel_x.target_position_transmission);
+
+  analog_a.set_floor(-20, 10);
+  analog_a.set_ceiling(20, 1020);
+  analog_a.map(&velocity_gen.speed_units_per_sec);
+  analog_a.begin(IO_LEGACY_A);
+  analog_b.begin(IO_LEGACY_B);
+  analog_d.begin(IO_LEGACY_D);
+  analog_e.begin(IO_LEGACY_E);
 
   dance_start();
 }
