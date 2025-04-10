@@ -33,6 +33,19 @@ class CircleGenerator : public Plugin{
     void run();
 };
 
+class VelocityGenerator : public Plugin{
+  public:
+    VelocityGenerator();
+    volatile ControlParameter speed_units_per_sec = 0; // generation velocity
+    void begin();
+    void map(Transmission* target_transmission);
+
+  private:
+    Transmission* output_transmission = nullptr;
+  
+  protected:
+    void run();
+};
 
 
 #endif //generators_h

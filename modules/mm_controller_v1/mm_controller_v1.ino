@@ -27,6 +27,8 @@ AnalogInput analog_a4;
 Encoder encoder_1;
 Encoder encoder_2;
 
+VelocityGenerator velocity_gen;
+
 void setup() {
   // put your setup code here, to run once:
   pinMode(14, OUTPUT); //motor A enable
@@ -65,13 +67,16 @@ void setup() {
   tiny_circles.begin();
   tiny_circles.map(&axidraw_kinematics.input_transmission_x, &axidraw_kinematics.input_transmission_y);
 
+  velocity_gen.begin();
+  velocity_gen.map(&axidraw_kinematics.input_transmission_x);
+
   encoder_1.begin(ENCODER_1);
-  encoder_1.set_ratio(2400, 24); //24mm per revolution
+  encoder_1.set_ratio(2400, 50); //24mm per revolution
   encoder_1.map(&axidraw_kinematics.input_transmission_x);
   encoder_1.invert();
 
   encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(2400, 24); //24mm per revolution
+  encoder_2.set_ratio(2400, 50); //24mm per revolution
   encoder_2.map(&axidraw_kinematics.input_transmission_y);
   encoder_2.invert();
 
@@ -79,10 +84,16 @@ void setup() {
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
 
-  analog_a1.set_floor(0, 10);
-  analog_a1.set_ceiling(2.0, 1020);
-  analog_a1.map(&interpolator.speed_overide);
-  analog_a1.begin(IO_A1);
+  // analog_a1.set_floor(0, 10);
+  // analog_a1.set_ceiling(2.0, 1020);
+  // analog_a1.map(&interpolator.speed_overide);
+  analog_a1.set_floor(-10, 10);
+  analog_a1.set_ceiling(10, 1020);
+  analog_a1.map(&velocity_gen.speed_units_per_sec);
+  // analog_a1.set_floor(0, 10);
+  // analog_a1.set_ceiling(10, 1020);
+  // analog_a1.map(&velocity_gen.speed_units_per_sec);
+  // analog_a1.begin(IO_A1);
 
   analog_a2.set_floor(0, 10);
   analog_a2.set_ceiling(5.0, 1020);
@@ -101,10 +112,10 @@ LoopDelay say_hi;
 
 void loop() {
   axidraw.loop();
-  say_hi.periodic_call(&say_hello, 1000);
+  say_hi.periodic_call(&say_hello, 500);
   dance_loop();
 }
 
 void say_hello(){
-  // Serial.println(stepdance_max_cpu_usage);
+  Serial.println(channel_x.target_position);
 }

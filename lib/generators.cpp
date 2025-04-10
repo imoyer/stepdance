@@ -65,3 +65,21 @@ void CircleGenerator::run(){
     y_output_transmission->increment(delta_y);
   }
 }
+
+VelocityGenerator::VelocityGenerator(){};
+
+void VelocityGenerator::begin(){
+  register_plugin();
+}
+
+void VelocityGenerator::map(Transmission* target_transmission){
+  output_transmission = target_transmission;
+}
+
+void VelocityGenerator::run(){
+  float64_t delta = speed_units_per_sec * CORE_FRAME_PERIOD_S;
+  if(output_transmission != nullptr){
+    output_transmission->increment(delta);
+  }
+}
+  
