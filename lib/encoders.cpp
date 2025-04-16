@@ -2,8 +2,8 @@
 
 #ifndef NO_ENCODERS //we can define this to avoid using the encoder hardware interface
                     //unfortunately the quadencoder library configures the XBAR from within the constructor, so there's no way to incorporate this library without affecting pin mapping.
-  QuadEncoder quad_encoder_1(1, ENCODER_1A_PIN, ENCODER_1B_PIN, 0); //no pullups required
-  QuadEncoder quad_encoder_2(2, ENCODER_2A_PIN, ENCODER_2B_PIN, 0);
+  QuadEncoder quad_encoder_1(1, ENCODER_1A_PIN, ENCODER_1B_PIN, 1); //no pullups required
+  QuadEncoder quad_encoder_2(2, ENCODER_2A_PIN, ENCODER_2B_PIN, 1);
   QuadEncoder * Encoder::all_encoders[MAX_NUM_ENCODERS] = {&quad_encoder_1, &quad_encoder_2};
 #else
   QuadEncoder * Encoder::all_encoders[MAX_NUM_ENCODERS] = {nullptr, nullptr};

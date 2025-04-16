@@ -32,6 +32,7 @@ class Encoder : public Plugin{
     void map(Transmission* target_transmission); //or can target a transmission
     void set_ratio(float input_units, float output_units); //sets the transmission ratio
     void invert();
+    int32_t last_encoder_value = 0;
 
   private:
     static QuadEncoder* all_encoders[MAX_NUM_ENCODERS];
@@ -39,7 +40,6 @@ class Encoder : public Plugin{
     DecimalPosition* target_position = nullptr;
     Transmission* target_transmission = nullptr;
     float64_t transfer_ratio = 1.0;
-    int32_t last_encoder_value = 0;
     uint8_t invert_flag = 0;
 
   protected:

@@ -71,12 +71,12 @@ void setup() {
   velocity_gen.map(&axidraw_kinematics.input_transmission_x);
 
   encoder_1.begin(ENCODER_1);
-  encoder_1.set_ratio(2400, 50); //24mm per revolution
+  encoder_1.set_ratio(2400, 150); //24mm per revolution
   encoder_1.map(&axidraw_kinematics.input_transmission_x);
   encoder_1.invert();
 
   encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(2400, 50); //24mm per revolution
+  encoder_2.set_ratio(2400, 150); //24mm per revolution
   encoder_2.map(&axidraw_kinematics.input_transmission_y);
   encoder_2.invert();
 
@@ -87,24 +87,24 @@ void setup() {
   // analog_a1.set_floor(0, 10);
   // analog_a1.set_ceiling(2.0, 1020);
   // analog_a1.map(&interpolator.speed_overide);
-  analog_a1.set_floor(-10, 10);
-  analog_a1.set_ceiling(10, 1020);
-  analog_a1.map(&velocity_gen.speed_units_per_sec);
+  // analog_a1.set_floor(-10, 10);
+  // analog_a1.set_ceiling(10, 1020);
+  // analog_a1.map(&velocity_gen.speed_units_per_sec);
   // analog_a1.set_floor(0, 10);
   // analog_a1.set_ceiling(10, 1020);
   // analog_a1.map(&velocity_gen.speed_units_per_sec);
   // analog_a1.begin(IO_A1);
 
-  analog_a2.set_floor(0, 10);
-  analog_a2.set_ceiling(5.0, 1020);
-  analog_a2.map(&tiny_circles.radius);
-  analog_a2.begin(IO_A2);
+  // analog_a2.set_floor(0, 10);
+  // analog_a2.set_ceiling(5.0, 1020);
+  // analog_a2.map(&tiny_circles.radius);
+  // analog_a2.begin(IO_A2);
 
-  analog_a3.set_floor(0, 10);
-  analog_a3.set_ceiling(10.0, 1020);
-  analog_a3.map(&tiny_circles.rotational_speed_rev_per_sec);
-  analog_a3.begin(IO_A3);
-  analog_a4.begin(IO_A4);
+  // analog_a3.set_floor(0, 10);
+  // analog_a3.set_ceiling(10.0, 1020);
+  // analog_a3.map(&tiny_circles.rotational_speed_rev_per_sec);
+  // analog_a3.begin(IO_A3);
+  // analog_a4.begin(IO_A4);
   dance_start();
 }
 
@@ -117,5 +117,10 @@ void loop() {
 }
 
 void say_hello(){
+  Serial.print("X POS: ");
   Serial.println(channel_x.target_position);
+  Serial.print("ENC1 POS: ");
+  Serial.println(encoder_1.last_encoder_value);
+  Serial.print("ENC2 POS: ");
+  Serial.println(encoder_2.last_encoder_value);
 }
