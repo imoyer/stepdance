@@ -166,10 +166,14 @@ void Transmission::set(float64_t input_value){
 }
 
 float64_t Transmission::get(){
-  if(target != nullptr){
-    return *target / transfer_ratio;
+  if(get_function == nullptr){ //no get override function
+    if(target != nullptr){
+      return *target / transfer_ratio;
+    }else{
+      return 0.0;
+    }
   }else{
-    return 0.0;
+    return get_function();
   }
 }
 

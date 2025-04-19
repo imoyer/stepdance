@@ -1,3 +1,4 @@
+#include <functional>
 #include "arm_math.h"
 #include "Arduino.h"
 /*
@@ -89,7 +90,8 @@ class Transmission{
     float64_t get(); //gets the output position
     float64_t convert(float64_t input_value); //converts from input to output values
     float64_t convert_reverse(float64_t output_value); //converts from output to input values
-
+    std::function<DecimalPosition()> get_function = nullptr; //points to a function that will override built-in get(). This is typically used within kinematics.
+  
   private:
     float64_t transfer_ratio = 1.0; // output_units/input_units. Initialize with a unity transfer ratio
     DecimalPosition *target;

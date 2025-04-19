@@ -118,9 +118,7 @@ void loop() {
 
 void say_hello(){
   Serial.print("X POS: ");
-  Serial.println(axidraw_kinematics.input_transmission_x.get());
-  Serial.print("Y POS: ");
-  Serial.println(axidraw_kinematics.input_transmission_y.get());
+  Serial.println(channel_x.target_position);
   Serial.print("ENC1 POS: ");
   Serial.println(encoder_1.last_encoder_value);
   Serial.print("ENC2 POS: ");
