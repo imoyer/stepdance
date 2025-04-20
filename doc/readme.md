@@ -62,7 +62,7 @@ Board-mounted standoffs are provided for a [Sparkfun QWIIC OLED](https://www.spa
 Although three standoffs are shown for the OLED, **only two should be installed on the PCB**. For an old-style OLED display, these are the left and right-most standoffs. For a new-style OLED, these are the top row of standoffs.
 
 #### Microcontroller
-The Stepdance driver module uses a Teensy 4.1, which is based off the badass IMXRT1062 (32-bit, 600MHz). The pinout we use is shown below:
+The Stepdance driver module uses a Teensy 4.1, which is based off the IMXRT1062 (32-bit, 600MHz). The pinout we use is shown below:
 ![](/doc/images/module_driver_teensy.png)
 
 Notes on pin selection:
@@ -75,3 +75,81 @@ Notes on pin selection:
 - output ref pins are analog inputs that allow the MCU to read the current setting on the drivers. Eventually we'll use this to help guide the user in setting the current.
 - output enable pins individually enable each driver
 - "LIM" are limit switch inputs for each output port.
+
+#### Dimensions
+
+- Board dimensions are 5.5" x 4.0"
+- Four 3.5mm ID mounting holes are on 5.1" x 3.6" centers.
+- Standoffs of up to 6.3MM / 0.25" OD may be used.
+- The corners are radiused at R0.15"
+### Basic Module v1.0
+![](/doc/images/module_basic.png)
+
+This is a stripped-down version of the Driver Module. It has:
+
+- 2 encoder ports
+- 4 analog/digital inputs A1->A4, which also can be digital outputs
+- 2 digital inputs/outputs D1->D2
+- 2 QWIIC connectors
+- 1 stepdance input port
+- 1 stepdance output port
+
+Pinouts for all connectors are the same as the driver module.
+
+#### Microcontroller
+The stepdance basic module can utilize either a Teensy 4.1 or a Teensy 4.0. The only difference is cost, and the 4.1 has an onboard SD card.
+
+**The pinout is different from the driver module**, and is shown below:
+![](/doc/images/module_basic_teensy.png)
+
+#### Dimensions
+
+- Board dimensions are 3.0" x 3.0"
+- Four 3.5mm ID mounting holes are on 2.6" x 2.6" centers.
+- Standoffs of up to 6.3MM / 0.25" OD may be used.
+- The corners are radiused at R0.15"
+
+***
+## Stepdance Ports
+![](/doc/images/stepdance_hookup.png)
+
+A key feature of Stepdance is that modules can be chained together by connecting the output port of one module to the input port of another. This allows modules to transmit what we call _motion streams_ between modules, which are real-time multi-axis signals carrying motion information.
+
+We use standard tip-ring-ring-sleeve (TRRS) audio cables to carry these motion streams. Electrically, the TRRS connector has the following pinout:
+![](/doc/images/trrs_pinout.png)
+
+Motion streams are carried by a step/direction signalling scheme, which is what's commonly used to control stepper drivers. **Signals are at 5V.** If you aren't familiar with step/direction, it works like this:
+![](/doc/images/step_dir_basics.png)
+
+A unit of motion (a "step") is transmitted whenever the STEP line is pulsed HIGH. If the DIR line is HIGH when this pulse occurs, a FORWARD step is indicated. If DIR is LOW when the pulse occurs, then the a REVERSE step is indicated.
+
+In stepdance, we refer to these STEP pulses as _signals_, and use their duration to indicate motion in one  of six axes:
+
+![](/doc/images/stepdance_signals.png)
+
+The encoding is as follows:
+| Axis  | STEP Pulse Duration |
+| -------- | ------- |
+| X  | 2us   |
+| Y | 3us     |
+| R    | 4us    |
+| θ | 5us     |
+| Z    | 6us    |
+| E | 7us     |
+
+A few notes:
+
+- R and θ signals support polar positioning systems
+- This scheme trades simplicity for robustness; electrical impedance can stretch out these signals. One way to think of this is as a 1MHz serial stream, where "X" is two high bits, "Y" is three, etc...
+
+This scheme doesn't care the order of pulses, or the maximum time between them. The stepdance library is implemented such that a particular signal only occurs at most _once_ within a _frame_, as shown below:
+
+![](/doc/images/stepdance_frames.png)
+
+Each frame is 40us long, of which 32us is available for signals. A 2us inter-signal gap is imposed. It is during this gap that the direction signal changes state. In the diagram above, the four longest signals (R, θ, Z, and E) are being transmitted within a single frame. In this way, the stepdance frame can support 4 axes of simultaneous motion.
+
+IMPORTANT NOTES:
+
+- Although we use the convention of XYRθZE to name signals based on their duration, it is up to the system designer to assign these signals to particular axes of their machine.
+- **Stepdance modules read the DIR line at the falling edge of the STEP pulse.** In this way we differ from stepper drivers, which read at the rising edge of STEP. We do this to improve performance by only needing to fire an interrupt once per pulse, but has implications for compatibility with non-stepdance signalling sources. Future work will introduce alternative input modes to restore this compatibility.
+
