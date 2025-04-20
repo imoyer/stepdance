@@ -115,6 +115,7 @@ The stepdance basic module can utilize either a Teensy 4.1 or a Teensy 4.0. The 
 
 A key feature of Stepdance is that modules can be chained together by connecting the output port of one module to the input port of another. This allows modules to transmit what we call _motion streams_ between modules, which are real-time multi-axis signals carrying motion information.
 
+### Electrical
 We use standard tip-ring-ring-sleeve (TRRS) audio cables to carry these motion streams. Electrically, the TRRS connector has the following pinout:
 ![](/doc/images/trrs_pinout.png)
 
@@ -123,6 +124,7 @@ Motion streams are carried by a step/direction signalling scheme, which is what'
 
 A unit of motion (a "step") is transmitted whenever the STEP line is pulsed HIGH. If the DIR line is HIGH when this pulse occurs, a FORWARD step is indicated. If DIR is LOW when the pulse occurs, then the a REVERSE step is indicated.
 
+### Signals: Axis-Encoded Step Pulses
 In stepdance, we refer to these STEP pulses as _signals_, and use their duration to indicate motion in one  of six axes:
 
 ![](/doc/images/stepdance_signals.png)
@@ -142,6 +144,7 @@ A few notes:
 - R and θ signals support polar positioning systems
 - This scheme trades simplicity for robustness; electrical impedance can stretch out these signals. One way to think of this is as a 1MHz serial stream, where "X" is two high bits, "Y" is three, etc...
 
+### Frames: Multi-Axis Synchronous Motion
 This scheme doesn't care the order of pulses, or the maximum time between them. The stepdance library is implemented such that a particular signal only occurs at most _once_ within a _frame_, as shown below:
 
 ![](/doc/images/stepdance_frames.png)
