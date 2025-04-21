@@ -1,3 +1,5 @@
+// Teensy 4.1 pin numbers
+
 #ifdef module_driver
   #define IO_A1     24
   #define IO_A2     25

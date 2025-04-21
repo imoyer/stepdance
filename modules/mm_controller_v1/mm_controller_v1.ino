@@ -26,6 +26,8 @@ AnalogInput analog_a2;
 AnalogInput analog_a3;
 AnalogInput analog_a4;
 
+Button button_d1;
+
 Encoder encoder_1;
 Encoder encoder_2;
 
@@ -85,6 +87,11 @@ void setup() {
   encoder_2.set_ratio(2400, 150); //24mm per revolution
   encoder_2.map(&axidraw_kinematics.input_transmission_y);
   encoder_2.invert();
+
+  button_d1.begin(IO_D1, INPUT_PULLDOWN);
+  button_d1.set_mode(BUTTON_MODE_TOGGLE);
+  button_d1.set_callback_on_press(&pen_down);
+  button_d1.set_callback_on_release(&pen_up);
 
   axidraw_kinematics.begin();
   axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
@@ -150,4 +157,6 @@ void say_hello(){
   Serial.println(encoder_1.last_encoder_value);
   Serial.print("ENC2 POS: ");
   Serial.println(encoder_2.last_encoder_value);
+  Serial.print("BUTTON: ");
+  Serial.println(button_d1.read_state());
 }

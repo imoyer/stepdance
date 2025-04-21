@@ -61,7 +61,7 @@ void dance_start(){
 
   // Start kilohertz plugin timer
   kilohertz_timer.priority(130);
-  // kilohertz_timer.begin(Plugin::run_kilohertz_plugins, KILOHERTZ_PLUGIN_PERIOD_US);
+  kilohertz_timer.begin(Plugin::run_kilohertz_plugins, KILOHERTZ_PLUGIN_PERIOD_US);
 }
 
 // -- METRICS --
