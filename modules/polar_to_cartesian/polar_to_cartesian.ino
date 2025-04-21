@@ -1,7 +1,7 @@
+#define module_driver
+
 #include "stepdance.hpp"
 #include <QuadEncoder.h>
-
-// First protoype, using legacy hardware
 
 InputPort input_a;
 

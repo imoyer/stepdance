@@ -86,4 +86,4 @@ class KinematicsPolarToCartesian : public Plugin{
     void run();
 };
 
-#endif
+#endif //kinematics_h

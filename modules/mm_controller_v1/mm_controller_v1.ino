@@ -1,3 +1,5 @@
+#define module_driver
+
 #include "stepdance.hpp"
 #include <QuadEncoder.h>
 

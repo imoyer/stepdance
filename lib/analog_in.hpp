@@ -16,30 +16,10 @@ A part of the Mixing Metaphors Project
 #ifndef analog_in_h //prevent importing twice
 #define analog_in_h
 
-#ifdef ARDUINO_TEENSY41
-  #define IO_A1    0
-  #define IO_A2    2
-  #define IO_A3    3
-  #define IO_A4    1
-  #define MOTOR_A_VREF    4
-  #define MOTOR_B_VREF    5
-  #define MOTOR_C_VREF    6
-  #define MOTOR_D_VREF    7
-  #define IO_LEGACY_A  12
-  #define IO_LEGACY_B  13
-  #define IO_LEGACY_C  14
-  #define IO_LEGACY_D  15
-  #define IO_LEGACY_E  16
-
-#else //TEENSY 4
-  #define IO_A1    8
-  #define IO_A2    9
-  #define IO_A3    10
-  #define IO_A4    11
-#endif
-
 #define ADC_MODULE_1    0
 #define ADC_MODULE_2    1
+
+#define ADC_NONE 255 //used to flag modules and channels when pin does not map to an ADC
 
 #define NUM_ADC_MODULES     2
 #define MAX_NUM_ADC_INPUTS  16  //per module
