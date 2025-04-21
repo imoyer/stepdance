@@ -47,5 +47,31 @@ class VelocityGenerator : public Plugin{
     void run();
 };
 
+class PositionGenerator : public Plugin{
+  // This position generator maintains its own internal state, and will incrementally drive an output transmission to achieve
+  // a particular value of its internal position state under the constraints of a maximum velocity.
+  // We do also provide a "go_coupled" function, which will drive to a particular downstream position based on the output transmission.
+
+  public:
+    PositionGenerator();
+    volatile DecimalPosition target_position = 0;
+    volatile DecimalPosition current_position = 0;
+    volatile ControlParameter max_speed_units_per_sec = 0; // generation velocity
+    void begin();
+    void map(Transmission* target_transmission);
+    void set_max_speed(ControlParameter max_speed);
+    void go_incremental(DecimalPosition distance); //Provides a direct interface to incrementing the target position
+    void go_incremental(DecimalPosition distance, ControlParameter max_speed);
+    void go_absolute(DecimalPosition target_position); //Direct position setting interface
+    void go_absolute(DecimalPosition target_position, ControlParameter max_speed);
+    // void go_coupled(DecimalPosition target_position); //drives to a position based on the current position of the downstream output transmission
+    Transmission input_transmission;  //direct transmission interface to the target position
+
+  private:
+    Transmission* output_transmission = nullptr;
+  
+  protected:
+    void run();
+};
 
 #endif //generators_h

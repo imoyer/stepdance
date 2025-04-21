@@ -11,6 +11,9 @@ A part of the Mixing Metaphors Project
 
 #include "core.hpp"
 
+#ifndef kinematics_h //prevent importing twice
+#define kinematics_h
+
 // Kinematics Mode
 // If incremental, the kinematic module will:
 //  1) read the input positions
@@ -82,3 +85,5 @@ class KinematicsPolarToCartesian : public Plugin{
   protected:
     void run();
 };
+
+#endif

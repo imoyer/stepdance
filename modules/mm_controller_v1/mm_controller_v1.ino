@@ -28,6 +28,7 @@ Encoder encoder_1;
 Encoder encoder_2;
 
 VelocityGenerator velocity_gen;
+PositionGenerator position_gen;
 
 void setup() {
   // put your setup code here, to run once:
@@ -70,6 +71,9 @@ void setup() {
   velocity_gen.begin();
   velocity_gen.map(&axidraw_kinematics.input_transmission_x);
 
+  position_gen.map(&channel_z.target_position_transmission);
+  position_gen.begin();
+
   encoder_1.begin(ENCODER_1);
   encoder_1.set_ratio(2400, 150); //24mm per revolution
   encoder_1.map(&axidraw_kinematics.input_transmission_x);
@@ -111,9 +115,28 @@ void setup() {
 LoopDelay say_hi;
 
 void loop() {
-  axidraw.loop();
+  // axidraw.loop();
   say_hi.periodic_call(&say_hello, 500);
+  if(Serial.available()>0){
+    uint8_t character = Serial.read();
+    if(character == 85){
+      pen_up();
+      Serial.println("U");
+    }
+    if(character == 68){
+      pen_down();
+      Serial.println("D");
+    }
+  }
   dance_loop();
+}
+
+void pen_down(){
+  position_gen.go_absolute(-500, 2000);
+}
+
+void pen_up(){
+  position_gen.go_absolute(500, 2000);
 }
 
 void say_hello(){
