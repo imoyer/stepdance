@@ -109,6 +109,32 @@ The stepdance basic module can utilize either a Teensy 4.1 or a Teensy 4.0. The 
 - Standoffs of up to 6.3MM / 0.25" OD may be used.
 - The corners are radiused at R0.15"
 
+### Hobby Servo Driver
+![](/doc/images/servo_stepper.png)
+
+The Hobby Servo Driver is a drop-in replacement for the BIGTREETECH TMC2209 stepper drivers, and provides a step/direction interface to controlling a standard hobby servo.
+
+An ATTiny84 accumulates step/dir inputs and outputs a standard pulse-width modulated signal. The timing of this signal is shown below:
+
+![](/doc/images/rc_stepper_timing.png)
+
+The attiny84 firmware is located in the repository [here](/rcstepmodule/).
+
+Currently, the firmware is configured such that the servo starts in the neutral position, and 500 input steps in either direction results in full-scale motion of 90 degrees. This can of course be configured differently. Additionally, two adjustment parameters are provided (units are nominally in microseconds) to tweak the pulse width and time between pulse outputs. This is to adjust for inconsistencies in the onboard RC clock source.
+
+The relevant lines are these:
+
+```
+// ---- SETTINGS ----
+#define PULSE_PERIOD_US 24000 //24ms pulse period
+#define PULSE_PERIOD_OFFSET 850 //adjustment on time between pulses
+#define PULSE_WIDTH_OFFSET 40 //adjustment to pulse width
+
+#define SERVO_TOP_LIMIT_STEPS 500 // +/- 500 steps is full-range, if 1 STEP == 1uS of pulse width
+#define SERVO_BOTTOM_LIMIT_STEPS -500
+#define SERVO_MIDPOINT_PULSE_WIDTH_US 1500
+```
+
 ***
 ## Stepdance Ports
 ![](/doc/images/stepdance_hookup.png)
@@ -156,3 +182,13 @@ IMPORTANT NOTES:
 - Although we use the convention of XYRθZE to name signals based on their duration, it is up to the system designer to assign these signals to particular axes of their machine.
 - **Stepdance modules read the DIR line at the falling edge of the STEP pulse.** In this way we differ from stepper drivers, which read at the rising edge of STEP. We do this to improve performance by only needing to fire an interrupt once per pulse, but has implications for compatibility with non-stepdance signalling sources. Future work will introduce alternative input modes to restore this compatibility.
 
+***
+## Examples
+Here we provide some example projects based around an AxiDraw plotter, which are aimed at introducing the functionality of Stepdance and library usage. These examples build on each other in the order they are listed.
+
+### "Step-A-Sketch" (Etch-A-Sketch)
+
+
+
+***
+## Stepdance Library Reference
