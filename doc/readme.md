@@ -184,10 +184,19 @@ IMPORTANT NOTES:
 
 ***
 ## Examples
-Here we provide some example projects based around an AxiDraw plotter, which are aimed at introducing the functionality of Stepdance and library usage. These examples build on each other in the order they are listed.
+Here we provide some example projects based around an AxiDraw pen plotter, which are aimed at introducing the functionality of Stepdance and library usage. These examples build on each other in the order they are listed.
 
 ### "Step-A-Sketch" (Etch-A-Sketch)
+![](/doc/images/step-a-sketch_teaser.png)
 
+This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in realtime, a la etch-a-sketch. One knob is mapped to the X axis, and the other to the Y axis. You will learn how to:
+
+- configure outputs ports, in this case to control stepper motor drivers
+- create "channels" that each generate output stream components for individual axes of motion.
+- use kinematic modules to convert between cartesian XY space and machine motor space. 
+- read position values from encoders, and use them to drive output channels.
+
+[Read the full Step-A-Setch example here.](/doc/examples/stepasketch.md)
 
 
 ***
