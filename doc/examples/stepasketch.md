@@ -12,7 +12,10 @@ This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in rea
 
 The axidraw has two stepper motors for XY positioning and a single servo motor for the pen height. The AxiDraw Inkscape plugin _and_ the Stepdance AxiDraw software module both expect that the motors are 200 steps/rev and driven at 1/16th microstepping. You'll want to configure the Stepdance Driver Module as follows:
 
-- Install jumpers on both microstepping headers for the A and B output ports as shown below to set 1/16 microstepping. The jumpers should be oriented vertically. [More details are here](../readme.md#stepper-drivers-and-motor-interfaces)
+- To set 1/16 microstepping, install jumpers on both microstepping headers for the A and B output ports as shown below. The jumpers should be oriented vertically ([more details here](../readme.md#stepper-drivers-and-motor-interfaces)).
+- Install two TMC2209 stepper drivers and one [Hobby Servo Driver](../readme.md#hobby-servo-driver) as shown below.
+
+![](/doc/images/step-a-sketch_board.png)
 
 ## Wiring
 ![](/doc/images/step-a-sketch_wiring.png)
