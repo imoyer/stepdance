@@ -16,7 +16,7 @@ Channel channel_z;
 // Eibotboard axidraw;
 // TimeBasedInterpolator interpolator;
 KinematicsPolarToCartesian polar_kinematics;
-KinematicsHBot axidraw_kinematics;
+KinematicsCoreXY axidraw_kinematics;
 
 // CircleGenerator tiny_circles;
 
@@ -85,8 +85,8 @@ void setup() {
   polar_kinematics.map(POLAR_OUTPUT_Y, &axidraw_kinematics.input_transmission_y);
   polar_kinematics.begin();
 
-  axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
-  axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
+  axidraw_kinematics.map(COREXY_OUTPUT_A, &channel_x.target_position_transmission);
+  axidraw_kinematics.map(COREXY_OUTPUT_B, &channel_y.target_position_transmission);
   axidraw_kinematics.begin();
 
 

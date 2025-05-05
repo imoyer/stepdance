@@ -28,17 +28,17 @@ A part of the Mixing Metaphors Project
 #define KINEMATICS_MODE_INCREMENTAL   0
 #define KINEMATICS_MODE_ABSOLUTE      1
 
-#define HBOT_NUM_OUTPUTS 2
-#define HBOT_OUTPUT_A   0
-#define HBOT_OUTPUT_B   1
+#define COREXY_NUM_OUTPUTS 2
+#define COREXY_OUTPUT_A   0
+#define COREXY_OUTPUT_B   1
 
 #define POLAR_NUM_OUTPUTS 2
 #define POLAR_OUTPUT_X  0
 #define POLAR_OUTPUT_Y  1
 
-class KinematicsHBot : public Plugin{
+class KinematicsCoreXY : public Plugin{
   public:
-    KinematicsHBot();
+    KinematicsCoreXY();
     void begin(); //defaults to incremental mode
     void begin(uint8_t mode);
     void begin(Transmission *output_transmission_a, Transmission *output_transmission_b);
@@ -55,7 +55,7 @@ class KinematicsHBot : public Plugin{
     DecimalPosition get_position_x(); // return current positions in input space, and override the input_transmission get() functions
     DecimalPosition get_position_y();
 
-    Transmission* output_transmissions[HBOT_NUM_OUTPUTS] = {nullptr}; //pointers to the output transmissions
+    Transmission* output_transmissions[COREXY_NUM_OUTPUTS] = {nullptr}; //pointers to the output transmissions
 
   protected:
     void run();

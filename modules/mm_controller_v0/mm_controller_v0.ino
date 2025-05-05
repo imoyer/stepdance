@@ -14,7 +14,7 @@ Channel channel_z;
 
 Eibotboard axidraw;
 TimeBasedInterpolator interpolator;
-KinematicsHBot axidraw_kinematics;
+KinematicsCoreXY axidraw_kinematics;
 
 AnalogInput analog_a;
 AnalogInput analog_b;
@@ -55,8 +55,8 @@ void setup() {
   interpolator.map(TBI_AXIS_Z, &channel_z.target_position_transmission); //pass this straight thru to the channel
 
   axidraw_kinematics.begin();
-  axidraw_kinematics.map(HBOT_OUTPUT_A, &channel_x.target_position_transmission);
-  axidraw_kinematics.map(HBOT_OUTPUT_B, &channel_y.target_position_transmission);
+  axidraw_kinematics.map(CoreXY_OUTPUT_A, &channel_x.target_position_transmission);
+  axidraw_kinematics.map(CoreXY_OUTPUT_B, &channel_y.target_position_transmission);
 
   velocity_gen.begin();
   velocity_gen.map(&channel_x.target_position_transmission);

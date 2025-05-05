@@ -14,76 +14,76 @@ A part of the Mixing Metaphors Project
 
 #include "kinematics.hpp"
 
-KinematicsHBot::KinematicsHBot(){};
+KinematicsCoreXY::KinematicsCoreXY(){};
 
-void KinematicsHBot::begin(){
+void KinematicsCoreXY::begin(){
   begin(KINEMATICS_MODE_INCREMENTAL, nullptr, nullptr);
 }
 
-void KinematicsHBot::begin(uint8_t mode){
+void KinematicsCoreXY::begin(uint8_t mode){
   begin(mode, nullptr, nullptr);
 }
 
-void KinematicsHBot::begin(Transmission *output_transmission_a, Transmission *output_transmission_b){
+void KinematicsCoreXY::begin(Transmission *output_transmission_a, Transmission *output_transmission_b){
   begin(KINEMATICS_MODE_INCREMENTAL, output_transmission_a, output_transmission_b);
 }
 
-void KinematicsHBot::begin(uint8_t mode, Transmission *output_transmission_a, Transmission *output_transmission_b){
+void KinematicsCoreXY::begin(uint8_t mode, Transmission *output_transmission_a, Transmission *output_transmission_b){
   this->mode = mode;
   if(output_transmission_a != nullptr){ //allows map() to be called before begin, if begin has no parameters.
-    map(HBOT_OUTPUT_A, output_transmission_a);
+    map(COREXY_OUTPUT_A, output_transmission_a);
   }
   if(output_transmission_b != nullptr){
-    map(HBOT_OUTPUT_B, output_transmission_b);
+    map(COREXY_OUTPUT_B, output_transmission_b);
   }
   input_transmission_x.begin(&input_position_x);
-  input_transmission_x.get_function = std::bind(&KinematicsHBot::get_position_x, this);
+  input_transmission_x.get_function = std::bind(&KinematicsCoreXY::get_position_x, this);
   input_transmission_y.begin(&input_position_y);
-  input_transmission_y.get_function = std::bind(&KinematicsHBot::get_position_y, this);
+  input_transmission_y.get_function = std::bind(&KinematicsCoreXY::get_position_y, this);
   reset();
   register_plugin();
 }
 
-void KinematicsHBot::reset(){
+void KinematicsCoreXY::reset(){
   input_position_x = 0;
   input_position_y = 0;
 }
 
-void KinematicsHBot::map(uint8_t output_index, Transmission* target_transmission){
+void KinematicsCoreXY::map(uint8_t output_index, Transmission* target_transmission){
   output_transmissions[output_index] = target_transmission;
 }
 
-void KinematicsHBot::run(){
+void KinematicsCoreXY::run(){
   float64_t output_position_a = input_position_x + input_position_y;
   float64_t output_position_b = input_position_x - input_position_y;
   if(mode == KINEMATICS_MODE_INCREMENTAL){
-    if(output_transmissions[HBOT_OUTPUT_A] != nullptr){
-      output_transmissions[HBOT_OUTPUT_A]->increment(output_position_a);
+    if(output_transmissions[COREXY_OUTPUT_A] != nullptr){
+      output_transmissions[COREXY_OUTPUT_A]->increment(output_position_a);
     }
-    if(output_transmissions[HBOT_OUTPUT_B] != nullptr){
-      output_transmissions[HBOT_OUTPUT_B]->increment(output_position_b);
+    if(output_transmissions[COREXY_OUTPUT_B] != nullptr){
+      output_transmissions[COREXY_OUTPUT_B]->increment(output_position_b);
     }
     input_position_x = 0.0;
     input_position_y = 0.0;  
   }else if (mode == KINEMATICS_MODE_ABSOLUTE){
-    if(output_transmissions[HBOT_OUTPUT_A] != nullptr){
-      output_transmissions[HBOT_OUTPUT_A]->set(output_position_a);
+    if(output_transmissions[COREXY_OUTPUT_A] != nullptr){
+      output_transmissions[COREXY_OUTPUT_A]->set(output_position_a);
     }
-    if(output_transmissions[HBOT_OUTPUT_B] != nullptr){    
-      output_transmissions[HBOT_OUTPUT_B]->set(output_position_b);
+    if(output_transmissions[COREXY_OUTPUT_B] != nullptr){    
+      output_transmissions[COREXY_OUTPUT_B]->set(output_position_b);
     }
   }
 }
 
-DecimalPosition KinematicsHBot::get_position_x(){
-  float64_t position_a = output_transmissions[HBOT_OUTPUT_A]->get();
-  float64_t position_b = output_transmissions[HBOT_OUTPUT_B]->get();
+DecimalPosition KinematicsCoreXY::get_position_x(){
+  float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
+  float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
   return (position_a + position_b)/2;
 }
 
-DecimalPosition KinematicsHBot::get_position_y(){
-  float64_t position_a = output_transmissions[HBOT_OUTPUT_A]->get();
-  float64_t position_b = output_transmissions[HBOT_OUTPUT_B]->get();
+DecimalPosition KinematicsCoreXY::get_position_y(){
+  float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
+  float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
   return (position_a - position_b)/2;
 }
 
