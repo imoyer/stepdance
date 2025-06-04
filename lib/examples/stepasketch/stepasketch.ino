@@ -42,6 +42,11 @@ KinematicsCoreXY axidraw_kinematics;
 Encoder encoder_1;  // left knob, controls horizontal
 Encoder encoder_2;  // right knob, controls vertical
 
+// -- Define Input Button --
+Button button_d1;
+
+// -- Position Generator for Pen Up/Down --
+PositionGenerator position_gen;
 
 void setup() {
   // -- Enable the stepper motors --
@@ -89,6 +94,16 @@ void setup() {
   axidraw_kinematics.map(COREXY_OUTPUT_A, &channel_a.target_position_transmission); //connect the kinematics to the motion channels
   axidraw_kinematics.map(COREXY_OUTPUT_B, &channel_b.target_position_transmission);
 
+  // -- Configure Button --
+  button_d1.begin(IO_D1, INPUT_PULLDOWN);
+  button_d1.set_mode(BUTTON_MODE_TOGGLE);
+  button_d1.set_callback_on_press(&pen_down);
+  button_d1.set_callback_on_release(&pen_up);
+
+  // -- Configure Position Generator --
+  position_gen.map(&channel_z.target_position_transmission);
+  position_gen.begin();
+
   // -- Start the stepdance library --
   // This activates the system.
   dance_start();
@@ -98,4 +113,12 @@ void loop() {
   // your custom code here
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
+}
+
+void pen_down(){
+  position_gen.go_absolute(-500, 2000);
+}
+
+void pen_up(){
+  position_gen.go_absolute(500, 2000);
 }

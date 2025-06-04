@@ -8,7 +8,7 @@ Stepdance is a framework for creative motion control. Stepdance is:
 - **Hybrid**: Blend real-time inputs and manipulation with traditional pre-planned approaches such as G-code.
 ***
 ## Stepdance Hardware
-### Driver Module v1.0
+### Driver Module Board v1.0
 ![](/doc/images/module_driver.png)
 
 #### Stepper Drivers and Motor Interfaces
@@ -198,6 +198,32 @@ This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in rea
 
 [Read the full Step-A-Setch example here.](/doc/examples/stepasketch.md)
 
+### Axidraw "EBB" Controller Emulator
+
 
 ***
-## Stepdance Library Reference
+## Stepdance Library User Manual
+
+Stepdance is a motion control operating system that scaffolds a wide range of modular software components. These can do things like:
+ - real-time control of motors from encoders and potentiometers 
+ - emulate standard motion controllers to interpret pre-planned motion formats like g-code and AxiDraw
+ - record and replay motion streams
+ - apply filters such as scaling and rotation
+ - generate a host of motion signals including transiting to a position, constant velocity, sinusoidal position, etc.
+ - convert between coordinate systems, e.g. polar and cartesian
+ - mix signal sources in real-time
+
+Most of the stepdance framework is interrupt-driven and operates in the background, by taking advantage of the relatively massive computing power of the Teensy 4/4.1 (based on the iMXRT1062).
+
+ In this user manual, we describe the overall framework, the currently available elements, and how to connect everything together.
+
+### Overview
+
+### Output Ports
+
+### Channels
+
+### Inputs
+#### Encoders
+
+
