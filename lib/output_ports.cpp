@@ -106,15 +106,50 @@ const struct output_port_info_struct OutputPort::port_info[] = {
   },
 };
 
+const struct output_format_struct OutputPort::output_formats[] = {
+  {
+    .FRAME_LENGTH_US = 32,
+    .STEP_PULSE_START_TIME_US = 2,
+    .DIR_PULSE_START_TIME_US = 1,
+    .SIGNAL_MIN_WIDTH_US = 2,
+    .SIGNAL_GAP_US = 2,
+    .RATE_SHIFT = 0
+  },
+  {
+    .FRAME_LENGTH_US = 16,
+    .STEP_PULSE_START_TIME_US = 1,
+    .DIR_PULSE_START_TIME_US = 0,
+    .SIGNAL_MIN_WIDTH_US = 2,
+    .SIGNAL_GAP_US = 2,
+    .RATE_SHIFT = 1
+  },
+  {
+    .FRAME_LENGTH_US = 8,
+    .STEP_PULSE_START_TIME_US = 1,
+    .DIR_PULSE_START_TIME_US = 0,
+    .SIGNAL_MIN_WIDTH_US = 2,
+    .SIGNAL_GAP_US = 2,
+    .RATE_SHIFT = 2
+  },
+  {
+    .FRAME_LENGTH_US = 4,
+    .STEP_PULSE_START_TIME_US = 1,
+    .DIR_PULSE_START_TIME_US = 0,
+    .SIGNAL_MIN_WIDTH_US = 2,
+    .SIGNAL_GAP_US = 2,
+    .RATE_SHIFT = 3
+  },
+};
+
 // ---- OUTPUT_PORT CLASS FUNCTIONS ----
 
 OutputPort::OutputPort(){};
 
 void OutputPort::begin(uint8_t port_number){
-  begin(port_number, OUTPUT_FORMAT_STEPDANCE);
+  begin(port_number, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME);
 }
 
-void OutputPort::begin(uint8_t port_number, uint8_t output_format){
+void OutputPort::begin(uint8_t port_number, uint8_t output_format, uint8_t transmit_mode){
   // Configures the output port.
   //
   // port_number -- the port ID number, from 0-3.
@@ -122,7 +157,14 @@ void OutputPort::begin(uint8_t port_number, uint8_t output_format){
   
   // -- Store Parameters for Later --
   this->port_number = port_number;
-  this->output_format = output_format;
+  this->format_index = output_format;
+  this->transmit_mode = transmit_mode;
+  this->FRAME_LENGTH_US = output_formats[format_index].FRAME_LENGTH_US;
+  this->STEP_PULSE_START_TIME_US = output_formats[format_index].STEP_PULSE_START_TIME_US;
+  this->DIR_PULSE_START_TIME_US = output_formats[format_index].DIR_PULSE_START_TIME_US;
+  this->SIGNAL_MIN_WIDTH_US = output_formats[format_index].SIGNAL_MIN_WIDTH_US;
+  this->SIGNAL_GAP_US = output_formats[format_index].SIGNAL_GAP_US;
+  this->RATE_SHIFT = output_formats[format_index].RATE_SHIFT;
 
   // -- Configure Teensy Output Pins --
   pinMode(port_info[port_number].STEP_TEENSY_PIN, OUTPUT);
@@ -192,8 +234,9 @@ void OutputPort::begin(uint8_t port_number, uint8_t output_format){
   // -- Configure Timer --
 
   // Set Timer Compare Register (p2938)
-  *port_info[port_number].TIMCMP_REGISTER = (63 <<8) | //32 bits of output.
-        ((120/2)-1); // We want an output every us, so we need CLK/120
+  *port_info[port_number].TIMCMP_REGISTER = (63 <<8) | //32 bits of output --> 63 shift clock edges
+        ((120>>(RATE_SHIFT+1))-1); // We want an output every us, so we need CLK/120 --> a timer edge every clock divider/2 (or a timer cycle every clock divider)
+        // ((120/2)-1); // We want an output every us, so we need CLK/120 --> a timer edge every clock divider/2 (or a timer cycle every clock divider)
 
   // Set Timer Control Register (P2933)
   *port_info[port_number].TIMCTL_REGISTER	= 
@@ -217,7 +260,9 @@ void OutputPort::begin(uint8_t port_number, uint8_t output_format){
 		//FLEXIO_TIMCFG_TSTART					          // start bit disabled  
 
   // register the output port
-  register_output_port();
+  if(transmit_mode == OUTPUT_TRANSMIT_ON_FRAME){
+    register_output_port();
+  }
 }
 
 void OutputPort::transmit_frame(){
@@ -260,33 +305,42 @@ void OutputPort::encode(){
   active_encoded_frame_dir = 0;
 
   // Initialize framing state
-  uint8_t step_pulse_bit_position = 2; // leading edge of first signal pulse is left-shifted two bits.
-  uint8_t dir_pulse_bit_position = 1; // leading edge of first direction pulse is left-shifted one bit.
+  uint8_t step_pulse_us_position = STEP_PULSE_START_TIME_US; // tracks the current write position of the step pulse
+  uint8_t dir_pulse_us_position = DIR_PULSE_START_TIME_US; // tracks the current write position of the dir pulse
 
   uint32_t step_pulse;
-  uint8_t step_pulse_length;
+  uint8_t step_pulse_length_us;
   uint32_t dir_pulse;
-  uint8_t dir_pulse_length;
+  uint8_t dir_pulse_length_us;
 
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index ++){
     if(active_signals[signal_index]){ //only bother to process active signals
-      //synthesize step and direction pulses
-      step_pulse_length = signal_index + SIGNAL_MIN_WIDTH_US;
-      step_pulse = (1<<step_pulse_length) - 1;
-      dir_pulse_length = step_pulse_length + SIGNAL_GAP_US;
+
+      // calculate step and dir pulse lengths
+      step_pulse_length_us = signal_index + SIGNAL_MIN_WIDTH_US;
+      dir_pulse_length_us = step_pulse_length_us + SIGNAL_GAP_US;
+
+      // check that we don't overrun the frame
+      if((step_pulse_us_position + step_pulse_length_us) > (FRAME_LENGTH_US-1)){
+        return;
+      }
+
+      // encode step and dir pulses
+      step_pulse = (1<<(step_pulse_length_us<<RATE_SHIFT)) - 1;
+
       if(active_signal_directions[signal_index]){ //direction is forwards, need a pulse
-        dir_pulse = (1<<dir_pulse_length) - 1;
+        dir_pulse = (1<<(dir_pulse_length_us<<RATE_SHIFT)) - 1;
       }else{
         dir_pulse = 0;
       }
 
       // overlay on encoded frame
-      active_encoded_frame_step |= (step_pulse << step_pulse_bit_position);
-      active_encoded_frame_dir |= (dir_pulse << dir_pulse_bit_position);
+      active_encoded_frame_step |= (step_pulse << (step_pulse_us_position<<RATE_SHIFT));
+      active_encoded_frame_dir |= (dir_pulse << (dir_pulse_us_position<<RATE_SHIFT));
 
       // update bit positions
-      step_pulse_bit_position += step_pulse_length + SIGNAL_GAP_US;
-      dir_pulse_bit_position += dir_pulse_length;
+      step_pulse_us_position += step_pulse_length_us + SIGNAL_GAP_US;
+      dir_pulse_us_position += dir_pulse_length_us;
     }
   }
 }
@@ -302,4 +356,36 @@ void transmit_frames_on_all_output_ports(){
   for(uint8_t output_port_index = 0; output_port_index < num_registered_output_ports; output_port_index++){
     registered_output_ports[output_port_index]->transmit_frame();
   }
+}
+
+void OutputPort::step_now(uint8_t direction){
+  step_now(direction, 0);
+}
+
+void OutputPort::step_now(uint8_t direction, uint8_t signal_index){
+  uint8_t step_pulse_length_us = signal_index + SIGNAL_MIN_WIDTH_US;
+  uint8_t dir_pulse_length_us = step_pulse_length_us + SIGNAL_GAP_US;
+
+  // check that we don't overrun the frame
+  if((STEP_PULSE_START_TIME_US + step_pulse_length_us) > (FRAME_LENGTH_US-1)){
+    return;
+  }
+
+  // encode step and dir pulses
+  uint32_t step_pulse = (1<<(step_pulse_length_us<<RATE_SHIFT)) - 1;
+  uint32_t dir_pulse;
+  if(direction){ //direction is forwards, need a pulse
+    dir_pulse = (1<<(dir_pulse_length_us<<RATE_SHIFT)) - 1;
+  }else{
+    dir_pulse = 0;
+  }
+
+  // encode frame
+  uint32_t active_encoded_frame_step = (step_pulse << (STEP_PULSE_START_TIME_US<<RATE_SHIFT));
+  uint32_t active_encoded_frame_dir = (dir_pulse << (DIR_PULSE_START_TIME_US<<RATE_SHIFT));
+
+  // transmit
+  *port_info[port_number].DIR_SHIFTBUF = active_encoded_frame_dir;
+  *port_info[port_number].STEP_SHIFTBUF = active_encoded_frame_step; //writing to the step shift buffer triggers transmission, so we do it last.
+
 }

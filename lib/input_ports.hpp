@@ -33,6 +33,8 @@ A part of the Mixing Metaphors Project
 
 #define FLEXPWM_CLOCK_MHZ 150
 
+#define SIGNAL_MIN_WIDTH_US 2 //standard input format
+
 struct input_port_info_struct{ //we use this structure to store hardware-specific information for each available port
     // Physical IO
   uint8_t STEP_TEENSY_PIN; //TEENSY Pin #s
