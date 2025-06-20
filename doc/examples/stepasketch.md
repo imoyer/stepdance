@@ -20,11 +20,12 @@ The axidraw has two stepper motors for XY positioning and a single servo motor f
 ## Wiring
 ![](/doc/images/step-a-sketch_wiring.png)
 
-There are seven wiring connections to be made:
+There are eight wiring connections to be made:
 
 - Both AxiDraw stepper motors to Output Ports A and B. We've wired the left motor to A, and the right motor to B.
 - The servo motor to Output Port C.
 - Two encoders, one to each of the encoder input ports ENC1 and ENC2. [Details on wiring Taiss encoders are here](../taiss.md). Refer to the [board reference](../readme.md#encoders-and-analog--digital-inputs) for general info on wiring encoders.
+- One pushbutton to digital input port D1.
 - 5VDC to the Teensy 4.1, delivered over a micro-usb cable. This powers the logic for all of the electronics, except for the hobby servo driver, which generates its own 5V supply. Initially, power this via your computer while programming the Teensy with firmware. Then, you can provide power from a USB charger etc.
 - 12VDC to the 5.5mm OD / 2.1mm ID barrel plug.
 
@@ -46,11 +47,17 @@ Below illustrates the color codes used in the AxiDraw V3.
 
 Note that the servo is wired into the same 4-pin connector and header as the stepper motors.
 
+### Wiring the Button
+![](/doc/images/button_wiring.png)
+
+The button should be wired across the INPUT and 3V3 pins of the Molex SL connector, as shown. We will configure the Teensy to apply an internal pull-down resistor to the input pin, which will cause the input to read LOW when not pressed and HIGH when pressed.
+
+
 ### Setting the Motor Driver Currents
 Most modern stepper drivers, including the TMC2209s supported by the Stepdance Driver Board, operate using current control. This means that a high voltage (e.g. 24VDC) is used to quickly pump current into the motor coils, and is then cut off once a target current is reached. This allows much higher performance of the motor than a voltage-controlled driver, which needs to operate at a lower voltage in order to avoid over-heating the motor coils. The current control circuitry works by measuring current in each motor coil through a sensing resistor, thereby converting current to voltage, and then comparing this to a reference voltage that sets the current limit. Your mission is to set the  reference voltage on each driver to correspond to the rated motor current.
 
 #### Determine the Peak Motor Current
-Motors are typically rated in amps/phase, which is an root-mean-square (RMS) value. The current limits on drivers are typically set in peak current by adjusting a reference voltage. First, you should look up the current rating of whichever motors you are using. For an Axidraw V3, this is 1A/phase. Next, convert this value into peak current, by multiplying by 1.414. This is 1.4A for the Axidraw V3.
+Motors are typically rated in amps/phase, which is a root-mean-square (RMS) value. The current limits on drivers are typically set in peak current by adjusting a reference voltage. First, you should look up the current rating of whichever motors you are using. For an Axidraw V3, this is 1A/phase. Next, convert this value into peak current, by multiplying by 1.414. This is 1.4A for the Axidraw V3.
 
 #### Calculate the Reference Voltage
 
