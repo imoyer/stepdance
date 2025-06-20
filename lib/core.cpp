@@ -86,6 +86,9 @@ Plugin* Plugin::registered_post_channel_frame_plugins[MAX_NUM_POST_CHANNEL_FRAME
 uint8_t Plugin::num_registered_kilohertz_plugins = 0;
 Plugin* Plugin::registered_kilohertz_plugins[MAX_NUM_KILOHERTZ_PLUGINS];
 
+uint8_t Plugin::num_registered_loop_plugins = 0;
+Plugin* Plugin::registered_loop_plugins[MAX_NUM_LOOP_PLUGINS];
+
 void Plugin::register_plugin(){ //default to pre-channel frame plugin
   register_plugin(PLUGIN_FRAME_PRE_CHANNEL);
 }
@@ -111,11 +114,20 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_kilohertz_plugins[num_registered_kilohertz_plugins] = this;
         num_registered_kilohertz_plugins ++;
       }
-      break;   
+      break;
+    
+    case PLUGIN_LOOP:
+      if(num_registered_loop_plugins < MAX_NUM_LOOP_PLUGINS){
+        registered_loop_plugins[num_registered_loop_plugins] = this;
+        num_registered_loop_plugins ++;
+      }
+      break;
   }
 }
 
 void Plugin::run(){};
+
+void Plugin::loop(){};
 
 void Plugin::run_pre_channel_frame_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_pre_channel_frame_plugins; plugin_index++){
@@ -133,6 +145,12 @@ void Plugin::run_kilohertz_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_kilohertz_plugins; plugin_index++){
     registered_kilohertz_plugins[plugin_index]->run();
   }
+}
+
+void Plugin::run_loop_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_loop_plugins; plugin_index++){
+    registered_loop_plugins[plugin_index]->loop();
+  }  
 }
 
 // -- TRANSMISSION --
@@ -193,6 +211,7 @@ float64_t Transmission::convert_reverse(float64_t output_value){
 // -- STEPDANCE LOOP FUNCTIONS AND CLASSES --
 
 void dance_loop(){
+  Plugin::run_loop_plugins(); //run all plugins that execute in the main loop
   stepdance_loop_time_ms = 1000*(float)(ARM_DWT_CYCCNT - stepdance_loop_entry_cycle_count) / (float)(F_CPU);
   stepdance_loop_entry_cycle_count = ARM_DWT_CYCCNT;
 }

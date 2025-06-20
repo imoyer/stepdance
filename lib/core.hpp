@@ -37,6 +37,7 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define PLUGIN_FRAME_PRE_CHANNEL  0 //runs on the frame, before channels are evaluated
 #define PLUGIN_FRAME_POST_CHANNEL 1 //runs on the frame, after channels are evaluated
 #define PLUGIN_KILOHERTZ          2 //runs in an independent 1khz context
+#define PLUGIN_LOOP               3 //runs in the main loop
 
 void add_function_to_frame(frame_function_pointer target_function);
 void dance_start();
@@ -52,6 +53,7 @@ static volatile uint32_t stepdance_interrupt_entry_cycle_count = 0; //stores the
 #define MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS   10 //plugins that execute in the frame, before the channels are evaluated
 #define MAX_NUM_POST_CHANNEL_FRAME_PLUGINS  10 //plugins that execute in the frame, after the channels are evaluated
 #define MAX_NUM_KILOHERTZ_PLUGINS 10 //plugins that execute at a 1khz rate, independent of the frame, and with a lower priority
+#define MAX_NUM_LOOP_PLUGINS 10 //plugins that execute in the main loop.
 
 class Plugin{
   // Base class for all plugins that need to run in the core frame.
@@ -60,18 +62,23 @@ class Plugin{
     static void run_pre_channel_frame_plugins(); //runs all pre-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_post_channel_frame_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_kilohertz_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
+    static void run_loop_plugins(); //runs all loop plugins, in the order they appear in the registered_plugins list
+
   private:
     static Plugin* registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS]; //stores all registered pre-channel frame plugins
     static Plugin* registered_post_channel_frame_plugins[MAX_NUM_POST_CHANNEL_FRAME_PLUGINS]; //stores all registered post-channel frame plugins
     static Plugin* registered_kilohertz_plugins[MAX_NUM_KILOHERTZ_PLUGINS]; //stores all registered kilohertz plugins
+    static Plugin* registered_loop_plugins[MAX_NUM_LOOP_PLUGINS]; //stores all registered loop plugins
     static uint8_t num_registered_pre_channel_frame_plugins; //tracks the number of registered pre-channel frame plugins
     static uint8_t num_registered_post_channel_frame_plugins; //tracks the number of registered post-channel frame plugins
     static uint8_t num_registered_kilohertz_plugins; //tracks the number of registered kilohertz plugins
+    static uint8_t num_registered_loop_plugins; //tracks the number of registered loop plugins
 
   protected: //these need to be accessed from derived classes
     void register_plugin(); //registers the plugin
     void register_plugin(uint8_t execution_target); //registers the plugin
     virtual void run(); //this should be overridden in the derived class. Runs each frame.
+    virtual void loop(); //this can be overridden in the derived class. Runs in the main loop context.
 };
 
 // -- Transmission Class --

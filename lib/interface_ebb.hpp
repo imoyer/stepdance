@@ -30,13 +30,15 @@ A part of the Mixing Metaphors Project
 #define EBB_SERVO_MIN_POSITION_STEPS -500 // -500us from neutral position (1500us pulse width)
 #define EBB_SERVO_MIDPOINT_PULSE_DURATION_US  1500 //pulse duration for the servo midpoint.
 
-class Eibotboard{
+class Eibotboard : public Plugin{
   public:
     Eibotboard();
     void begin(TimeBasedInterpolator* interpolator); // setup routine
-    void loop(); // should be run inside loop
     void set_steps_to_mm(float steps, float mm); //sets the conversion between steps and mm
   
+  protected:
+    void loop(); // should be run inside loop
+    
   private:
     // Serial Debug State
     uint8_t debug_port_identified; //1 if debug port has been ID'd, otherwise 0

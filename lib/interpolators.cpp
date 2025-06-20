@@ -1,5 +1,6 @@
 #include <cmath>
 #include "arm_math.h"
+#include "core.hpp"
 /*
 Interpolator Module of the StepDance Control System
 
@@ -125,5 +126,5 @@ void TimeBasedInterpolator::run_frame_on_active_block(){
 
 void TimeBasedInterpolator::begin(){
   reset_block_queue();
-  register_plugin();
+  register_plugin(PLUGIN_LOOP);
 }

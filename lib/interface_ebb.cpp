@@ -42,6 +42,7 @@ void Eibotboard::begin(TimeBasedInterpolator* interpolator){
   Serial.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
+  register_plugin();
 }
 
 void Eibotboard::set_steps_to_mm(float steps, float mm){
