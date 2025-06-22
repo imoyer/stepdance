@@ -86,6 +86,8 @@ class OutputPort{
     void begin(uint8_t port_number); // initialize using only port number
     void add_signal(uint8_t signal_index, uint8_t signal_direction); //adds a signal to the current active frame
     void transmit_frame(); //encodes and transmits the active frame
+    void step_now(uint8_t direction); //shortcut to immediately output a step at the minimum signal size
+    void step_now(uint8_t direction, uint8_t signal_index);
 
   private:
     // -- CONFIGURATION PARAMETERS --
@@ -110,8 +112,6 @@ class OutputPort{
     // -- METHODS --
     void encode();// encodes the active_signal arrays into the active_encoded_frames
     void transmit(); //transmits the active encoded frame
-    void step_now(uint8_t direction); //shortcut to immediately output a step at the minimum signal size
-    void step_now(uint8_t direction, uint8_t signal_index);
     void clear_all_signals(); //clears all signals in the current active frame
     void register_output_port(); //registers the output port
 };
