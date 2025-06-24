@@ -1,3 +1,5 @@
+#include <cstring>
+#include "arm_math.h"
 #include <sys/_stdint.h>
 #include "core_pins.h"
 #include "imxrt.h"
@@ -28,7 +30,8 @@ const struct output_port_info_struct OutputPort::port_info[] = {
   // for two outputs on a Teensy 4, and four outputs on a Teensy 4.1. This is because we intend to
   // use the Teensy 4.1 for connecting to stepper motor drivers using the same output ports.
   // For the Teensy 4, two output ports gives possibilities for splitting signals, and should be adequate for normal use.
-  { .STEP_TEENSY_PIN = 23, // OUTPUT PORT A
+  { .PORT_NAME = "OUTPUT A",
+    .STEP_TEENSY_PIN = 23, // OUTPUT PORT A
     .DIR_TEENSY_PIN = 22,
     .STEP_FLEXIO_PIN = 9,
     .DIR_FLEXIO_PIN = 8,
@@ -45,9 +48,13 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .TIMER_ID = 0,
     .TIMCMP_REGISTER = &FLEXIO3_TIMCMP0,
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL0,
-    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG0
+    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG0,
+    .VREF_TEENSY_PIN = 15,
+    .ENABLE_TEENSY_PIN = 14,
+    .LIMIT_TEENSY_PIN = 29
   },
-  { .STEP_TEENSY_PIN = 21, // OUTPUT PORT B
+  { .PORT_NAME = "OUTPUT B",
+    .STEP_TEENSY_PIN = 21, // OUTPUT PORT B
     .DIR_TEENSY_PIN = 20,
     .STEP_FLEXIO_PIN = 11,
     .DIR_FLEXIO_PIN = 10,
@@ -64,9 +71,13 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .TIMER_ID = 1,
     .TIMCMP_REGISTER = &FLEXIO3_TIMCMP1,
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL1,
-    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG1
+    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG1,
+    .VREF_TEENSY_PIN = 41,
+    .ENABLE_TEENSY_PIN = 13,
+    .LIMIT_TEENSY_PIN = 30
   },
-  { .STEP_TEENSY_PIN = 37, // OUTPUT PORT C
+  { .PORT_NAME = "OUTPUT C",
+    .STEP_TEENSY_PIN = 37, // OUTPUT PORT C
     .DIR_TEENSY_PIN = 36,
     .STEP_FLEXIO_PIN = 19,
     .DIR_FLEXIO_PIN = 18,
@@ -83,9 +94,13 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .TIMER_ID = 2,
     .TIMCMP_REGISTER = &FLEXIO3_TIMCMP2,
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL2,
-    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG2
+    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG2,
+    .VREF_TEENSY_PIN = 40,
+    .ENABLE_TEENSY_PIN = 39,
+    .LIMIT_TEENSY_PIN = 31
   },
-  { .STEP_TEENSY_PIN = 35, // OUTPUT PORT D
+  { .PORT_NAME = "OUTPUT D",
+    .STEP_TEENSY_PIN = 35, // OUTPUT PORT D
     .DIR_TEENSY_PIN = 34,
     .STEP_FLEXIO_PIN = 28,
     .DIR_FLEXIO_PIN = 29,
@@ -102,7 +117,10 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .TIMER_ID = 3,
     .TIMCMP_REGISTER = &FLEXIO3_TIMCMP3,
     .TIMCTL_REGISTER = &FLEXIO3_TIMCTL3,
-    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG3
+    .TIMCFG_REGISTER = &FLEXIO3_TIMCFG3,
+    .VREF_TEENSY_PIN = 38,
+    .ENABLE_TEENSY_PIN = 33,
+    .LIMIT_TEENSY_PIN = 32
   },
 };
 
@@ -156,6 +174,7 @@ void OutputPort::begin(uint8_t port_number, uint8_t output_format, uint8_t trans
   // mode -- specifies whether 
   
   // -- Store Parameters for Later --
+  strcpy(this->port_name, port_info[port_number].PORT_NAME);
   this->port_number = port_number;
   this->format_index = output_format;
   this->transmit_mode = transmit_mode;
@@ -388,4 +407,22 @@ void OutputPort::step_now(uint8_t direction, uint8_t signal_index){
   *port_info[port_number].DIR_SHIFTBUF = active_encoded_frame_dir;
   *port_info[port_number].STEP_SHIFTBUF = active_encoded_frame_step; //writing to the step shift buffer triggers transmission, so we do it last.
 
+}
+
+void OutputPort::begin_reading_drive_current(float32_t amps_per_volt){
+  uint8_t VREF_PIN = port_info[port_number].VREF_TEENSY_PIN;
+  analog_vref.set_floor(0, 0);
+  analog_vref.set_ceiling(amps_per_volt * analog_vref.full_scale_volts, 1023);
+  analog_vref.map(&last_drive_current_reading_amps);
+  analog_vref.begin(VREF_PIN);
+}
+
+float32_t OutputPort::get_drive_current_amps(){
+  return last_drive_current_reading_amps;
+}
+
+void iterate_across_all_output_ports(void (*target_function)(OutputPort*)){
+  for(uint8_t output_port_index = 0; output_port_index < num_registered_output_ports; output_port_index++){
+    target_function(registered_output_ports[output_port_index]);
+  }
 }

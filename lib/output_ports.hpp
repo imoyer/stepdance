@@ -1,4 +1,8 @@
+#include "arm_math.h"
 #include <sys/_stdint.h>
+#include "analog_in.hpp"
+#include "string.h"
+
 /*
 Output Ports Module of the StepDance Control System
 
@@ -16,7 +20,9 @@ A part of the Mixing Metaphors Project
 #define output_ports_h
 
 struct output_port_info_struct{ //we use this structure to store hardware-specific information for each available port
-  
+  // Port Name (for reporting)
+  char PORT_NAME[10];
+
   // Physical IO
   uint8_t STEP_TEENSY_PIN; //TEENSY Pin #s
   uint8_t DIR_TEENSY_PIN;
@@ -40,6 +46,9 @@ struct output_port_info_struct{ //we use this structure to store hardware-specif
   volatile uint32_t *TIMCMP_REGISTER; //timer compare register pointer, sets the output length and frequency
   volatile uint32_t *TIMCTL_REGISTER; //timer control register pointer
   volatile uint32_t *TIMCFG_REGISTER; //timer config register
+  uint8_t VREF_TEENSY_PIN; //current vref pin on teensy
+  uint8_t ENABLE_TEENSY_PIN; //enable pin on teensy
+  uint8_t LIMIT_TEENSY_PIN; //limit switch pin on teensy
 };
 
 struct output_format_struct{
@@ -88,6 +97,9 @@ class OutputPort{
     void transmit_frame(); //encodes and transmits the active frame
     void step_now(uint8_t direction); //shortcut to immediately output a step at the minimum signal size
     void step_now(uint8_t direction, uint8_t signal_index);
+    void begin_reading_drive_current(float32_t amps_per_volt); // starts reading the drive current
+    float32_t get_drive_current_amps(); // returns the last drive current reading
+    char port_name[10]; //stores the name of the port 
 
   private:
     // -- CONFIGURATION PARAMETERS --
@@ -108,14 +120,20 @@ class OutputPort{
     volatile uint8_t active_signal_directions[NUM_SIGNALS];
     volatile uint32_t active_encoded_frame_step; //these get populated by the encode function
     volatile uint32_t active_encoded_frame_dir;
+    volatile float32_t last_drive_current_reading_amps;
 
     // -- METHODS --
     void encode();// encodes the active_signal arrays into the active_encoded_frames
     void transmit(); //transmits the active encoded frame
     void clear_all_signals(); //clears all signals in the current active frame
     void register_output_port(); //registers the output port
+
+    // -- ADC --
+    AnalogInput analog_vref;
 };
 
 void transmit_frames_on_all_output_ports(); //transmits across all output ports
+
+void iterate_across_all_output_ports(void (*target_function)(OutputPort*)); // allows user code to iterate across all output ports
 
 #endif //output_ports_h

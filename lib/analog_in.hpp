@@ -47,6 +47,9 @@ A part of the Mixing Metaphors Project
 #define ANALOG_INPUT_DISABLED 0
 #define ANALOG_INPUT_ENABLED  1
 
+// REFERENCE VOLTAGE
+#define VREF_3V3  3.3
+
 
 struct analog_pin_info_struct{ //hardware_specific 
     // Physical IO
@@ -79,6 +82,7 @@ class AnalogInput{
     void set_ceiling(ControlParameter output_at_ceiling);
     void set_ceiling(ControlParameter output_at_ceiling, uint16_t adc_upper_limit);
     ControlParameter read(); //returns the last read value, based on the internal conversion factor
+    float32_t full_scale_volts = VREF_3V3; //we'll default to this for now, until we support changing the reference voltage.
 
   private:
     // Static Parameters and Methods

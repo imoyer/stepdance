@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include <sys/_stdint.h>
 #include "pins_arduino.h"
 #include "core_pins.h"
@@ -378,3 +379,8 @@ void AnalogInput::adc2_on_interrupt(){
     this_module->callback_function();
   }
 }
+
+// float32_t AnalogInput::get_volts_per_raw_count(){
+//   // Returns the volts per count of the encoder.
+//   return this->full_scale_volts / static_cast<float32_t>((uint32_t)255 << (this->resolution * 2));
+// }
