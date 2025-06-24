@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "encoders.hpp"
 
 #ifndef NO_ENCODERS //we can define this to avoid using the encoder hardware interface
@@ -32,6 +33,22 @@ void Encoder::set_ratio(float input_units, float output_units){
 
 void Encoder::invert(){
   invert_flag ^= 1;
+}
+
+int32_t Encoder::read(){
+  return quad_encoder->read();
+}
+
+void Encoder::reset(){
+  set(0);
+}
+
+void Encoder::set(int32_t value){
+  if(invert_flag){
+    quad_encoder->write(-value);
+  }else{
+    quad_encoder->write(value);
+  }
 }
 
 void Encoder::run(){

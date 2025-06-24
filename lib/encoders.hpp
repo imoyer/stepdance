@@ -32,6 +32,9 @@ class Encoder : public Plugin{
     void map(Transmission* target_transmission); //or can target a transmission
     void set_ratio(float input_units, float output_units); //sets the transmission ratio
     void invert();
+    int32_t read(); //directly reads the instantaneous encoder value
+    void reset(); //resets the encoder value to zero
+    void set(int32_t value); //resets the encoder value to a provided value
     int32_t last_encoder_value = 0;
 
   private:
