@@ -24,7 +24,7 @@ CircleGenerator tiny_circles;
 AnalogInput analog_a1;
 AnalogInput analog_a2;
 AnalogInput analog_a3;
-AnalogInput analog_a4;
+// AnalogInput analog_a4;
 
 Button button_d1;
 
@@ -56,8 +56,8 @@ void setup() {
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_transmission_ratio(1, 1); //straight step pass-thru.
 
-  input_a.begin(INPUT_A);
-  input_a.map(SIGNAL_X, &channel_x.target_position);
+  // input_a.begin(INPUT_A);
+  // input_a.map(SIGNAL_X, &channel_x.target_position);
   // input_b.map(SIGNAL_Y, &channel_z.target_position);
   // input_b.map(SIGNAL_Z, &channel_e.target_position);
 
@@ -72,19 +72,19 @@ void setup() {
   tiny_circles.begin();
   tiny_circles.map(&axidraw_kinematics.input_transmission_x, &axidraw_kinematics.input_transmission_y);
 
-  velocity_gen.begin();
-  velocity_gen.map(&axidraw_kinematics.input_transmission_x);
+  // velocity_gen.begin();
+  // velocity_gen.map(&axidraw_kinematics.input_transmission_x);
 
   position_gen.map(&channel_z.target_position_transmission);
   position_gen.begin();
 
   encoder_1.begin(ENCODER_1);
-  encoder_1.set_ratio(2400, 150); //24mm per revolution
+  encoder_1.set_ratio(2400, 25); //24mm per revolution
   encoder_1.map(&axidraw_kinematics.input_transmission_x);
   encoder_1.invert();
 
   encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(2400, 150); //24mm per revolution
+  encoder_2.set_ratio(2400, 25); //24mm per revolution
   encoder_2.map(&axidraw_kinematics.input_transmission_y);
   encoder_2.invert();
 
@@ -97,27 +97,27 @@ void setup() {
   axidraw_kinematics.map(COREXY_OUTPUT_A, &channel_x.target_position_transmission);
   axidraw_kinematics.map(COREXY_OUTPUT_B, &channel_y.target_position_transmission);
 
-  // analog_a1.set_floor(0, 10);
-  // analog_a1.set_ceiling(2.0, 1020);
-  // analog_a1.map(&interpolator.speed_overide);
-  // analog_a1.set_floor(-10, 10);
-  // analog_a1.set_ceiling(10, 1020);
+  analog_a1.set_floor(0, 10);
+  analog_a1.set_ceiling(2.0, 1020);
+  analog_a1.map(&interpolator.speed_overide);
+  analog_a1.set_floor(-10, 10);
+  analog_a1.set_ceiling(10, 1020);
   // analog_a1.map(&velocity_gen.speed_units_per_sec);
   // analog_a1.set_floor(0, 10);
   // analog_a1.set_ceiling(10, 1020);
   // analog_a1.map(&velocity_gen.speed_units_per_sec);
   // analog_a1.begin(IO_A1);
 
-  // analog_a2.set_floor(0, 10);
-  // analog_a2.set_ceiling(5.0, 1020);
-  // analog_a2.map(&tiny_circles.radius);
-  // analog_a2.begin(IO_A2);
+  analog_a2.set_floor(0, 10);
+  analog_a2.set_ceiling(5.0, 1020);
+  analog_a2.map(&tiny_circles.radius);
+  analog_a2.begin(IO_A2);
 
-  // analog_a3.set_floor(0, 10);
-  // analog_a3.set_ceiling(10.0, 1020);
-  // analog_a3.map(&tiny_circles.rotational_speed_rev_per_sec);
-  // analog_a3.begin(IO_A3);
-  // analog_a4.begin(IO_A4);
+  analog_a3.set_floor(0, 10);
+  analog_a3.set_ceiling(10.0, 1020);
+  analog_a3.map(&tiny_circles.rotational_speed_rev_per_sec);
+  analog_a3.begin(IO_A3);
+
   dance_start();
 }
 
@@ -125,23 +125,23 @@ LoopDelay say_hi;
 
 void loop() {
   // axidraw.loop();
-  say_hi.periodic_call(&say_hello, 500);
-  if(Serial.available()>0){
-    uint8_t character = Serial.read();
-    if(character == 85){
-      pen_up();
-      Serial.println("U");
-    }
-    if(character == 68){
-      pen_down();
-      Serial.println("D");
-    }
-  }
+  // say_hi.periodic_call(&say_hello, 500);
+  // if(Serial.available()>0){
+  //   uint8_t character = Serial.read();
+  //   if(character == 85){
+  //     pen_up();
+  //     Serial.println("U");
+  //   }
+  //   if(character == 68){
+  //     pen_down();
+  //     Serial.println("D");
+  //   }
+  // }
   dance_loop();
 }
 
 void pen_down(){
-  position_gen.go_absolute(-500, 2000);
+  position_gen.go_absolute(0, 2000);
 }
 
 void pen_up(){

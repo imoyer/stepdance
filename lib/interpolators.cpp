@@ -126,5 +126,5 @@ void TimeBasedInterpolator::run_frame_on_active_block(){
 
 void TimeBasedInterpolator::begin(){
   reset_block_queue();
-  register_plugin(PLUGIN_LOOP);
+  register_plugin();
 }

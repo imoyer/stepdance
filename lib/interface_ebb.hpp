@@ -35,7 +35,7 @@ class Eibotboard : public Plugin{
     Eibotboard();
     void begin(TimeBasedInterpolator* interpolator); // setup routine
     void set_steps_to_mm(float steps, float mm); //sets the conversion between steps and mm
-  
+
   protected:
     void loop(); // should be run inside loop
     
