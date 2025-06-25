@@ -2,9 +2,9 @@
 
 #ifdef module_driver
   #define IO_A1     24
-  #define IO_A2     25
-  #define IO_A3     26
-  #define IO_A4     27
+  #define IO_A2     26
+  #define IO_A3     27
+  #define IO_A4     25
   #define IO_D1     28
   #define IO_D2     12
   #define MOTOR_A_VREF    15
