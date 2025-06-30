@@ -9,8 +9,12 @@ uint8_t Button::num_registered_buttons = 0;
 Button* Button::registered_buttons[MAX_NUM_BUTTONS] = {nullptr, nullptr};
 ButtonKilohertzPlugin Button::kilohertz_plugin;
 
-uint8_t Button::read_state(){
+uint8_t Button::read(){
   return button_state;
+}
+
+uint8_t Button::read_raw(){
+  return digitalReadFast(input_pin);
 }
 
 uint8_t Button::has_changed(){

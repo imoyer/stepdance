@@ -39,7 +39,8 @@ class ButtonKilohertzPlugin : public Plugin{ //we'll set up to run on every kilo
 class Button{
   public:
     Button();
-    uint8_t read_state(); //returns button state
+    uint8_t read(); //returns button state
+    uint8_t read_raw(); //returns the asynchronous raw state of the input pin
     uint8_t has_changed(); //returns 1 if the button state has changed
     void set_callback_on_toggle(void (*callback_function)());
     void set_callback_on_press(void (*callback_function)());
