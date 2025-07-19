@@ -27,7 +27,6 @@ void setup() {
   output_b.begin(OUTPUT_B);
   output_c.begin(OUTPUT_C);
   output_d.begin(OUTPUT_D);
-  iterate_across_all_output_ports(&begin_reading_drive_currents);
   Serial.begin(115200);
 }
 
@@ -38,13 +37,9 @@ void loop() {
   delay(500);
 }
 
-void begin_reading_drive_currents(OutputPort* this_output_port){
-  this_output_port->begin_reading_drive_current(VREF_GAIN_AMPS_PEAK_PER_VOLT);
-}
-
 void report_drive_current(OutputPort* this_output_port){
   Serial.print(this_output_port->port_name);
   Serial.print(": ");
-  Serial.print(this_output_port->get_drive_current_amps());
+  Serial.print(this_output_port->read_drive_current_amps(VREF_GAIN_AMPS_PEAK_PER_VOLT));
   Serial.println("A (PEAK)");
 }

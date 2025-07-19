@@ -2,6 +2,7 @@
 #include <sys/_stdint.h>
 #include "analog_in.hpp"
 #include "string.h"
+#include "configuration.hpp"
 
 /*
 Output Ports Module of the StepDance Control System
@@ -87,19 +88,29 @@ struct output_format_struct{
 
 #define NUM_AVAILABLE_OUTPUT_PORTS 4 // max available output ports. NOTE: Should make this dynamic based on TEENSY version
 
+
 // Main Output Port Class
 class OutputPort{
   public:
     OutputPort();
+
+    // -- STANDARD PORT FUNCTIONS --
     void begin(uint8_t port_number, uint8_t output_format, uint8_t transmit_mode); //complete initializer
     void begin(uint8_t port_number); // initialize using only port number
     void add_signal(uint8_t signal_index, uint8_t signal_direction); //adds a signal to the current active frame
     void transmit_frame(); //encodes and transmits the active frame
     void step_now(uint8_t direction); //shortcut to immediately output a step at the minimum signal size
     void step_now(uint8_t direction, uint8_t signal_index);
-    void begin_reading_drive_current(float32_t amps_per_volt); // starts reading the drive current
-    float32_t get_drive_current_amps(); // returns the last drive current reading
-    char port_name[10]; //stores the name of the port 
+    
+    // -- DRIVER FUNCTIONS --
+    float32_t read_drive_current_amps(); // returns the last drive current reading
+    float32_t read_drive_current_amps(float32_t drive_current_gain_amps_per_volt); // sets the gain and then returns the last drive current reading
+    void set_drive_current_gain(float32_t amps_per_volt); // sets the drive current gain, in amps/volt
+    void enable_driver(); //enables the motor driver
+    void disable_driver(); //disables the motor driver
+    uint8_t read_limit_switch(); //returns the current value of the limit switch
+
+    char port_name[10]; //stores the name of the port
 
   private:
     // -- CONFIGURATION PARAMETERS --
@@ -121,6 +132,14 @@ class OutputPort{
     volatile uint32_t active_encoded_frame_step; //these get populated by the encode function
     volatile uint32_t active_encoded_frame_dir;
     volatile float32_t last_drive_current_reading_amps;
+
+    // DRIVER CONFIG AND STATE 
+    // for reading driver-related peripherals
+    // storing this state allows us to configure on-the-fly when relevant functions get called.
+    volatile bool vref_is_configured = false;
+    volatile bool enable_is_configured = false;
+    volatile bool limitsw_is_configured = false; 
+    float32_t drive_current_gain_amps_per_volt = 0; //stores the drive current gain setting.
 
     // -- METHODS --
     void encode();// encodes the active_signal arrays into the active_encoded_frames

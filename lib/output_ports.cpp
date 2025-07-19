@@ -52,6 +52,9 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .VREF_TEENSY_PIN = 15,
     .ENABLE_TEENSY_PIN = 14,
     .LIMIT_TEENSY_PIN = 29
+    // .VREF_TEENSY_PIN = OUTPUT_A_VREF,
+    // .ENABLE_TEENSY_PIN = OUTPUT_A_ENABLE,
+    // .LIMIT_TEENSY_PIN = OUTPUT_A_LIMIT
   },
   { .PORT_NAME = "OUTPUT B",
     .STEP_TEENSY_PIN = 21, // OUTPUT PORT B
@@ -75,6 +78,9 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .VREF_TEENSY_PIN = 41,
     .ENABLE_TEENSY_PIN = 13,
     .LIMIT_TEENSY_PIN = 30
+    // .VREF_TEENSY_PIN = OUTPUT_B_VREF,
+    // .ENABLE_TEENSY_PIN = OUTPUT_B_ENABLE,
+    // .LIMIT_TEENSY_PIN = OUTPUT_B_LIMIT
   },
   { .PORT_NAME = "OUTPUT C",
     .STEP_TEENSY_PIN = 37, // OUTPUT PORT C
@@ -98,6 +104,9 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .VREF_TEENSY_PIN = 40,
     .ENABLE_TEENSY_PIN = 39,
     .LIMIT_TEENSY_PIN = 31
+    // .VREF_TEENSY_PIN = OUTPUT_C_VREF,
+    // .ENABLE_TEENSY_PIN = OUTPUT_C_ENABLE,
+    // .LIMIT_TEENSY_PIN = OUTPUT_C_LIMIT
   },
   { .PORT_NAME = "OUTPUT D",
     .STEP_TEENSY_PIN = 35, // OUTPUT PORT D
@@ -121,6 +130,9 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .VREF_TEENSY_PIN = 38,
     .ENABLE_TEENSY_PIN = 33,
     .LIMIT_TEENSY_PIN = 32
+    // .VREF_TEENSY_PIN = OUTPUT_D_VREF,
+    // .ENABLE_TEENSY_PIN = OUTPUT_D_ENABLE,
+    // .LIMIT_TEENSY_PIN = OUTPUT_D_LIMIT
   },
 };
 
@@ -409,16 +421,44 @@ void OutputPort::step_now(uint8_t direction, uint8_t signal_index){
 
 }
 
-void OutputPort::begin_reading_drive_current(float32_t amps_per_volt){
-  uint8_t VREF_PIN = port_info[port_number].VREF_TEENSY_PIN;
-  analog_vref.set_floor(0, 0);
-  analog_vref.set_ceiling(amps_per_volt * analog_vref.full_scale_volts, 1023);
-  analog_vref.map(&last_drive_current_reading_amps);
-  analog_vref.begin(VREF_PIN);
+// -- PERIPHERAL FUNCTIONS --
+
+void OutputPort::set_drive_current_gain(float32_t amps_per_volt){
+  drive_current_gain_amps_per_volt = amps_per_volt;
 }
 
-float32_t OutputPort::get_drive_current_amps(){
-  return last_drive_current_reading_amps;
+float32_t OutputPort::read_drive_current_amps(){
+  if(vref_is_configured){ //VREF is already configured
+    return last_drive_current_reading_amps;
+  }else{ //let's configure VREF
+    uint8_t VREF_PIN = port_info[port_number].VREF_TEENSY_PIN;
+    if(VREF_PIN != TEENSY_PIN_NULL){ //vref pin is valid
+      analog_vref.set_floor(0, 0);
+      analog_vref.set_ceiling(drive_current_gain_amps_per_volt * analog_vref.full_scale_volts, 1023);
+      analog_vref.map(&last_drive_current_reading_amps);
+      analog_vref.begin(VREF_PIN);
+      vref_is_configured = 1;
+      return 0;   
+    }else{
+      //This board config doesn't have a VREF_PIN on this port!
+      return -1;
+    }
+  }
+}
+
+float32_t OutputPort::read_drive_current_amps(float32_t drive_current_gain_amps_per_volt){
+  set_drive_current_gain(drive_current_gain_amps_per_volt);
+  return read_drive_current_amps();
+}
+
+void OutputPort::enable_driver(){
+  pinMode(port_info[port_number].ENABLE_TEENSY_PIN, OUTPUT); //we don't explicitly configure the output port as a driver, so we'll do it when the function is called.
+  digitalWrite(port_info[port_number].ENABLE_TEENSY_PIN, LOW);
+}
+
+void OutputPort::disable_driver(){
+  pinMode(port_info[port_number].ENABLE_TEENSY_PIN, OUTPUT);
+  digitalWrite(port_info[port_number].ENABLE_TEENSY_PIN, HIGH);
 }
 
 void iterate_across_all_output_ports(void (*target_function)(OutputPort*)){
