@@ -1,4 +1,4 @@
-#include "module_configurations.hpp"
+#include "configuration.hpp"
 #include "analog_in.hpp"
 #include "channels.hpp"
 #include "core.hpp"
