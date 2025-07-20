@@ -15,14 +15,15 @@ A part of the Mixing Metaphors Project
 #ifndef encoders_h //prevent importing twice
 #define encoders_h
 
-#define MAX_NUM_ENCODERS 2
+#define MAX_NUM_ENCODERS 3 //this is the most we can get out of a stepdance board (ENC1, ENC2, and INPUT_A)
 #define ENCODER_1 0
 #define ENCODER_2 1
+#define ENCODER_A 2 //the A stepdance input can double as a third encoder input
 
-#define ENCODER_1A_PIN  0
-#define ENCODER_1B_PIN  1
-#define ENCODER_2A_PIN  2
-#define ENCODER_2B_PIN  3
+struct encoder_info_struct{
+  uint8_t CHANNEL_A_TEENSY_PIN;
+  uint8_t CHANNEL_B_TEENSY_PIN;
+};
 
 class Encoder : public Plugin{
   public:
@@ -38,7 +39,9 @@ class Encoder : public Plugin{
     int32_t last_encoder_value = 0;
 
   private:
+    static const struct encoder_info_struct encoder_info[]; //stores configuration for all available encoder ports
     static QuadEncoder* all_encoders[MAX_NUM_ENCODERS];
+    void QuadEncoder_configure(uint8_t encoder_index); //applies the configuration stored in encoder_info[encoder_index] to the QuadEncoder object.
     QuadEncoder* quad_encoder; //pointer to the active quad encoder for this instance
     DecimalPosition* target_position = nullptr;
     Transmission* target_transmission = nullptr;
