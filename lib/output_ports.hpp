@@ -155,4 +155,7 @@ void transmit_frames_on_all_output_ports(); //transmits across all output ports
 
 void iterate_across_all_output_ports(void (*target_function)(OutputPort*)); // allows user code to iterate across all output ports
 
+void enable_drivers(); //enables drivers on all registered output ports
+void disable_drivers(); //enables drivers on all registered output ports
+
 #endif //output_ports_h

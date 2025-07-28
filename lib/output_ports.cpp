@@ -22,6 +22,8 @@ A part of the Mixing Metaphors Project
 // Registration
 OutputPort* registered_output_ports[NUM_AVAILABLE_OUTPUT_PORTS]; //stores all registered ports
 uint8_t num_registered_output_ports = 0; //tracks the number of registered output ports 
+OutputPort* all_output_ports[NUM_AVAILABLE_OUTPUT_PORTS]; //stores all ports. This includes ports that are NOT registered for execution on the frame.
+uint8_t num_output_ports = 0; //tracks the total number of output ports 
 
 // ---- MCU-LEVEL OUTPUT PORT CONFIGURATION INFO ----
 const struct output_port_info_struct OutputPort::port_info[] = {
@@ -294,6 +296,12 @@ void OutputPort::begin(uint8_t port_number, uint8_t output_format, uint8_t trans
   if(transmit_mode == OUTPUT_TRANSMIT_ON_FRAME){
     register_output_port();
   }
+
+  // add output port to all_output_ports, for executing functions across all ports
+  if(num_output_ports < NUM_AVAILABLE_OUTPUT_PORTS){
+    all_output_ports[num_output_ports] = this;
+    num_output_ports ++;
+  }
 }
 
 void OutputPort::transmit_frame(){
@@ -462,7 +470,21 @@ void OutputPort::disable_driver(){
 }
 
 void iterate_across_all_output_ports(void (*target_function)(OutputPort*)){
-  for(uint8_t output_port_index = 0; output_port_index < num_registered_output_ports; output_port_index++){
-    target_function(registered_output_ports[output_port_index]);
+  for(uint8_t output_port_index = 0; output_port_index < num_output_ports; output_port_index++){
+    target_function(all_output_ports[output_port_index]);
   }
+}
+
+void enable_drivers(){
+  //enables drivers on all output ports
+  for(uint8_t output_port_index = 0; output_port_index < num_output_ports; output_port_index++){
+    all_output_ports[output_port_index]->enable_driver();
+  }  
+}
+
+void disable_drivers(){
+  //disables drivers on all output ports
+  for(uint8_t output_port_index = 0; output_port_index < num_output_ports; output_port_index++){
+    all_output_ports[output_port_index]->disable_driver();
+  }    
 }

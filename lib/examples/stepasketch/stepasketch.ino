@@ -49,17 +49,13 @@ Button button_d1;
 PositionGenerator position_gen;
 
 void setup() {
-  // -- Enable the stepper motors --
-  // These lines will be replaced with a single function call soon.
-  pinMode(14, OUTPUT); //motor A enable
-  pinMode(13, OUTPUT); //motor B enable
-  digitalWrite(14, LOW); //enable motors
-  digitalWrite(13, LOW);
-
   // -- Configure and start the output ports --
   output_a.begin(OUTPUT_A); // "OUTPUT_A" specifies the physical port on the PCB for the output.
   output_b.begin(OUTPUT_B);
   output_c.begin(OUTPUT_C);
+
+  // Enable the output drivers
+  enable_drivers();
 
   // -- Configure and start the channels --
   channel_a.begin(&output_a, SIGNAL_E); // Connects the channel to the "E" signal on "output_a".
@@ -116,9 +112,9 @@ void loop() {
 }
 
 void pen_down(){
-  position_gen.go_absolute(-500, 2000);
+  position_gen.go_absolute(-200, 2000);
 }
 
 void pen_up(){
-  position_gen.go_absolute(500, 2000);
+  position_gen.go_absolute(200, 2000);
 }
