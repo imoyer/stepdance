@@ -97,6 +97,12 @@ void Channel::run(){
   // by generating a signal if a) there is a non-zero distance to the target, and
   // b) doing so would not violate the maximum pulse rate for the channel.
 
+  // 0. Update the target positions
+  input_target_position.pull(mode);
+  input_target_position_2.pull(mode);
+  input_target_position.update();
+  input_target_position_2.update();
+
   // 1. Increment the accumulator. This is used to determine if generating a pulse
   //    signal would exceed the maximum pulse frequency on the channel. 
   if(accumulator < 2*ACCUMULATOR_THRESHOLD){ //only bother incrementing if meaningful (avoids overruns)

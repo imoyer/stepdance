@@ -124,6 +124,8 @@ class BlockPort{
     // -- User Functions -- these are called within user code, not (just) the library
     void set_ratio(float world_units, float block_units);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
                                                             // conversion always happens within the write/read functions when data enters and exits the BlockPort
+    
+    void map(BlockPort *map_target); //maps this BlockPort's pipe to a target BlockPort
 
     // -- External Functions -- these are called outside the block that contains this BlockPort
     void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers
@@ -140,6 +142,11 @@ class BlockPort{
     void begin(volatile float64_t *target); //initializes the BlockPort
     void set_target(volatile float64_t *target); //sets a target variable for the BlockPort
     void update(); //called by the block, to update the target and the buffers. Note that this does not handle pulling or pushing, which must be done first or after update.
+    void set(float64_t value, uint8_t mode); //sets a new value for the target.
+    void reset(float64_t value); //resets the target, and updates buffers to reflect new value WITHOUT an incremental update.
+
+    void push(uint8_t mode); // pushes this BlockPort's buffer state to a target.
+    void pull(uint8_t mode); // pulls a target BlockPort's buffer state into this BlockPort's buffers. 
 
   private:
     volatile float64_t incremental_buffer = 0;
@@ -152,10 +159,11 @@ class BlockPort{
     inline float64_t convert_block_to_world_units(float64_t block_units){
       return block_units * world_to_block_ratio;
     }
-    
     inline float64_t convert_world_to_block_units(float64_t world_units){
       return world_units / world_to_block_ratio;
     }
+
+    BlockPort* target_BlockPort = nullptr;
 
 };
 

@@ -162,6 +162,10 @@ void BlockPort::set_ratio(float world_units, float block_units){
   world_to_block_ratio = static_cast<float64_t>(world_units / block_units);
 }
 
+void BlockPort::map(BlockPort *map_target){
+  target_BlockPort = map_target;
+}
+
 // - Library Functions -
 // These are intended to be called from other library components, e.g. other blocks interfacing with this Blockport
 
@@ -219,6 +223,49 @@ void BlockPort::update(){
     absolute_buffer += incremental_buffer; //update absolute buffer to reflect how we're about to set target
     incremental_buffer = absolute_buffer - *target; //update incremental buffer to reflect changes to target
     *target = absolute_buffer; //update target
+  }
+}
+
+void BlockPort::set(float64_t value, uint8_t mode){
+  update_has_run = true; //we set this to reflect that the buffers contain the current state of the target
+  if(mode == INCREMENTAL){
+    incremental_buffer = value;
+    *target += value;
+    absolute_buffer = *target;
+  }else{ //ABSOLUTE
+    incremental_buffer = value - *target;
+    absolute_buffer = value;
+    *target = value;
+  }
+}
+
+void BlockPort::reset(float64_t value){
+  //resets the target and absolute_buffer to a particular value, BUT clears increment_buffer
+  update_has_run = true;
+  incremental_buffer = 0;
+  absolute_buffer = value;
+  *target = value;
+}
+
+void BlockPort::push(uint8_t mode){
+  // pushes the buffer state of this BlockPort onto a target.
+  // Note that for pushing, we are using the incremental and absolute buffers slightly differently;
+  // we don't have the notion of pre and post- update, because these values are being set internally.
+
+  if(target_BlockPort != nullptr){
+    if(mode == INCREMENTAL){
+      target_BlockPort->write(convert_block_to_world_units(incremental_buffer), INCREMENTAL);
+    }else{
+      target_BlockPort->write(convert_block_to_world_units(absolute_buffer), ABSOLUTE);
+    }
+  }
+}
+
+void BlockPort::pull(uint8_t mode){
+  // pulls the buffer state of a target BlockPort onto this BlockPort
+  // THIS NEEDS TO BE CALLED BEFORE update();
+  if(target_BlockPort != nullptr){
+    write(target_BlockPort->read(mode), mode);
   }
 }
 
