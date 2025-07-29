@@ -16,7 +16,7 @@ A part of the Mixing Metaphors Project
 
 #define MAX_NUM_CHANNELS 10 //just to start with, until we need more.
 
-void drive_all_registered_channels(); //drives all registered channels to their target positions
+void run_all_registered_channels(); //drives all registered channels to their target positions
 void activate_channels(); //adds channels to the frame interrupt routine
 
 class Channel{
@@ -31,16 +31,15 @@ class Channel{
     void begin(); //channel with no output port
     void begin(OutputPort* target_output_port, uint8_t output_signal); //channel with an output port
     void set_max_pulse_rate(float max_pulses_per_sec); // sets the maximum allowable pulse rate
-    void drive_to_target(); //Drives the current position to the target position by one pulse, and generates a signal
+    void run(); //Drives the current position to the target position by one pulse, and generates a signal
     void pulse(int8_t direction); // generates a step pulse and releases a signal on the output port
-    void set_transmission_ratio(float input_units, float output_units); //sets the transmission ratio for all target and current position transmissions
+    void set_ratio(float channel_units, float input_units); //sets the transmission ratio for all target transmissions
     void invert_output(); //inverts the channel output direction
     void invert_output(bool invert);
 
-    // Public Objects
-    Transmission target_position_transmission; //provides a dimensional (i.e. with units) interface to target_position
-    Transmission target_position_2_transmission; //dimensional interface to target_position_2
-    Transmission current_position_transmission; //dimensional interface to current position
+    // BlockPorts
+    BlockPort input_target_position;
+    BlockPort input_target_position_2;
   
   private:
     // Constants

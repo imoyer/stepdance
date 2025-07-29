@@ -18,14 +18,14 @@ Channel* registered_channels[MAX_NUM_CHANNELS]; //stores all registered channels
 uint8_t num_registered_channels = 0; //tracks the number of registered channels
 
 // -- General Functions --
-void drive_all_registered_channels(){
+void run_all_registered_channels(){
   for(uint8_t channel_index = 0; channel_index < num_registered_channels; channel_index ++){
-    registered_channels[channel_index] ->drive_to_target();
+    registered_channels[channel_index] ->run();
   }
 }
 
 void activate_channels(){
-  add_function_to_frame(drive_all_registered_channels);
+  add_function_to_frame(run_all_registered_channels);
   add_function_to_frame(transmit_frames_on_all_output_ports);
 };
 
@@ -53,10 +53,9 @@ void Channel::set_max_pulse_rate(float max_pulses_per_sec){
   accumulator_velocity = (float)((float)ACCUMULATOR_THRESHOLD * pulses_per_tick);
 }
 
-void Channel::set_transmission_ratio(float input_units, float output_units){
-  target_position_transmission.set_ratio(input_units, output_units);
-  target_position_2_transmission.set_ratio(input_units, output_units);
-  current_position_transmission.set_ratio(input_units, output_units);
+void Channel::set_ratio(float input_units, float channel_units){
+  input_target_position.set_ratio(input_units, channel_units);
+  input_target_position.set_ratio(input_units, channel_units);
 }
 
 void Channel::begin(){
@@ -71,20 +70,17 @@ void Channel::begin(OutputPort* target_output_port, uint8_t output_signal){
   // target_output_port -- a pointer to an output port on which this channel will generate signals.
   //                       If nullptr, the channel will not register for updates.
   // output_signal -- a signal ID
-  
-  if(target_output_port == nullptr){ // no output port provided
-    initialize_state();
-  }else{
-    initialize_state();
+  initialize_state();
+
+  // Initialize BlockPorts
+  input_target_position.begin(&target_position);
+  input_target_position_2.begin(&target_position_2);
+
+  if(target_output_port != nullptr){ // an output port is provided
     this->target_output_port = target_output_port;
     this->output_signal = output_signal;
     register_channel(); //register channel with pulse generator
   }
-
-  // Initialize transmissions
-  target_position_transmission.begin(&target_position);
-  target_position_2_transmission.begin(&target_position_2);
-  current_position_transmission.begin(&current_position);
 }
 
 void Channel::register_channel(){
@@ -95,7 +91,7 @@ void Channel::register_channel(){
   } // NOTE: should add a return value if it works
 }
 
-void Channel::drive_to_target(){
+void Channel::run(){
   // This function should be called every signal frame period.
   // It attempts to drive the channel's current position to the target position,
   // by generating a signal if a) there is a non-zero distance to the target, and

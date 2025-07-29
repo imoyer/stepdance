@@ -158,8 +158,8 @@ BlockPort::BlockPort(){};
 
 // - User Functions -
 // These are intended to be called from user code
-void BlockPort::set_ratio(float block_units, float world_units){
-  block_to_world_ratio = static_cast<float64_t>(block_units / world_units);
+void BlockPort::set_ratio(float world_units, float block_units){
+  world_to_block_ratio = static_cast<float64_t>(world_units / block_units);
 }
 
 // - Library Functions -
@@ -199,7 +199,11 @@ float64_t BlockPort::read(uint8_t mode){
 
 // - Block Functions -
 // Called by the block that has instantiated this BlockPort.
-void BlockPort::set_target(float64_t *target){
+void BlockPort::begin(volatile float64_t *target){
+  set_target(target);
+}
+
+void BlockPort::set_target(volatile float64_t *target){
   this->target = target;
 }
 
@@ -210,7 +214,7 @@ void BlockPort::update(){
   }else{
     update_has_run = true; // flag that we've updated the buffer states
   }
-  
+
   if(target != nullptr){ //make sure we even have a target.
     absolute_buffer += incremental_buffer; //update absolute buffer to reflect how we're about to set target
     incremental_buffer = absolute_buffer - *target; //update incremental buffer to reflect changes to target

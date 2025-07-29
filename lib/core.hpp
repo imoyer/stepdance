@@ -122,12 +122,10 @@ class BlockPort{
     BlockPort();
 
     // -- User Functions -- these are called within user code, not (just) the library
-    void set_ratio(float block_units, float world_units);  // sets the ratio between block and world units, for automatic conversion. Default is 1.
+    void set_ratio(float world_units, float block_units);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
                                                             // conversion always happens within the write/read functions when data enters and exits the BlockPort
 
     // -- External Functions -- these are called outside the block that contains this BlockPort
-    void set_target(float64_t *target); //sets a target variable for e.g. the get function
-    
     void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers
 
     float64_t read(uint8_t mode); // externally reads the BlockPort's target via the BlockPort buffers.
@@ -139,6 +137,8 @@ class BlockPort{
     float64_t read_now(); //reads directly from the target
 
     // -- Internal Functions -- called by the block containing this BlockPort
+    void begin(volatile float64_t *target); //initializes the BlockPort
+    void set_target(volatile float64_t *target); //sets a target variable for the BlockPort
     void update(); //called by the block, to update the target and the buffers. Note that this does not handle pulling or pushing, which must be done first or after update.
 
   private:
@@ -146,15 +146,15 @@ class BlockPort{
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
 
-    float64_t* target = nullptr;
-    float64_t block_to_world_ratio = 1;
+    volatile float64_t* target = nullptr;
+    float64_t world_to_block_ratio = 1;
     
     inline float64_t convert_block_to_world_units(float64_t block_units){
-      return block_units / block_to_world_ratio;
+      return block_units * world_to_block_ratio;
     }
     
     inline float64_t convert_world_to_block_units(float64_t world_units){
-      return block_to_world_ratio * world_units;
+      return world_units / world_to_block_ratio;
     }
 
 };
