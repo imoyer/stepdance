@@ -1,3 +1,30 @@
+// -- BlockPort Scraps --
+
+// float64_t BlockPort::get(uint8_t mode){
+//   // Internally reads the incremental or absolute buffers
+//   // This is an alternative method that a block can have more fine-grained control over accessing values in the BlockPort
+
+//   if(mode == INCREMENTAL){
+//     incremental_buffer_is_read = true; //flags that the buffer has been internally read.
+//     return incremental_buffer;
+//   }else{
+//     absolute_buffer_is_written = false; //flags that we've read the absolute buffer
+//     return absolute_buffer;
+//   }
+// }
+
+// void BlockPort::set(float64_t value, uint8_t mode){
+//   // Internally updates the value of buffers
+//   if(mode == INCREMENTAL){
+//     incremental_buffer = value;
+//   }else{
+//     absolute_buffer = value;
+//   }
+// }
+
+
+
+
 // -- Block Port Class --
 // Block ports are used to provide inputs and outputs between component blocks.
 class BlockInput;

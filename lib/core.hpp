@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <stdint.h>
 #include <functional>
 #include "arm_math.h"
@@ -125,19 +126,37 @@ class BlockPort{
                                                             // conversion always happens within the write/read functions when data enters and exits the BlockPort
 
     // -- External Functions -- these are called outside the block that contains this BlockPort
-    void write(float64_t value, uint8_t mode); // externally updates the BlockPort's absolute or incremental buffers
-    float64_t read(uint8_t mode); // externally reads the BlockPort's absolute or incremental buffers
+    void set_target(float64_t *target); //sets a target variable for e.g. the get function
+    
+    void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers
+
+    float64_t read(uint8_t mode); // externally reads the BlockPort's target via the BlockPort buffers.
+                                  // an incremental read will reflect the change to the target, either pending or after the block has run.
+                                  // an absolute read will reflect the upcoming or last state of the target, depending on whether the block has run.
+                                  // In some cases this function can be overridden by a custom read function.
+
+    void write_now(float64_t); //writes directly to the target. REMEMBER TO UPDATE ABSOLUTE_BUFFER AT SAME TIME.
+    float64_t read_now(); //reads directly from the target
 
     // -- Internal Functions -- called by the block containing this BlockPort
-    void set_absolute(float64_t value); //internally writes the absolute buffer's value
-    float64_t get(uint8_t mode); //internally reads the BlockPort's absolute or incremental buffers
+    void update(); //called by the block, to update the target and the buffers. Note that this does not handle pulling or pushing, which must be done first or after update.
 
   private:
     volatile float64_t incremental_buffer = 0;
-    volatile float64_t absolute_buffer = 0;
-    volatile bool incremental_buffer_is_read = false;
+    volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
+    volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
 
+    float64_t* target = nullptr;
     float64_t block_to_world_ratio = 1;
+    
+    inline float64_t convert_block_to_world_units(float64_t block_units){
+      return block_units / block_to_world_ratio;
+    }
+    
+    inline float64_t convert_world_to_block_units(float64_t world_units){
+      return block_to_world_ratio * world_units;
+    }
+
 };
 
 

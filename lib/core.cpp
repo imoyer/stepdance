@@ -156,46 +156,66 @@ void Plugin::run_loop_plugins(){
 // -- BLOCKPORT --
 BlockPort::BlockPort(){};
 
+// - User Functions -
+// These are intended to be called from user code
+void BlockPort::set_ratio(float block_units, float world_units){
+  block_to_world_ratio = static_cast<float64_t>(block_units / world_units);
+}
+
+// - Library Functions -
+// These are intended to be called from other library components, e.g. other blocks interfacing with this Blockport
+
 void BlockPort::write(float64_t value, uint8_t mode){
-  // externally updates the incremental or absolute buffers
+  if(update_has_run){
+    update_has_run = false;
+    incremental_buffer = 0;
+  }
   if(mode == INCREMENTAL){
-    if(incremental_buffer_is_read){ //if this buffer has been read internally, then we assume it's being set by a new frame, so we clear it first.
-      incremental_buffer = (value * block_to_world_ratio);
-      incremental_buffer_is_read = false;
-    }else{
-      incremental_buffer += (value * block_to_world_ratio);
-    }
-  }else{
-    absolute_buffer = (value * block_to_world_ratio);
+    incremental_buffer += convert_world_to_block_units(value);
+  }else{ //ABSOLUTE
+    absolute_buffer = convert_world_to_block_units(value);
   }
 }
 
 float64_t BlockPort::read(uint8_t mode){
-  // Externally reads the incremental or absolute buffers
-  if(mode == INCREMENTAL){
-    return (incremental_buffer / block_to_world_ratio);
+  if(update_has_run){
+    // we're post-update, so we can just return the buffers directly, because they reflect what's actually happened.
+    if(mode == INCREMENTAL){
+      return convert_block_to_world_units(incremental_buffer);
+    }else{
+      return convert_block_to_world_units(absolute_buffer);
+    }
   }else{
-    return (absolute_buffer / block_to_world_ratio);
+    // pre-update, so we provide an estimate of what the target state will be post-update.
+    if(mode == INCREMENTAL){
+      // We return an estimate of the CHANGE to target. 
+      return convert_block_to_world_units(incremental_buffer + (absolute_buffer - *target)); //this subtraction term will result in 0 if nothing has been written to the buffer
+
+    }else{ //ABSOLUTE
+      return convert_block_to_world_units(incremental_buffer + absolute_buffer);
+    }
   }
 }
 
-void BlockPort::set_absolute(float64_t value){
-  // Internally updates the value of the absolute_buffer
-  absolute_buffer = value;
+// - Block Functions -
+// Called by the block that has instantiated this BlockPort.
+void BlockPort::set_target(float64_t *target){
+  this->target = target;
 }
 
-float64_t BlockPort::get(uint8_t mode){
-  // Internally reads the incremental or absolute buffers
-  if(mode == INCREMENTAL){
-    incremental_buffer_is_read = true; //flags that the buffer has been internally read.
-    return incremental_buffer;
+void BlockPort::update(){
+  // Updates the state of the target based on the buffers, and vice-versa.
+  if(update_has_run){ //nothing has changed since the last update.
+    incremental_buffer = 0;
   }else{
-    return absolute_buffer;
+    update_has_run = true; // flag that we've updated the buffer states
   }
-}
-
-void BlockPort::set_ratio(float block_units, float world_units){
-  block_to_world_ratio = static_cast<float64_t>(block_units / world_units);
+  
+  if(target != nullptr){ //make sure we even have a target.
+    absolute_buffer += incremental_buffer; //update absolute buffer to reflect how we're about to set target
+    incremental_buffer = absolute_buffer - *target; //update incremental buffer to reflect changes to target
+    *target = absolute_buffer; //update target
+  }
 }
 
 // -- TRANSMISSION --
