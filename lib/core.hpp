@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <functional>
 #include "arm_math.h"
 #include "Arduino.h"
@@ -34,10 +35,18 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define SIGNAL_Z  4
 #define SIGNAL_E  5 // Extruder
 
+// Plugin Execution Context
 #define PLUGIN_FRAME_PRE_CHANNEL  0 //runs on the frame, before channels are evaluated
 #define PLUGIN_FRAME_POST_CHANNEL 1 //runs on the frame, after channels are evaluated
 #define PLUGIN_KILOHERTZ          2 //runs in an independent 1khz context
 #define PLUGIN_LOOP               3 //runs in the main loop
+
+// Block Mode
+// Throughout stepdance, there is a question of whether to operate incrementally or in absolute coordinates.
+// By default, we operate incrementally. But some modules require data to be in absolute values (e.g. non-linear functions)
+
+#define INCREMENTAL   0 //data is handled incrementally
+#define ABSOLUTE      1 //data is handled in absolute values
 
 void add_function_to_frame(frame_function_pointer target_function);
 void dance_start();
@@ -103,6 +112,34 @@ class Transmission{
     float64_t transfer_ratio = 1.0; // output_units/input_units. Initialize with a unity transfer ratio
     DecimalPosition *target;
 };
+
+// -- BlockPort --
+// BlockPorts provide a unified interface into and out of component blocks (i.e. "blocks")
+// These are designed to be flexibly used depending on the component to which they belong.
+class BlockPort{
+  public:
+    BlockPort();
+
+    // -- User Functions -- these are called within user code, not (just) the library
+    void set_ratio(float block_units, float world_units);  // sets the ratio between block and world units, for automatic conversion. Default is 1.
+                                                            // conversion always happens within the write/read functions when data enters and exits the BlockPort
+
+    // -- External Functions -- these are called outside the block that contains this BlockPort
+    void write(float64_t value, uint8_t mode); // externally updates the BlockPort's absolute or incremental buffers
+    float64_t read(uint8_t mode); // externally reads the BlockPort's absolute or incremental buffers
+
+    // -- Internal Functions -- called by the block containing this BlockPort
+    void set_absolute(float64_t value); //internally writes the absolute buffer's value
+    float64_t get(uint8_t mode); //internally reads the BlockPort's absolute or incremental buffers
+
+  private:
+    volatile float64_t incremental_buffer = 0;
+    volatile float64_t absolute_buffer = 0;
+    volatile bool incremental_buffer_is_read = false;
+
+    float64_t block_to_world_ratio = 1;
+};
+
 
 // -- LOOP FUNCTION AND CLASSES --
 // These allow non-blocking functions to be called within the loop, at an approximately given frequency.

@@ -153,6 +153,51 @@ void Plugin::run_loop_plugins(){
   }  
 }
 
+// -- BLOCKPORT --
+BlockPort::BlockPort(){};
+
+void BlockPort::write(float64_t value, uint8_t mode){
+  // externally updates the incremental or absolute buffers
+  if(mode == INCREMENTAL){
+    if(incremental_buffer_is_read){ //if this buffer has been read internally, then we assume it's being set by a new frame, so we clear it first.
+      incremental_buffer = (value * block_to_world_ratio);
+      incremental_buffer_is_read = false;
+    }else{
+      incremental_buffer += (value * block_to_world_ratio);
+    }
+  }else{
+    absolute_buffer = (value * block_to_world_ratio);
+  }
+}
+
+float64_t BlockPort::read(uint8_t mode){
+  // Externally reads the incremental or absolute buffers
+  if(mode == INCREMENTAL){
+    return (incremental_buffer / block_to_world_ratio);
+  }else{
+    return (absolute_buffer / block_to_world_ratio);
+  }
+}
+
+void BlockPort::set_absolute(float64_t value){
+  // Internally updates the value of the absolute_buffer
+  absolute_buffer = value;
+}
+
+float64_t BlockPort::get(uint8_t mode){
+  // Internally reads the incremental or absolute buffers
+  if(mode == INCREMENTAL){
+    incremental_buffer_is_read = true; //flags that the buffer has been internally read.
+    return incremental_buffer;
+  }else{
+    return absolute_buffer;
+  }
+}
+
+void BlockPort::set_ratio(float block_units, float world_units){
+  block_to_world_ratio = static_cast<float64_t>(block_units / world_units);
+}
+
 // -- TRANSMISSION --
 Transmission::Transmission(){};
 
