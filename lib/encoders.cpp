@@ -1,3 +1,4 @@
+#include "core_pins.h"
 #include "QuadEncoder.h"
 #include <stdint.h>
 #include "encoders.hpp"
@@ -33,6 +34,7 @@ void Encoder::begin(uint8_t encoder_index){
   QuadEncoder_configure(encoder_index);
   quad_encoder->setInitConfig();
   quad_encoder->init();
+  output.begin(&encoder_value); //will be interacting with encoder_value
   register_plugin();
 }
 
@@ -50,18 +52,6 @@ void Encoder::QuadEncoder_configure(uint8_t encoder_index){
   quad_encoder->disableInterrupts(_positionRUEnable);
 }
 
-void Encoder::map(DecimalPosition* target_position){
-  this->target_position = target_position;
-}
-
-void Encoder::map(Transmission* target_transmission){
-  this->target_transmission = target_transmission;
-}
-
-void Encoder::set_ratio(float input_units, float output_units){
-  transfer_ratio = static_cast<float64_t>(output_units / input_units);
-}
-
 void Encoder::invert(){
   invert_flag ^= 1;
 }
@@ -77,23 +67,22 @@ void Encoder::reset(){
 void Encoder::set(int32_t value){
   if(invert_flag){
     quad_encoder->write(-value);
+    output.reset(-value);
   }else{
     quad_encoder->write(value);
+    output.reset(value);
   }
 }
 
+void Encoder::set_ratio(float output_units, float encoder_units){
+  output.set_ratio(output_units, encoder_units);
+}
+
 void Encoder::run(){
-  int32_t encoder_value = quad_encoder->read();
-  int32_t encoder_delta = encoder_value - last_encoder_value;
-  float64_t output_value = transfer_ratio * static_cast<float64_t>(encoder_delta);
+  int32_t encoder_reading = quad_encoder->read();
   if(invert_flag){
-    output_value *= -1;
+    encoder_reading *= -1;
   }
-  if(target_position != nullptr){
-    *target_position += output_value;
-  }
-  if(target_transmission != nullptr){
-    target_transmission->increment(output_value);
-  }
-  last_encoder_value = encoder_value;
+  output.set(static_cast<float64_t>(encoder_reading), ABSOLUTE);
+  output.push(this->mode);
 }

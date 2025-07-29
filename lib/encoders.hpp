@@ -29,24 +29,23 @@ class Encoder : public Plugin{
   public:
     Encoder();
     void begin(uint8_t encoder_index);
-    void map(DecimalPosition* target_position); //can target a position register directly
-    void map(Transmission* target_transmission); //or can target a transmission
-    void set_ratio(float input_units, float output_units); //sets the transmission ratio
     void invert();
     int32_t read(); //directly reads the instantaneous encoder value
     void reset(); //resets the encoder value to zero
     void set(int32_t value); //resets the encoder value to a provided value
-    int32_t last_encoder_value = 0;
+    void set_ratio(float output_units, float encoder_units);
+
+    // BlockPorts
+    BlockPort output;
 
   private:
     static const struct encoder_info_struct encoder_info[]; //stores configuration for all available encoder ports
     static QuadEncoder* all_encoders[MAX_NUM_ENCODERS];
     void QuadEncoder_configure(uint8_t encoder_index); //applies the configuration stored in encoder_info[encoder_index] to the QuadEncoder object.
     QuadEncoder* quad_encoder; //pointer to the active quad encoder for this instance
-    DecimalPosition* target_position = nullptr;
-    Transmission* target_transmission = nullptr;
-    float64_t transfer_ratio = 1.0;
     uint8_t invert_flag = 0;
+    DecimalPosition encoder_value; //stores the encoder position as a DecimalPosition. This gets updated at the beginning of each call to run();
+    uint8_t mode = INCREMENTAL;
 
   protected:
     void run();
