@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <sys/types.h>
+#include "arm_math.h"
 /*
 Generators Module of the StepDance Control System
 
@@ -54,21 +57,21 @@ class PositionGenerator : public Plugin{
 
   public:
     PositionGenerator();
-    volatile DecimalPosition target_position = 0;
-    volatile DecimalPosition current_position = 0;
-    volatile ControlParameter max_speed_units_per_sec = 0; // generation velocity
+
     void begin();
-    void map(Transmission* target_transmission);
-    void set_max_speed(ControlParameter max_speed);
-    void go_incremental(DecimalPosition distance); //Provides a direct interface to incrementing the target position
-    void go_incremental(DecimalPosition distance, ControlParameter max_speed);
-    void go_absolute(DecimalPosition target_position); //Direct position setting interface
-    void go_absolute(DecimalPosition target_position, ControlParameter max_speed);
-    // void go_coupled(DecimalPosition target_position); //drives to a position based on the current position of the downstream output transmission
-    Transmission input_transmission;  //direct transmission interface to the target position
+    void set_speed(ControlParameter speed);
+    void go(float64_t distance_or_position, uint8_t mode);
+    void go(float64_t distance_or_position, uint8_t mode, ControlParameter speed);
+
+    DecimalPosition target_position = 0;
+    DecimalPosition current_position = 0;
+    volatile ControlParameter speed_units_per_sec = 0; // generation velocity. This will be used if not explicitly provided by the call to go()
+
+    // BlockPorts
+    BlockPort output;
 
   private:
-    Transmission* output_transmission = nullptr;
+    uint8_t mode = INCREMENTAL;
   
   protected:
     void run();

@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "arm_math.h"
 #include "generators.hpp"
 /*
@@ -87,56 +88,46 @@ void VelocityGenerator::run(){
 PositionGenerator::PositionGenerator(){};
 
 void PositionGenerator::begin(){
-  input_transmission.begin(&target_position); //configure input transmission as interface to target_position
+  output.begin(&current_position); //configure input transmission as interface to target_position
   register_plugin();
 }
 
-void PositionGenerator::map(Transmission* target_transmission){
-  output_transmission = target_transmission;
+void PositionGenerator::set_speed(ControlParameter speed){
+  speed_units_per_sec = speed;
 }
 
-void PositionGenerator::go_incremental(DecimalPosition distance){
-  go_incremental(distance, max_speed_units_per_sec);
+void PositionGenerator::go(float64_t distance_or_position, uint8_t mode){
+  go(distance_or_position, mode, speed_units_per_sec);
 }
 
-void PositionGenerator::go_incremental(DecimalPosition distance, ControlParameter max_speed){
-  max_speed_units_per_sec = max_speed;
-  input_transmission.increment(distance);
+void PositionGenerator::go(float64_t distance_or_position, uint8_t mode, ControlParameter speed){
+  speed_units_per_sec = speed;
+  if(mode == INCREMENTAL){
+    target_position += distance_or_position;
+  }else{ //ABSOLUTE
+    target_position = distance_or_position;
+  }
 }
 
-void PositionGenerator::go_absolute(DecimalPosition target_position){
-  go_absolute(target_position, max_speed_units_per_sec);
-}
-
-void PositionGenerator::go_absolute(DecimalPosition target_position, ControlParameter max_speed){
-  max_speed_units_per_sec = max_speed;
-  input_transmission.set(target_position);
-}
-
-void PositionGenerator::set_max_speed(ControlParameter max_speed){
-  max_speed_units_per_sec = max_speed;
-}
 
 void PositionGenerator::run(){
   float64_t delta_position = target_position - current_position;
   float64_t max_distance_this_frame;
 
-  // clamp delta to maximum distance imposed by velocity limit
+  // clamp delta to maximum distance imposed by velocity
   if(delta_position>=0){
-    max_distance_this_frame = max_speed_units_per_sec * CORE_FRAME_PERIOD_S;
+    max_distance_this_frame = speed_units_per_sec * CORE_FRAME_PERIOD_S;
     if(delta_position > max_distance_this_frame){
       delta_position = max_distance_this_frame;
     }
   }else{
-    max_distance_this_frame = -max_speed_units_per_sec * CORE_FRAME_PERIOD_S;
+    max_distance_this_frame = -speed_units_per_sec * CORE_FRAME_PERIOD_S;
     if(delta_position < max_distance_this_frame){
       delta_position = max_distance_this_frame;
     }
   }
 
-  if(output_transmission != nullptr){
-    output_transmission->increment(delta_position);
-  }
+  output.set(delta_position, INCREMENTAL); // this updates the current position
 
-  current_position += delta_position;
+  output.push(mode);
 }
