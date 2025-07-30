@@ -1,3 +1,4 @@
+#include <cmath>
 #include <stdint.h>
 #include "arm_math.h"
 #include "generators.hpp"
@@ -68,6 +69,7 @@ void CircleGenerator::run(){
   }
 }
 
+// -- VELOCITY GENERATOR --
 VelocityGenerator::VelocityGenerator(){};
 
 void VelocityGenerator::begin(){
@@ -80,6 +82,7 @@ void VelocityGenerator::run(){
   output.push();
 }
 
+// -- POSITION GENERATOR --
 PositionGenerator::PositionGenerator(){};
 
 void PositionGenerator::begin(){
@@ -123,6 +126,56 @@ void PositionGenerator::run(){
   }
 
   output.set(delta_position, INCREMENTAL); // this updates the current position
+
+  output.push();
+}
+
+// -- 1D Ratio Generator --
+RatioGenerator1D::RatioGenerator1D(){};
+
+void RatioGenerator1D::begin(){
+  input.begin(&input_position);
+  output.begin(&output_position);
+  register_plugin();
+}
+
+void RatioGenerator1D::set_ratio(ControlParameter ratio){
+  this->ratio = ratio;
+}
+
+void RatioGenerator1D::run(){
+  input.pull();
+  input.update();
+
+  output.set(input_position * ratio);
+  output.push();
+}
+
+// -- 2D Ratio Generator --
+RatioGenerator2D::RatioGenerator2D(){};
+
+void RatioGenerator2D::begin(){
+  input_1.begin(&input_1_position);
+  input_2.begin(&input_2_position);
+  output.begin(&output_position);
+  register_plugin();
+}
+
+void RatioGenerator2D::set_ratio(ControlParameter ratio){
+  this->ratio = ratio;
+}
+
+void RatioGenerator2D::run(){
+  input_1.pull();
+  input_2.pull();
+  input_1.update();
+  input_2.update();
+
+  // below was a bit tricky. pull() defaults to incremental, which reads an incremental change, which it then uses to increment input_1_position. But
+  // input_1_position is cumulative. If we want to calculate based on changes to input_1, the most speed-efficient way is to read the incremental buffers
+  // directly. Since we're in the block, let's consider this OK, rather than using a read() call.
+  float64_t distance = std::sqrt((input_1.incremental_buffer * input_1.incremental_buffer) + (input_2.incremental_buffer * input_2.incremental_buffer));
+  output.set(distance * ratio, INCREMENTAL);
 
   output.push();
 }

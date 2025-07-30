@@ -51,7 +51,6 @@ class VelocityGenerator : public Plugin{
 class PositionGenerator : public Plugin{
   // This position generator maintains its own internal state, and will incrementally drive an output transmission to achieve
   // a particular value of its internal position state under the constraints of a maximum velocity.
-  // We do also provide a "go_coupled" function, which will drive to a particular downstream position based on the output transmission.
 
   public:
     PositionGenerator();
@@ -61,13 +60,71 @@ class PositionGenerator : public Plugin{
     void go(float64_t distance_or_position, uint8_t mode);
     void go(float64_t distance_or_position, uint8_t mode, ControlParameter speed);
 
-    DecimalPosition target_position = 0;
-    DecimalPosition current_position = 0;
     volatile ControlParameter speed_units_per_sec = 0; // generation velocity. This will be used if not explicitly provided by the call to go()
 
     // BlockPorts
     BlockPort output;
-  
+
+  private:
+    DecimalPosition target_position = 0;
+    DecimalPosition current_position = 0;
+
+  protected:
+    void run();
+};
+
+class RatioGenerator1D : public Plugin{
+  // Generates an output signal in proportion to one input signal.
+
+  public:
+    RatioGenerator1D();
+
+    void begin();
+    void set_ratio(ControlParameter ratio);
+    inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
+      set_ratio(output_distance / input_distance);
+    }
+
+    ControlParameter ratio = 1.0; // output / input
+
+    // BlockPorts
+    BlockPort input;
+    BlockPort output;
+
+  private:
+    DecimalPosition input_position;
+    DecimalPosition output_position; 
+
+  protected:
+    void run();
+};
+
+class RatioGenerator2D : public Plugin{
+  // Generates an output signal in proportion to the linear distance traversed by two inputs.
+
+  public:
+    RatioGenerator2D();
+
+    void begin();
+    void set_ratio(ControlParameter ratio);
+    inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
+      set_ratio(output_distance / input_distance);
+    }
+
+    ControlParameter ratio = 1.0; // output / input
+
+    // BlockPorts
+    BlockPort input_1;
+    BlockPort input_2;
+    BlockPort output;
+
+    DecimalPosition input_1_position;
+    DecimalPosition input_2_position;
+    DecimalPosition output_position;
+
+  private:
+
+
   protected:
     void run();
 };
