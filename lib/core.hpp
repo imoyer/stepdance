@@ -1,3 +1,4 @@
+#include <sys/_stdint.h>
 #include <cstddef>
 #include <stdint.h>
 #include <functional>
@@ -125,7 +126,10 @@ class BlockPort{
     void set_ratio(float world_units, float block_units);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
                                                             // conversion always happens within the write/read functions when data enters and exits the BlockPort
     
-    void map(BlockPort *map_target); //maps this BlockPort's pipe to a target BlockPort
+    void map(BlockPort *map_target, uint8_t mode); //maps this BlockPort's pipe to a target BlockPort
+    inline void map(BlockPort *map_target){
+      map(map_target, INCREMENTAL); //default internal mode is INCREMENTAL
+    }
 
     // -- External Functions -- these are called outside the block that contains this BlockPort
     void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers
@@ -149,12 +153,21 @@ class BlockPort{
     void reset(float64_t value); //resets the target, and updates buffers to reflect new value WITHOUT an incremental update.
 
     void push(uint8_t mode); // pushes this BlockPort's buffer state to a target.
-    void pull(uint8_t mode); // pulls a target BlockPort's buffer state into this BlockPort's buffers. 
+    inline void push(){
+      push(this->mode); //uses internal mode
+    }
+
+    void pull(uint8_t mode); // pulls a target BlockPort's buffer state into this BlockPort's buffers.
+    inline void pull(){
+      pull(this->mode); //uses internal mode
+    }
+
 
   private:
     volatile float64_t incremental_buffer = 0;
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
+    uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
 
     volatile float64_t* target = nullptr;
     float64_t world_to_block_ratio = 1;

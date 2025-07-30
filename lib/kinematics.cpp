@@ -17,10 +17,6 @@ A part of the Mixing Metaphors Project
 KinematicsCoreXY::KinematicsCoreXY(){};
 
 void KinematicsCoreXY::begin(){
-  begin(INCREMENTAL);
-}
-
-void KinematicsCoreXY::begin(uint8_t mode){
   input_x.begin(&position_x);
   input_y.begin(&position_y);
   output_a.begin(&position_a);
@@ -30,15 +26,15 @@ void KinematicsCoreXY::begin(uint8_t mode){
 }
 
 void KinematicsCoreXY::run(){
-  input_x.pull(mode);
-  input_y.pull(mode);
+  input_x.pull();
+  input_y.pull();
   input_x.update();
   input_y.update();
   
   output_a.set(position_x + position_y);
   output_b.set(position_x - position_y);
-  output_a.push(mode);
-  output_b.push(mode);
+  output_a.push();
+  output_b.push();
 }
 
 // DecimalPosition KinematicsCoreXY::get_position_x(){
@@ -56,81 +52,28 @@ void KinematicsCoreXY::run(){
 KinematicsPolarToCartesian::KinematicsPolarToCartesian(){};
 
 void KinematicsPolarToCartesian::begin(){
-  begin(KINEMATICS_MODE_INCREMENTAL, nullptr, nullptr);
-}
-
-void KinematicsPolarToCartesian::begin(uint8_t mode){
-  begin(mode, nullptr, nullptr);
-}
-
-void KinematicsPolarToCartesian::begin(Transmission *output_transmission_x, Transmission *output_transmission_y){
-  begin(KINEMATICS_MODE_INCREMENTAL, output_transmission_x, output_transmission_y);
-}
-
-void KinematicsPolarToCartesian::begin(uint8_t mode, Transmission *output_transmission_x, Transmission *output_transmission_y){
-  this->mode = mode;
-  if(output_transmission_x != nullptr){ //allows map() to be called before begin, if begin has no parameters.
-    map(POLAR_OUTPUT_X, output_transmission_x);
-  }
-  if(output_transmission_y != nullptr){
-    map(POLAR_OUTPUT_Y, output_transmission_y);
-  }
-  input_transmission_r.begin(&input_position_r);
-  // input_transmission_r.get_function = std::bind(&KinematicsPolarToCartesian::get_position_r, this);
-  input_transmission_t.begin(&input_position_t);
-  // input_transmission_t.get_function = std::bind(&KinematicsPolarToCartesian::get_position_t, this);
-  reset();
+  input_radius.begin(&position_r);
+  input_angle.begin(&position_a);
+  output_x.begin(&position_x);
+  output_y.begin(&position_y);
   register_plugin();
 }
 
 void KinematicsPolarToCartesian::reset(){
-  input_position_r = 0;
-  input_position_t = 0;
-}
-
-void KinematicsPolarToCartesian::map(uint8_t output_index, Transmission* target_transmission){
-  output_transmissions[output_index] = target_transmission;
 }
 
 void KinematicsPolarToCartesian::run(){
-  if(mode == KINEMATICS_MODE_INCREMENTAL){ 
-    // Get current X and Y positions
-    float64_t current_x = output_transmissions[POLAR_OUTPUT_X]->get();
-    float64_t current_y = output_transmissions[POLAR_OUTPUT_Y]->get();
+  //update radius and angle positions
+  input_angle.pull();
+  input_radius.pull();
+  input_angle.update();
+  input_radius.update();
 
-    // Convert to R and T
-    float64_t current_r = std::sqrt(std::pow(current_x, 2) + std::pow(current_y, 2));
-    float64_t current_t = atan2(current_y, current_x);
+  float64_t angle_reduced = std::remainder(position_a, TWO_PI); // Reduce current_t to range of 2 PI; I believe this may speed up sin and cos functions...
 
-    // Increment based on inputs
-    current_r += input_position_r;
-    current_t += input_position_t;
+  output_x.set(position_r * std::cos(angle_reduced));
+  output_y.set(position_r * std::sin(angle_reduced));
 
-    // Reduce current_t to range of 2 PI; I believe this may speed up sin and cos functions...
-    current_t = std::remainder(current_t, TWO_PI);
-
-    float64_t target_x = current_r * std::cos(current_t);
-    float64_t target_y = current_r * std::sin(current_t);
-
-    float64_t delta_x = target_x - current_x;
-    float64_t delta_y = target_y - current_y;
-    output_transmissions[POLAR_OUTPUT_X]->increment(delta_x);
-    output_transmissions[POLAR_OUTPUT_Y]->increment(delta_y);
-
-    input_position_r = 0.0;
-    input_position_t = 0.0;
-  
-  }else if (mode == KINEMATICS_MODE_ABSOLUTE){
-    //todo
-  }
-}
-
-DecimalPosition KinematicsPolarToCartesian::get_position_r(){
-  //todo
-  return 0;
-}
-
-DecimalPosition KinematicsPolarToCartesian::get_position_t(){
-  //todo
-  return 0;
+  output_x.push();
+  output_y.push();
 }

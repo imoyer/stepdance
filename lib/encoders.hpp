@@ -45,7 +45,6 @@ class Encoder : public Plugin{
     QuadEncoder* quad_encoder; //pointer to the active quad encoder for this instance
     uint8_t invert_flag = 0;
     DecimalPosition encoder_value; //stores the encoder position as a DecimalPosition. This gets updated at the beginning of each call to run();
-    uint8_t mode = INCREMENTAL;
 
   protected:
     void run();

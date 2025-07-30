@@ -41,10 +41,8 @@ class VelocityGenerator : public Plugin{
     VelocityGenerator();
     volatile ControlParameter speed_units_per_sec = 0; // generation velocity
     void begin();
-    void map(Transmission* target_transmission);
-
-  private:
-    Transmission* output_transmission = nullptr;
+    BlockPort output;
+    DecimalPosition target_position = 0;
   
   protected:
     void run();
@@ -69,9 +67,6 @@ class PositionGenerator : public Plugin{
 
     // BlockPorts
     BlockPort output;
-
-  private:
-    uint8_t mode = INCREMENTAL;
   
   protected:
     void run();

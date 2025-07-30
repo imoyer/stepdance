@@ -98,8 +98,8 @@ void Channel::run(){
   // b) doing so would not violate the maximum pulse rate for the channel.
 
   // 0. Update the target positions
-  input_target_position.pull(mode);
-  input_target_position_2.pull(mode);
+  input_target_position.pull();
+  input_target_position_2.pull();
   input_target_position.update();
   input_target_position_2.update();
 

@@ -84,5 +84,5 @@ void Encoder::run(){
     encoder_reading *= -1;
   }
   output.set(static_cast<float64_t>(encoder_reading));
-  output.push(this->mode);
+  output.push();
 }

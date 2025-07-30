@@ -17,8 +17,7 @@ A part of the Mixing Metaphors Project
 class KinematicsCoreXY : public Plugin{
   public:
     KinematicsCoreXY();
-    void begin(); //defaults to incremental mode
-    void begin(uint8_t mode);
+    void begin();
 
     // BlockPorts
     BlockPort input_x;
@@ -27,7 +26,6 @@ class KinematicsCoreXY : public Plugin{
     BlockPort output_b;
 
   private:
-    uint8_t mode;
     volatile DecimalPosition position_x = 0; //internal registers to store state positions
     volatile DecimalPosition position_y = 0;
     volatile DecimalPosition position_a = 0;
@@ -40,32 +38,24 @@ class KinematicsCoreXY : public Plugin{
     void run();
 };
 
-#define POLAR_NUM_OUTPUTS 2
-#define KINEMATICS_MODE_INCREMENTAL 0
-#define KINEMATICS_MODE_ABSOLUTE 1
-#define POLAR_OUTPUT_X 0
-#define POLAR_OUTPUT_Y 1
-
 class KinematicsPolarToCartesian : public Plugin{
   public:
     KinematicsPolarToCartesian();
-    void begin(); //defaults to incremental mode
-    void begin(uint8_t mode);
-    void begin(Transmission *output_transmission_x, Transmission *output_transmission_y);
-    void begin(uint8_t mode, Transmission *output_transmission_x, Transmission *output_transmission_y);
+    void begin();
     void reset(); //resets the internal state
-    void map(uint8_t output_index, Transmission* target_transmission); //maps an output to a target transmission
-    Transmission input_transmission_r; //transmissions to work externally with internal r and t positions
-    Transmission input_transmission_t;
+    void solve_kinematics(); //solves the relationship between r-t and x-y.
+                              // we do this outside run() so that it can be called during a state reset.
+    
+    BlockPort input_radius;
+    BlockPort input_angle;
+    BlockPort output_x;
+    BlockPort output_y;
 
   private:
-    uint8_t mode;
-    volatile DecimalPosition input_position_r; //internal registers to store target x and y positions
-    volatile DecimalPosition input_position_t;
-    DecimalPosition get_position_r();
-    DecimalPosition get_position_t();
-
-    Transmission* output_transmissions[POLAR_NUM_OUTPUTS]; //pointers to the output transmissions
+    DecimalPosition position_r = 0;
+    DecimalPosition position_a = 0;
+    DecimalPosition position_x = 0;
+    DecimalPosition position_y = 0;
 
   protected:
     void run();

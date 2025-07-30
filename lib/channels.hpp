@@ -51,8 +51,7 @@ class Channel{
     OutputPort* target_output_port; //stores the target output port
     uint8_t output_signal = SIGNAL_X; //default to signal X
     uint8_t output_inverted = 0; //if 1, will invert the output direction of the channel
-    uint8_t mode = INCREMENTAL; //used for pulling
-    
+
     // Private State
     volatile float accumulator;
     volatile float accumulator_velocity;

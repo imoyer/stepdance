@@ -71,18 +71,13 @@ void CircleGenerator::run(){
 VelocityGenerator::VelocityGenerator(){};
 
 void VelocityGenerator::begin(){
+  output.begin(&target_position);
   register_plugin();
 }
 
-void VelocityGenerator::map(Transmission* target_transmission){
-  output_transmission = target_transmission;
-}
-
 void VelocityGenerator::run(){
-  float64_t delta = speed_units_per_sec * CORE_FRAME_PERIOD_S;
-  if(output_transmission != nullptr){
-    output_transmission->increment(delta);
-  }
+  output.set(speed_units_per_sec * CORE_FRAME_PERIOD_S, INCREMENTAL);
+  output.push();
 }
 
 PositionGenerator::PositionGenerator(){};
@@ -129,5 +124,5 @@ void PositionGenerator::run(){
 
   output.set(delta_position, INCREMENTAL); // this updates the current position
 
-  output.push(mode);
+  output.push();
 }

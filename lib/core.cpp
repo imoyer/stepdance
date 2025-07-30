@@ -162,8 +162,9 @@ void BlockPort::set_ratio(float world_units, float block_units){
   world_to_block_ratio = static_cast<float64_t>(world_units / block_units);
 }
 
-void BlockPort::map(BlockPort *map_target){
+void BlockPort::map(BlockPort *map_target, uint8_t mode){
   target_BlockPort = map_target;
+  this->mode = mode;
 }
 
 // - Library Functions -
