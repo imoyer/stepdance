@@ -14,52 +14,37 @@ A part of the Mixing Metaphors Project
 #ifndef kinematics_h //prevent importing twice
 #define kinematics_h
 
-// Kinematics Mode
-// If incremental, the kinematic module will:
-//  1) read the input positions
-//  2) convert them to output positions
-//  3) INCREMENT the target transmissions by these output positions
-//  4) clear the input positions
-//
-// If absolute, the kinematics module will:
-//  1) read the input positions
-//  2) convert them into output positions
-//  3) SET the target transmissions to these output positions
-#define KINEMATICS_MODE_INCREMENTAL   0
-#define KINEMATICS_MODE_ABSOLUTE      1
-
-#define COREXY_NUM_OUTPUTS 2
-#define COREXY_OUTPUT_A   0
-#define COREXY_OUTPUT_B   1
-
-#define POLAR_NUM_OUTPUTS 2
-#define POLAR_OUTPUT_X  0
-#define POLAR_OUTPUT_Y  1
-
 class KinematicsCoreXY : public Plugin{
   public:
     KinematicsCoreXY();
     void begin(); //defaults to incremental mode
     void begin(uint8_t mode);
-    void begin(Transmission *output_transmission_a, Transmission *output_transmission_b);
-    void begin(uint8_t mode, Transmission *output_transmission_a, Transmission *output_transmission_b);
-    void reset(); //resets the internal state
-    void map(uint8_t output_index, Transmission* target_transmission); //maps an output to a target transmission
-    Transmission input_transmission_x; //transmissions to work externally with internal x and y positions
-    Transmission input_transmission_y;
+
+    // BlockPorts
+    BlockPort input_x;
+    BlockPort input_y;
+    BlockPort output_a;
+    BlockPort output_b;
 
   private:
     uint8_t mode;
-    volatile DecimalPosition input_position_x; //internal registers to store target x and y positions
-    volatile DecimalPosition input_position_y;
-    DecimalPosition get_position_x(); // return current positions in input space, and override the input_transmission get() functions
-    DecimalPosition get_position_y();
+    volatile DecimalPosition position_x = 0; //internal registers to store state positions
+    volatile DecimalPosition position_y = 0;
+    volatile DecimalPosition position_a = 0;
+    volatile DecimalPosition position_b = 0;
 
-    Transmission* output_transmissions[COREXY_NUM_OUTPUTS] = {nullptr}; //pointers to the output transmissions
+    // DecimalPosition get_position_x(); // return current positions in input space, and override the input_transmission get() functions
+    // DecimalPosition get_position_y();
 
   protected:
     void run();
 };
+
+#define POLAR_NUM_OUTPUTS 2
+#define KINEMATICS_MODE_INCREMENTAL 0
+#define KINEMATICS_MODE_ABSOLUTE 1
+#define POLAR_OUTPUT_X 0
+#define POLAR_OUTPUT_Y 1
 
 class KinematicsPolarToCartesian : public Plugin{
   public:

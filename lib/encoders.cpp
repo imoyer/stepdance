@@ -83,6 +83,6 @@ void Encoder::run(){
   if(invert_flag){
     encoder_reading *= -1;
   }
-  output.set(static_cast<float64_t>(encoder_reading), ABSOLUTE);
+  output.set(static_cast<float64_t>(encoder_reading));
   output.push(this->mode);
 }
