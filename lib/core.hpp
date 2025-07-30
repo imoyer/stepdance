@@ -161,11 +161,10 @@ class BlockPort{
     inline void pull(){
       pull(this->mode); //uses internal mode
     }
-
-
-  private:
     volatile float64_t incremental_buffer = 0;
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
+
+  private:
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
     uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
 
