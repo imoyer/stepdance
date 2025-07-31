@@ -90,12 +90,12 @@ void loop() {
 }
 
 void button_press(){
-  channel_x.target_position += 10000;
-  channel_y.target_position -= 10000;
+  channel_x.input_target_position.write(10000, INCREMENTAL);
+  channel_y.input_target_position.write(-10000, INCREMENTAL);
   // channel_r.target_position += 10000;
   // channel_t.target_position -= 10000;
-  channel_z.target_position += 10000;
-  channel_e.target_position -= 10000;
+  channel_z.input_target_position.write(10000, INCREMENTAL);
+  channel_e.input_target_position.write(-10000, INCREMENTAL);
 }
 
 void report_input_values(){
