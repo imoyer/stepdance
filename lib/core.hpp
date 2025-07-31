@@ -50,6 +50,9 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define INCREMENTAL   0 //data is handled incrementally
 #define ABSOLUTE      1 //data is handled in absolute values
 
+#define MIN   0
+#define MAX   1
+
 void add_function_to_frame(frame_function_pointer target_function);
 void dance_start();
 
@@ -150,7 +153,7 @@ class BlockPort{
     inline void set(float64_t value){ //default for set is ABSOLUTE
       set(value, ABSOLUTE);
     };
-    void reset(float64_t value); //resets the target, and updates buffers to reflect new value WITHOUT an incremental update.
+    void reset(float64_t value, bool raw = false); //resets the target, and updates buffers to reflect new value WITHOUT an incremental update.
 
     void push(uint8_t mode); // pushes this BlockPort's buffer state to a target.
     inline void push(){
@@ -164,19 +167,19 @@ class BlockPort{
     volatile float64_t incremental_buffer = 0;
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
 
-  private:
-    volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
-    uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
-
-    volatile float64_t* target = nullptr;
-    float64_t world_to_block_ratio = 1;
-    
     inline float64_t convert_block_to_world_units(float64_t block_units){
       return block_units * world_to_block_ratio;
     }
     inline float64_t convert_world_to_block_units(float64_t world_units){
       return world_units / world_to_block_ratio;
     }
+
+  private:
+    volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
+    uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
+
+    volatile float64_t* target = nullptr;
+    float64_t world_to_block_ratio = 1;
 
     BlockPort* target_BlockPort = nullptr;
 
