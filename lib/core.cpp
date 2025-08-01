@@ -48,6 +48,8 @@ void on_frame(){
 // -- OVERALL SYSTEM --
 
 void dance_start(){
+  // activate input port plugins
+  add_function_to_frame(Plugin::run_input_port_frame_plugins);
   // activate all pre-channel frame plugins
   add_function_to_frame(Plugin::run_pre_channel_frame_plugins);
   // activate channels
@@ -76,6 +78,8 @@ void stepdance_metrics_reset(){
 
 // -- PLUGINS --
 Plugin::Plugin(){};
+uint8_t Plugin::num_registered_input_port_frame_plugins = 0;
+Plugin* Plugin::registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS];
 
 uint8_t Plugin::num_registered_pre_channel_frame_plugins = 0;
 Plugin* Plugin::registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS];
@@ -95,6 +99,13 @@ void Plugin::register_plugin(){ //default to pre-channel frame plugin
 
 void Plugin::register_plugin(uint8_t execution_target){
   switch(execution_target){
+    case PLUGIN_INPUT_PORT:
+      if(num_registered_input_port_frame_plugins < MAX_NUM_INPUT_PORT_FRAME_PLUGINS){
+        registered_input_port_frame_plugins[num_registered_input_port_frame_plugins] = this;
+        num_registered_input_port_frame_plugins ++;
+      }
+      break;
+
     case PLUGIN_FRAME_PRE_CHANNEL:
       if(num_registered_pre_channel_frame_plugins < MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS){
         registered_pre_channel_frame_plugins[num_registered_pre_channel_frame_plugins] = this;
@@ -128,6 +139,12 @@ void Plugin::register_plugin(uint8_t execution_target){
 void Plugin::run(){};
 
 void Plugin::loop(){};
+
+void Plugin::run_input_port_frame_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_input_port_frame_plugins; plugin_index++){
+    registered_input_port_frame_plugins[plugin_index]->run();
+  }
+}
 
 void Plugin::run_pre_channel_frame_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_pre_channel_frame_plugins; plugin_index++){
@@ -224,6 +241,15 @@ void BlockPort::update(){
     absolute_buffer += incremental_buffer; //update absolute buffer to reflect how we're about to set target
     incremental_buffer = absolute_buffer - *target; //update incremental buffer to reflect changes to target
     *target = absolute_buffer; //update target
+  }
+}
+
+void BlockPort::reverse_update(){
+  // Performs an update of the buffers based on direct changes made to the target position.
+  update_has_run = true;
+  if(target != nullptr){ //make sure we even have a target.
+    incremental_buffer = *target - absolute_buffer;
+    absolute_buffer = *target;
   }
 }
 

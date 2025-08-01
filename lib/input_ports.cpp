@@ -117,20 +117,18 @@ const struct input_port_info_struct InputPort::port_info[] = {
 InputPort::InputPort(){};
 
 void InputPort::begin(uint8_t port_number){
-  begin(port_number, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-}
-
-void InputPort::begin(uint8_t port_number, DecimalPosition* x_signal_target, DecimalPosition* y_signal_target, DecimalPosition* z_signal_target, DecimalPosition* e_signal_target, DecimalPosition* r_signal_target, DecimalPosition* t_signal_target){
   // store port number
   this->port_number = port_number;
 
-  // Set up target channels
-  map(SIGNAL_X, x_signal_target);
-  map(SIGNAL_Y, y_signal_target);
-  map(SIGNAL_Z, z_signal_target);
-  map(SIGNAL_E, e_signal_target);
-  map(SIGNAL_R, r_signal_target);
-  map(SIGNAL_T, t_signal_target);
+  // Set up output BlockPorts
+  output_x.begin(&position_x);
+  output_y.begin(&position_y);
+  output_r.begin(&position_r);
+  output_t.begin(&position_t);
+  output_z.begin(&position_z);
+  output_e.begin(&position_e);
+
+  // start with all signals enabled
   enable_all_signals();
 
   // configure teensy pins
@@ -224,14 +222,13 @@ void InputPort::begin(uint8_t port_number, DecimalPosition* x_signal_target, Dec
   NVIC_SET_PRIORITY(port_info[port_number].IRQ, 48); //we give it a high priority (low number), so we don't miss anything!
   NVIC_ENABLE_IRQ(port_info[port_number].IRQ);
   __enable_irq(); //re-enable interrupts
+  register_plugin(PLUGIN_INPUT_PORT);
 }
 
-void InputPort::map(uint8_t signal_index, DecimalPosition* signal_target){
-  signal_position_targets[signal_index] = signal_target;
-  if(signal_target != nullptr){
-    signal_enable_flags[signal_index] = INPUT_ENABLED;
-  }else{
-    signal_enable_flags[signal_index] = INPUT_DISABLED;
+void InputPort::run(){
+  // iterate over all outputs
+  for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
+    signal_BlockPort_targets[signal_index]->reverse_update(); //updates the buffers from the positional target
   }
 }
 
@@ -270,33 +267,28 @@ void InputPort::isr(){
 
   if((last_signal_index >= SIGNAL_X) && (last_signal_index <= SIGNAL_E)){ // check if signal index within range
     if(signal_enable_flags[last_signal_index]){ // check if signal is enabled
-      *signal_position_targets[last_signal_index] += dir; // increment or decrement based on direction
+      *(signal_BlockPort_targets[last_signal_index]->target) += dir; // increment or decrement based on direction
     }
   }
   // input_interrupt_cycles = ARM_DWT_CYCCNT - interrupt_entry_cycle_count;
 }
 
 void InputPort::enable_signal(uint8_t signal_index){
-  signal_enable_flags[signal_index] = INPUT_ENABLED;
+  signal_enable_flags[signal_index] = true;
 }
 
 void InputPort::disable_signal(uint8_t signal_index){
-  signal_enable_flags[signal_index] = INPUT_DISABLED;
+  signal_enable_flags[signal_index] = false;
 }
 
 void InputPort::enable_all_signals(){
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
-    // only enable signals that have a target channel
-    if(signal_position_targets[signal_index] != nullptr){
-      signal_enable_flags[signal_index] = INPUT_ENABLED;
-    }else{
-      signal_enable_flags[signal_index] = INPUT_DISABLED;
-    }
+    signal_enable_flags[signal_index] = true;
   }
 }
 
 void InputPort::disable_all_signals(){
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
-    signal_enable_flags[signal_index] = INPUT_DISABLED;
+    signal_enable_flags[signal_index] = false;
   }
 }

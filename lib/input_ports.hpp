@@ -28,9 +28,6 @@ A part of the Mixing Metaphors Project
 #define FLEXPWM_CHANNEL_A   1
 #define FLEXPWM_CHANNEL_B   2
 
-#define INPUT_DISABLED  0
-#define INPUT_ENABLED   1
-
 #define FLEXPWM_CLOCK_MHZ 150
 
 #define SIGNAL_MIN_WIDTH_US 2 //standard input format
@@ -52,17 +49,31 @@ struct input_port_info_struct{ //we use this structure to store hardware-specifi
   void (*STATIC_ISR)(); // interrupt service routine. This needs to be a static function. We do some acrobatics to be able to call class methods as ISRs.
 };
 
-class InputPort{
+class InputPort : public Plugin{
   public:
     InputPort();
     void begin(uint8_t port_number);
-    void begin(uint8_t port_number, DecimalPosition* x_signal_target, DecimalPosition* y_signal_target, DecimalPosition* z_signal_target, DecimalPosition* e_signal_target, DecimalPosition* r_signal_target, DecimalPosition* t_signal_target);
-    void map(uint8_t signal_index, DecimalPosition* signal_target); //maps a signal to a target DecimalPosition
     void enable_all_signals();
     void disable_all_signals();
     void enable_signal(uint8_t signal_index);
     void disable_signal(uint8_t signal_index);
     volatile uint32_t input_interrupt_cycles; //measures the number of cycles spent in each input interrupt routine.
+
+    // BlockPorts
+    BlockPort output_x; // 2us signal
+    BlockPort output_y; // 3us signal
+    BlockPort output_r; // 4us signal
+    BlockPort output_t; // 5us signal
+    BlockPort output_z; // 6us signal
+    BlockPort output_e; // 7us signal
+
+    // Input Position Registers
+    DecimalPosition position_x;
+    DecimalPosition position_y;
+    DecimalPosition position_r;
+    DecimalPosition position_t;
+    DecimalPosition position_z;
+    DecimalPosition position_e;
 
   private:
     // Configuration Parameters
@@ -78,8 +89,8 @@ class InputPort{
     volatile uint16_t last_pulse_width_count; //important that this is UINT16_T to calculate rollover correctly.
 
     // State Parameters
-    DecimalPosition *signal_position_targets[NUM_SIGNALS]; //pointers to target positions for each signal, e.g. a passthru might do X -> channel_x.target_position, Y-> channel_y
-    volatile uint8_t signal_enable_flags[NUM_SIGNALS]; // for each signal, 1 == enabled, and 0 == disabled
+    BlockPort *signal_BlockPort_targets[NUM_SIGNALS] = {&output_x, &output_y, &output_r, &output_t, &output_z, &output_e}; //pointers to BlockPorts, indexed by signal number
+    bool signal_enable_flags[NUM_SIGNALS] = {true, true, true};
 
     // Private Methods
     void isr(); //this is the actual ISR function
@@ -89,6 +100,9 @@ class InputPort{
     static void input_D_isr();
     static void input_B_legacy_isr();
     static void input_C_legacy_isr();
+
+  protected:
+    void run();
 };
 
 

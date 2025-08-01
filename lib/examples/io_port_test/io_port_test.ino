@@ -38,15 +38,6 @@ Channel channel_e;
 // -- Button to trigger test --
 Button button_d1;
 
-// -- Input Variables --
-// We'll use these to track whatever has been read in on the input port.
-DecimalPosition in_x = 0;
-DecimalPosition in_y = 0;
-DecimalPosition in_r = 0;
-DecimalPosition in_t = 0;
-DecimalPosition in_z = 0;
-DecimalPosition in_e = 0;
-
 // -- Input Port --
 InputPort input_port;
 
@@ -69,12 +60,6 @@ void setup() {
 
   // -- Configure and start the input port --
   input_port.begin(INPUT_A);
-  input_port.map(SIGNAL_X, &in_x);
-  input_port.map(SIGNAL_Y, &in_y);
-  input_port.map(SIGNAL_R, &in_r);
-  input_port.map(SIGNAL_T, &in_t);
-  input_port.map(SIGNAL_Z, &in_z);
-  input_port.map(SIGNAL_E, &in_e);
 
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
   button_d1.set_mode(BUTTON_MODE_STANDARD);
@@ -106,15 +91,15 @@ void button_press(){
 
 void report_input_values(){
   Serial.print("X: ");
-  Serial.print(in_x);
+  Serial.print(input_port.position_x);
   Serial.print(", Y: ");
-  Serial.print(in_y); 
+  Serial.print(input_port.position_y); 
   // Serial.print(", R: ");
-  // Serial.print(in_r);
+  // Serial.print(input_port.position_r);
   // Serial.print(", T: ");
-  // Serial.print(in_t);
+  // Serial.print(input_port.position_t);
   Serial.print(", Z: ");
-  Serial.print(in_z);
+  Serial.print(input_port.position_z);
   Serial.print(", E: ");
-  Serial.println(in_e);
+  Serial.println(input_port.position_e);
 }
