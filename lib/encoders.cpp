@@ -24,7 +24,7 @@ const struct encoder_info_struct Encoder::encoder_info[] = {
   },
   { 
     .CHANNEL_A_TEENSY_PIN = 4,
-    .CHANNEL_B_TEENSY_PIN = 6,
+    .CHANNEL_B_TEENSY_PIN = 7,
   }
 };
 
