@@ -12,6 +12,8 @@ A part of the Mixing Metaphors Project
                         // This configures pin assignments for the Teensy 4.1
 
 #include "stepdance.hpp"  // Import the stepdance library
+// -- Define Input Ports --
+InputPort input_a;
 
 // -- Define Output Ports --
 // Output ports generate step and direction electrical signals
@@ -61,17 +63,28 @@ void setup() {
   channel_a.begin(&output_a, SIGNAL_E); // Connects the channel to the "E" signal on "output_a".
                                         // We choose the "E" signal because it results in a step pulse of 7us,
                                         // which is more than long enough for the driver IC.
-  channel_a.set_ratio(25.4, 2874); // Sets the input/output transmission ratio for the channel.
+  channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
                                                 // This provides a convenience of converting between input units and motor (micro)steps
-                                                // For the axidraw, 25.4mm == 2874 steps
+                                                // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
   channel_a.invert_output();  // CALL THIS TO INVERT THE MOTOR DIRECTION IF NEEDED
 
   channel_b.begin(&output_b, SIGNAL_E);
-  channel_b.set_ratio(25.4, 2874);
+  channel_b.set_ratio(40, 3200);
   channel_b.invert_output();
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 1); //straight step pass-thru.
+
+  // -- Configure and start the input port --
+  input_a.begin(INPUT_A);
+  input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_x.map(&axidraw_kinematics.input_x);
+
+  input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_y.map(&axidraw_kinematics.input_y);
+
+  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_z.map(&channel_z.input_target_position);
 
   // -- Configure and start the encoders --
   encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
