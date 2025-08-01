@@ -229,6 +229,7 @@ void InputPort::run(){
   // iterate over all outputs
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
     signal_BlockPort_targets[signal_index]->reverse_update(); //updates the buffers from the positional target
+    signal_BlockPort_targets[signal_index]->push(); //pushes results
   }
 }
 
