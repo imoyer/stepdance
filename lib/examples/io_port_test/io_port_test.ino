@@ -14,7 +14,8 @@ A part of the Mixing Metaphors Project
 // (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
 */
 
-#define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
+// #define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
+#define module_basic   // tells compiler we're using the Stepdance Driver Module PCB
                         // This configures pin assignments for the Teensy 4.1
 
 #include "stepdance.hpp"  // Import the stepdance library
@@ -51,7 +52,12 @@ InputPort input_port;
 
 void setup() {
   // -- Configure and start the output port --
-  output_port.begin(OUTPUT_D, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME); // We'll use "D" because it has both a driver socket and an output jack
+  #ifdef module_driver
+    output_port.begin(OUTPUT_D, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME); // For driver module we use "D" because it has both a driver socket and an output jack
+  #endif
+  #ifdef module_basic
+    output_port.begin(OUTPUT_A, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME); // For basic module we use "D" because it has both a driver socket and an output jack
+  #endif
 
   // -- Configure and start the channels --
   channel_x.begin(&output_port, SIGNAL_X);
@@ -90,12 +96,12 @@ void loop() {
 }
 
 void button_press(){
-  channel_x.target_position += 10000;
-  channel_y.target_position -= 10000;
+  channel_x.input_target_position.write(10000, INCREMENTAL);
+  channel_y.input_target_position.write(-10000, INCREMENTAL);
   // channel_r.target_position += 10000;
   // channel_t.target_position -= 10000;
-  channel_z.target_position += 10000;
-  channel_e.target_position -= 10000;
+  channel_z.input_target_position.write(10000, INCREMENTAL);
+  channel_e.input_target_position.write(-10000, INCREMENTAL);
 }
 
 void report_input_values(){

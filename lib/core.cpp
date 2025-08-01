@@ -240,8 +240,11 @@ void BlockPort::set(float64_t value, uint8_t mode){
   }
 }
 
-void BlockPort::reset(float64_t value){
+void BlockPort::reset(float64_t value, bool raw){
   //resets the target and absolute_buffer to a particular value, BUT clears increment_buffer
+  if(raw == false){ //input is in world units
+    value = convert_world_to_block_units(value);
+  }
   update_has_run = true;
   incremental_buffer = 0;
   absolute_buffer = value;

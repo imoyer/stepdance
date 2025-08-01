@@ -1,3 +1,4 @@
+#include <stdint.h>
 /*
 Encoders Module of the StepDance Control System
 
@@ -32,11 +33,17 @@ class Encoder : public Plugin{
     void invert();
     int32_t read(); //directly reads the instantaneous encoder value
     void reset(); //resets the encoder value to zero
-    void set(int32_t value); //resets the encoder value to a provided value
+    void set(DecimalPosition value); //resets the encoder value to a provided value, in world units
+    void set_latch(DecimalPosition value_world_units, uint8_t min_or_max);
     void set_ratio(float output_units, float encoder_units);
 
     // BlockPorts
     BlockPort output;
+
+    bool min_latch_enabled = false; //enables latching in the negative direction (encoder units)
+    bool max_latch_enabled = false; //enables latching in the positive direction
+    int32_t min_latch_value = 0; //encoder units
+    int32_t max_latch_value = 0;
 
   private:
     static const struct encoder_info_struct encoder_info[]; //stores configuration for all available encoder ports
