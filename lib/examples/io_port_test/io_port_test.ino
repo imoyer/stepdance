@@ -14,7 +14,8 @@ A part of the Mixing Metaphors Project
 // (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
 */
 
-#define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
+// #define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
+#define module_basic   // tells compiler we're using the Stepdance Driver Module PCB
                         // This configures pin assignments for the Teensy 4.1
 
 #include "stepdance.hpp"  // Import the stepdance library
@@ -51,7 +52,12 @@ InputPort input_port;
 
 void setup() {
   // -- Configure and start the output port --
-  output_port.begin(OUTPUT_D, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME); // We'll use "D" because it has both a driver socket and an output jack
+  #ifdef module_driver
+    output_port.begin(OUTPUT_D, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME); // For driver module we use "D" because it has both a driver socket and an output jack
+  #endif
+  #ifdef module_basic
+    output_port.begin(OUTPUT_A, OUTPUT_FRAME_32US, OUTPUT_TRANSMIT_ON_FRAME); // For basic module we use "D" because it has both a driver socket and an output jack
+  #endif
 
   // -- Configure and start the channels --
   channel_x.begin(&output_port, SIGNAL_X);
