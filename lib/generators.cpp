@@ -130,42 +130,21 @@ void PositionGenerator::run(){
   output.push();
 }
 
-// -- 1D Ratio Generator --
-RatioGenerator1D::RatioGenerator1D(){};
-
-void RatioGenerator1D::begin(){
-  input.begin(&input_position);
-  output.begin(&output_position);
-  register_plugin();
-}
-
-void RatioGenerator1D::set_ratio(ControlParameter ratio){
-  this->ratio = ratio;
-}
-
-void RatioGenerator1D::run(){
-  input.pull();
-  input.update();
-
-  output.set(input_position * ratio);
-  output.push();
-}
-
 // -- 2D Ratio Generator --
-RatioGenerator2D::RatioGenerator2D(){};
+PathLengthGenerator2D::PathLengthGenerator2D(){};
 
-void RatioGenerator2D::begin(){
+void PathLengthGenerator2D::begin(){
   input_1.begin(&input_1_position);
   input_2.begin(&input_2_position);
   output.begin(&output_position);
   register_plugin();
 }
 
-void RatioGenerator2D::set_ratio(ControlParameter ratio){
+void PathLengthGenerator2D::set_ratio(ControlParameter ratio){
   this->ratio = ratio;
 }
 
-void RatioGenerator2D::run(){
+void PathLengthGenerator2D::run(){
   input_1.pull();
   input_2.pull();
   input_1.update();

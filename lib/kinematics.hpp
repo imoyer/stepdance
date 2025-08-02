@@ -42,7 +42,7 @@ class KinematicsCoreXY : public Plugin{
 class KinematicsPolarToCartesian : public Plugin{
   public:
     KinematicsPolarToCartesian();
-    void begin();
+    void begin(float64_t fixed_radius = 0); //optional radius parameter
     void reset(); //TODO: resets the internal state
     void solve_kinematics(); //TODO: solves the relationship between r-t and x-y.
                               // we do this outside run() so that it can be called during a state reset.
@@ -101,25 +101,6 @@ class KinematicsFiveBarForward : public Plugin{
     void run();
 };
 
-class KinematicsLever : public Plugin{
-  // A swinging mechanism with variable angle and optionally a variable length.
+using KinematicsLever = KinematicsPolarToCartesian;
 
-  public:
-    KinematicsLever();
-    void begin(float64_t lever_length = 0); //if no lever length is provided, then use input_length BlockPort.
-
-    BlockPort input_length;
-    BlockPort input_angle; //in radians, in the XY quadrant, relative to the X horizontal.
-    BlockPort output_x;
-    BlockPort output_y;
-
-  private:
-    DecimalPosition lever_length;
-    DecimalPosition lever_angle_rad;
-    DecimalPosition position_x; //x position of the end of the lever
-    DecimalPosition position_y;
-  
-  protected:
-    void run();
-};
 #endif //kinematics_h

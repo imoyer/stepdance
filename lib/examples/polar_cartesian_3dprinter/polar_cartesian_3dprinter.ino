@@ -21,9 +21,9 @@ Encoder encoder_1; //hand lever
 
 VelocityGenerator velocity_gen;
 
-RatioGenerator1D z_gen;
+ScalingFilter1D z_gen;
 
-RatioGenerator2D e_gen; //generates extruder signal
+PathLengthGenerator2D e_gen; //generates extruder signal
 
 void setup() {
   output_a.begin(OUTPUT_A);

@@ -26,10 +26,17 @@ Channel channel_z;
 KinematicsFiveBarForward pantograph_kinematics;
 KinematicsLever pantograph_yz_kinematics;
 
+// -- Position Generator --
+// For Z axis fine-tuning
+PositionGenerator z_tuning_generator;
+
 // -- Define Encoders --
 Encoder encoder_r; //ENC_1 -- right encoder
 Encoder encoder_l; //ENC_2 -- left encoder
 Encoder encoder_t; //ENC_A -- tilt encoder
+
+// -- Analog Inputs --
+AnalogInput z_tuning_knob_a1;
 
 void setup() {
   // -- Configure and start the output ports --
@@ -43,7 +50,9 @@ void setup() {
   channel_y.set_ratio(0.01, 1);
 
   channel_z.begin(&output_a, SIGNAL_Z);
-  channel_z.set_ratio(0.01, 1);
+  channel_z.set_ratio(0.0075, 1); //this used to be 0.01mm / 1step, but I've made it more sensitive for usability
+  channel_z.set_upper_limit(10); //10mm. Goal is for the z servo to stop as soon as you are lifting the pantograph significantly.
+  channel_z.set_lower_limit(-5);
 
   // -- Configure and start the encoders --
   const DecimalPosition encoder_r_home_rad = -(60.0/360.0)*TWO_PI;
@@ -72,8 +81,16 @@ void setup() {
   pantograph_kinematics.output_y.map(&channel_y.input_target_position);
 
   pantograph_yz_kinematics.begin();
-  pantograph_yz_kinematics.input_length.map(&pantograph_kinematics.output_y, ABSOLUTE);
+  pantograph_yz_kinematics.input_radius.map(&pantograph_kinematics.output_y, ABSOLUTE);
   pantograph_yz_kinematics.output_y.map(&channel_z.input_target_position, ABSOLUTE);
+
+  // -- Configure the Z Tuning Position Generator
+  z_tuning_generator.output.map(&channel_z.input_target_position_2);
+  z_tuning_generator.begin();
+
+  z_tuning_knob_a1.begin(IO_A1);
+  z_tuning_knob_a1.set_floor(-5);
+  z_tuning_knob_a1.set_ceiling(5);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -86,9 +103,18 @@ void loop() {
   overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
+  if(channel_z.is_outside_limits()){
+    pantograph_kinematics.output_x.disable();
+    pantograph_kinematics.output_y.disable();
+  }else{
+    pantograph_kinematics.output_x.enable();
+    pantograph_kinematics.output_y.enable();
+  }
+  z_tuning_generator.go(z_tuning_knob_a1.read(), ABSOLUTE, 200);
 }
 
 void report_overhead(){
   Serial.println(stepdance_get_cpu_usage(), 4);
-  Serial.println(channel_z.target_position, 6);
+  Serial.println(channel_z.current_position, 6);
+  Serial.println(z_tuning_knob_a1.read());
 }

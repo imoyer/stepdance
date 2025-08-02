@@ -73,37 +73,11 @@ class PositionGenerator : public Plugin{
     void run();
 };
 
-class RatioGenerator1D : public Plugin{
-  // Generates an output signal in proportion to one input signal.
-
-  public:
-    RatioGenerator1D();
-
-    void begin();
-    void set_ratio(ControlParameter ratio);
-    inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
-      set_ratio(output_distance / input_distance);
-    }
-
-    ControlParameter ratio = 1.0; // output / input
-
-    // BlockPorts
-    BlockPort input;
-    BlockPort output;
-
-  private:
-    DecimalPosition input_position;
-    DecimalPosition output_position; 
-
-  protected:
-    void run();
-};
-
-class RatioGenerator2D : public Plugin{
+class PathLengthGenerator2D : public Plugin{
   // Generates an output signal in proportion to the linear distance traversed by two inputs.
 
   public:
-    RatioGenerator2D();
+    PathLengthGenerator2D();
 
     void begin();
     void set_ratio(ControlParameter ratio);
