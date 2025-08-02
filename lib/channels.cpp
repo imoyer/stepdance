@@ -55,7 +55,7 @@ void Channel::set_max_pulse_rate(float max_pulses_per_sec){
 
 void Channel::set_ratio(float input_units, float channel_units){
   input_target_position.set_ratio(input_units, channel_units);
-  input_target_position.set_ratio(input_units, channel_units);
+  input_target_position_2.set_ratio(input_units, channel_units);
 }
 
 void Channel::begin(){

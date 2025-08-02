@@ -46,6 +46,7 @@ Encoder encoder_2;  // right knob, controls vertical
 
 // -- Define Input Button --
 Button button_d1;
+Button button_d2;
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
@@ -73,7 +74,7 @@ void setup() {
   channel_b.invert_output();
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
-  channel_z.set_ratio(1, 1); //straight step pass-thru.
+  channel_z.set_ratio(1, 50); //straight step pass-thru.
 
   // -- Configure and start the input port --
   input_a.begin(INPUT_A);
@@ -107,9 +108,14 @@ void setup() {
 
   // -- Configure Button --
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
-  button_d1.set_mode(BUTTON_MODE_TOGGLE);
-  button_d1.set_callback_on_press(&pen_down);
-  button_d1.set_callback_on_release(&pen_up);
+  button_d1.set_mode(BUTTON_MODE_STANDARD);
+  button_d1.set_callback_on_press(&pen_up);
+  // button_d1.set_callback_on_release(&pen_up);
+
+  button_d2.begin(IO_D2, INPUT_PULLDOWN);
+  button_d2.set_mode(BUTTON_MODE_TOGGLE);
+  button_d2.set_callback_on_press(&motors_enable);
+  button_d2.set_callback_on_release(&motors_disable);
 
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
@@ -123,19 +129,28 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  // overhead_delay.periodic_call(&report_overhead, 500);
+  overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
 void pen_down(){
-  position_gen.go(-200, ABSOLUTE, 2000);
+  position_gen.go(-4, ABSOLUTE, 2000);
 }
 
 void pen_up(){
-  position_gen.go(200, ABSOLUTE, 2000);
+  position_gen.go(0.2, INCREMENTAL, 2000);
+}
+
+void motors_enable(){
+  enable_drivers();
+}
+
+void motors_disable(){
+  disable_drivers();
 }
 
 void report_overhead(){
+  Serial.println(channel_z.target_position, 4);
   Serial.println(stepdance_get_cpu_usage(), 4);
 }

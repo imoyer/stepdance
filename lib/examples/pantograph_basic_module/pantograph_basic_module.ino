@@ -24,6 +24,7 @@ Channel channel_z;
 
 // -- Define Kinematics --
 KinematicsFiveBarForward pantograph_kinematics;
+KinematicsLever pantograph_yz_kinematics;
 
 // -- Define Encoders --
 Encoder encoder_r; //ENC_1 -- right encoder
@@ -42,7 +43,7 @@ void setup() {
   channel_y.set_ratio(0.01, 1);
 
   channel_z.begin(&output_a, SIGNAL_Z);
-  channel_y.set_ratio(0.01, 1);
+  channel_z.set_ratio(0.01, 1);
 
   // -- Configure and start the encoders --
   const DecimalPosition encoder_r_home_rad = -(60.0/360.0)*TWO_PI;
@@ -61,10 +62,18 @@ void setup() {
   encoder_l.set_latch(encoder_l_home_rad, MAX);
   encoder_l.output.map(&pantograph_kinematics.input_l, ABSOLUTE); // map the right encoder to the y axis input of the kinematics
 
+  encoder_t.begin(ENCODER_A);
+  encoder_t.set_ratio(TWO_PI, 40000);
+  encoder_t.output.map(&pantograph_yz_kinematics.input_angle, ABSOLUTE);
+
   // -- Configure and start the kinematics modules --
   pantograph_kinematics.begin(60, 145.75, 134, 169, 178.3, 28.82, 2.9019);
   pantograph_kinematics.output_x.map(&channel_x.input_target_position);
   pantograph_kinematics.output_y.map(&channel_y.input_target_position);
+
+  pantograph_yz_kinematics.begin();
+  pantograph_yz_kinematics.input_length.map(&pantograph_kinematics.output_y, ABSOLUTE);
+  pantograph_yz_kinematics.output_y.map(&channel_z.input_target_position, ABSOLUTE);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -81,4 +90,5 @@ void loop() {
 
 void report_overhead(){
   Serial.println(stepdance_get_cpu_usage(), 4);
+  Serial.println(channel_z.target_position, 6);
 }

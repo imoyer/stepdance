@@ -138,3 +138,31 @@ void KinematicsFiveBarForward::run(){
   output_x.push();
   output_y.push();
 }
+
+KinematicsLever::KinematicsLever(){};
+
+void KinematicsLever::begin(float64_t lever_length){
+  // Configure BlockPorts
+  input_length.begin(&this->lever_length);
+  input_angle.begin(&lever_angle_rad);
+  output_x.begin(&position_x);
+  output_y.begin(&position_y);
+
+  // Initialize lever length if user-provided.
+  if(lever_length > 0){
+    input_length.set(lever_length); //write a starting lever length, but without updating the incremental buffer.
+  }
+  register_plugin();
+}
+
+void KinematicsLever::run(){
+  input_angle.pull();
+  input_length.pull();
+  input_angle.update();
+  input_length.update();
+
+  output_x.set(lever_length * std::cos(lever_angle_rad));
+  output_y.set(lever_length * std::sin(lever_angle_rad));
+  output_x.push();
+  output_y.push();
+}

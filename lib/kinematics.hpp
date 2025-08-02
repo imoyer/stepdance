@@ -101,4 +101,25 @@ class KinematicsFiveBarForward : public Plugin{
     void run();
 };
 
+class KinematicsLever : public Plugin{
+  // A swinging mechanism with variable angle and optionally a variable length.
+
+  public:
+    KinematicsLever();
+    void begin(float64_t lever_length = 0); //if no lever length is provided, then use input_length BlockPort.
+
+    BlockPort input_length;
+    BlockPort input_angle; //in radians, in the XY quadrant, relative to the X horizontal.
+    BlockPort output_x;
+    BlockPort output_y;
+
+  private:
+    DecimalPosition lever_length;
+    DecimalPosition lever_angle_rad;
+    DecimalPosition position_x; //x position of the end of the lever
+    DecimalPosition position_y;
+  
+  protected:
+    void run();
+};
 #endif //kinematics_h
