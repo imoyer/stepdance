@@ -282,7 +282,7 @@ void BlockPort::push(uint8_t mode){
   // Note that for pushing, we are using the incremental and absolute buffers slightly differently;
   // we don't have the notion of pre and post- update, because these values are being set internally.
 
-  if(target_BlockPort != nullptr){
+  if((target_BlockPort != nullptr) && push_pull_enabled){
     if(mode == INCREMENTAL){
       target_BlockPort->write(convert_block_to_world_units(incremental_buffer), INCREMENTAL);
     }else{
@@ -294,9 +294,17 @@ void BlockPort::push(uint8_t mode){
 void BlockPort::pull(uint8_t mode){
   // pulls the buffer state of a target BlockPort onto this BlockPort
   // THIS NEEDS TO BE CALLED BEFORE update();
-  if(target_BlockPort != nullptr){
+  if((target_BlockPort != nullptr) && push_pull_enabled){
     write(target_BlockPort->read(mode), mode);
   }
+}
+
+void BlockPort::enable(){
+  push_pull_enabled = true;
+}
+
+void BlockPort::disable(){
+  push_pull_enabled = false;
 }
 
 // -- TRANSMISSION --

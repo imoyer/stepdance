@@ -170,6 +170,10 @@ class BlockPort{
     inline void pull(){
       pull(this->mode); //uses internal mode
     }
+
+    void enable(); // enables push/pull on blockport
+    void disable(); // disables push/pull
+
     volatile float64_t incremental_buffer = 0;
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
 
@@ -185,7 +189,9 @@ class BlockPort{
   private:
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
     uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
-
+    volatile uint8_t push_pull_enabled = true; //controlled by enable() and disable(). This enables/disables push and pull. NOTE: We could optimize by removing volatile,
+                                          // but then this couldn't be operated inside any interrupts incl. the kilohertz interrupt, which could be confusing.
+                                          // Can re-examine if we start running out of compute overhead.
     float64_t world_to_block_ratio = 1;
 
     BlockPort* target_BlockPort = nullptr;
