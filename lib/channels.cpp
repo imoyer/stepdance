@@ -58,6 +58,40 @@ void Channel::set_ratio(float input_units, float channel_units){
   input_target_position_2.set_ratio(input_units, channel_units);
 }
 
+void Channel::set_upper_limit(DecimalPosition upper_limit_input_units){
+  // Sets the upper limit of current_position. Oustide this, the channel will no longer output, and current_position will be capped.
+
+  // convert into block units.
+  upper_limit = input_target_position.convert_world_to_block_units(upper_limit_input_units);
+  upper_limit_enabled = true;
+}
+
+void Channel::set_lower_limit(DecimalPosition lower_limit_input_units){
+  // Sets the lower limit of current_position. Oustide this, the channel will no longer output, and current_position will be capped.
+
+  // convert into block units.
+  lower_limit = input_target_position.convert_world_to_block_units(lower_limit_input_units);
+  lower_limit_enabled = true;
+}
+
+void Channel::disable_upper_limit(){
+  upper_limit_enabled = false;
+}
+
+void Channel::disable_lower_limit(){
+  lower_limit_enabled = false;
+}
+
+int8_t Channel::is_outside_limits(){
+  if(upper_limit_enabled && current_position > upper_limit){
+    return 1;
+  }else if (lower_limit_enabled && current_position < lower_limit) {
+    return -1;
+  }else{
+    return 0;
+  }
+}
+
 void Channel::begin(){
   // Initializes the channel without an output.
   // This is useful in cases where we are using the channel as an intermediary.
@@ -146,11 +180,15 @@ void Channel::pulse(int8_t direction){
   if(direction == DIRECTION_FORWARD){
     current_position ++;
     last_direction = DIRECTION_FORWARD;
-    target_output_port->add_signal(output_signal, (DIRECTION_FORWARD^output_inverted));
+    if((!upper_limit_enabled || (current_position < upper_limit)) && (!lower_limit_enabled || (current_position > lower_limit))){
+      target_output_port->add_signal(output_signal, (DIRECTION_FORWARD^output_inverted));
+    }
   }else{
     current_position --;
     last_direction = DIRECTION_REVERSE;
-    target_output_port->add_signal(output_signal, (DIRECTION_REVERSE^output_inverted));
+    if((!upper_limit_enabled || (current_position < upper_limit)) && (!lower_limit_enabled || (current_position > lower_limit))){
+      target_output_port->add_signal(output_signal, (DIRECTION_REVERSE^output_inverted));
+    }
   }
 }
 
