@@ -103,4 +103,34 @@ class PathLengthGenerator2D : public Plugin{
     void run();
 };
 
+class PathLengthGenerator3D : public Plugin{
+  // Generates an output signal in proportion to the linear distance traversed by three inputs.
+
+  public:
+    PathLengthGenerator3D();
+
+    void begin();
+    void set_ratio(ControlParameter ratio);
+    inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
+      set_ratio(output_distance / input_distance);
+    }
+
+    ControlParameter ratio = 1.0; // output / input
+
+    // BlockPorts
+    BlockPort input_1;
+    BlockPort input_2;
+    BlockPort input_3;
+    BlockPort output;
+
+  private:
+    DecimalPosition input_1_position;
+    DecimalPosition input_2_position;
+    DecimalPosition input_3_position;
+    DecimalPosition output_position;
+
+  protected:
+    void run();
+};
+
 #endif //generators_h
