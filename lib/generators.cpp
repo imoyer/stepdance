@@ -33,8 +33,6 @@ void WaveGenerator1D::debugPrint(){
   Serial.print(amplitude);
   Serial.print(", delta_value: ");
   Serial.print(delta);
-   Serial.print(", previous_pos: ");
-  Serial.print(previousTime);
   Serial.print(", output read: ");
   Serial.println(output.read(ABSOLUTE));
 

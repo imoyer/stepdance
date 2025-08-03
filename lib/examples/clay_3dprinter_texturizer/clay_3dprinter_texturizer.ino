@@ -60,7 +60,7 @@ void setup() {
 
 
   channel_e.begin(&output_d, SIGNAL_E);
-  channel_e.set_ratio(1, 70); // testing with an 8mm lead leadscrew
+  channel_e.set_ratio(1,  8.75); // testing with an 8mm lead leadscrew
   channel_e.invert_output();
 
   velocity_gen.begin();

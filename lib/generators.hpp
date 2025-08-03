@@ -35,7 +35,6 @@ class WaveGenerator1D : public Plugin{
 
     protected:
       volatile float64_t current_angle_rad = 0;
-      volatile float64_t previousTime = 0;
       volatile float64_t delta = 0;
 
       void run();
