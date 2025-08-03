@@ -42,7 +42,7 @@ class KinematicsCoreXY : public Plugin{
 class KinematicsPolarToCartesian : public Plugin{
   public:
     KinematicsPolarToCartesian();
-    void begin();
+    void begin(float64_t fixed_radius = 0); //optional radius parameter
     void reset(); //TODO: resets the internal state
     void solve_kinematics(); //TODO: solves the relationship between r-t and x-y.
                               // we do this outside run() so that it can be called during a state reset.
@@ -100,5 +100,7 @@ class KinematicsFiveBarForward : public Plugin{
   protected:
     void run();
 };
+
+using KinematicsLever = KinematicsPolarToCartesian;
 
 #endif //kinematics_h

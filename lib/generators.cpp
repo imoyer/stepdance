@@ -208,42 +208,21 @@ void PositionGenerator::run(){
   output.push();
 }
 
-// -- 1D Ratio Generator --
-RatioGenerator1D::RatioGenerator1D(){};
+// -- 2D Path Length Generator --
+PathLengthGenerator2D::PathLengthGenerator2D(){};
 
-void RatioGenerator1D::begin(){
-  input.begin(&input_position);
-  output.begin(&output_position);
-  register_plugin();
-}
-
-void RatioGenerator1D::set_ratio(ControlParameter ratio){
-  this->ratio = ratio;
-}
-
-void RatioGenerator1D::run(){
-  input.pull();
-  input.update();
-
-  output.set(input_position * ratio);
-  output.push();
-}
-
-// -- 2D Ratio Generator --
-RatioGenerator2D::RatioGenerator2D(){};
-
-void RatioGenerator2D::begin(){
+void PathLengthGenerator2D::begin(){
   input_1.begin(&input_1_position);
   input_2.begin(&input_2_position);
   output.begin(&output_position);
   register_plugin();
 }
 
-void RatioGenerator2D::set_ratio(ControlParameter ratio){
+void PathLengthGenerator2D::set_ratio(ControlParameter ratio){
   this->ratio = ratio;
 }
 
-void RatioGenerator2D::run(){
+void PathLengthGenerator2D::run(){
   input_1.pull();
   input_2.pull();
   input_1.update();
@@ -253,6 +232,38 @@ void RatioGenerator2D::run(){
   // input_1_position is cumulative. If we want to calculate based on changes to input_1, the most speed-efficient way is to read the incremental buffers
   // directly. Since we're in the block, let's consider this OK, rather than using a read() call.
   float64_t distance = std::sqrt((input_1.incremental_buffer * input_1.incremental_buffer) + (input_2.incremental_buffer * input_2.incremental_buffer));
+  output.set(distance * ratio, INCREMENTAL);
+
+  output.push();
+}
+
+// -- 3D Path Length Generator --
+PathLengthGenerator3D::PathLengthGenerator3D(){};
+
+void PathLengthGenerator3D::begin(){
+  input_1.begin(&input_1_position);
+  input_2.begin(&input_2_position);
+  input_3.begin(&input_3_position);
+  output.begin(&output_position);
+  register_plugin();
+}
+
+void PathLengthGenerator3D::set_ratio(ControlParameter ratio){
+  this->ratio = ratio;
+}
+
+void PathLengthGenerator3D::run(){
+  input_1.pull();
+  input_2.pull();
+  input_3.pull();
+  input_1.update();
+  input_2.update();
+  input_3.update();
+
+  // below was a bit tricky. pull() defaults to incremental, which reads an incremental change, which it then uses to increment input_1_position. But
+  // input_1_position is cumulative. If we want to calculate based on changes to input_1, the most speed-efficient way is to read the incremental buffers
+  // directly. Since we're in the block, let's consider this OK, rather than using a read() call.
+  float64_t distance = std::sqrt((input_1.incremental_buffer * input_1.incremental_buffer) + (input_2.incremental_buffer * input_2.incremental_buffer) + (input_3.incremental_buffer * input_3.incremental_buffer));
   output.set(distance * ratio, INCREMENTAL);
 
   output.push();

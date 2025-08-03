@@ -51,11 +51,16 @@ void KinematicsCoreXY::run(){
 
 KinematicsPolarToCartesian::KinematicsPolarToCartesian(){};
 
-void KinematicsPolarToCartesian::begin(){
+void KinematicsPolarToCartesian::begin(float64_t fixed_radius){
   input_radius.begin(&position_r);
   input_angle.begin(&position_a);
   output_x.begin(&position_x);
   output_y.begin(&position_y);
+
+  if(fixed_radius > 0){
+    input_radius.reset(fixed_radius);
+  }
+
   register_plugin();
 }
 

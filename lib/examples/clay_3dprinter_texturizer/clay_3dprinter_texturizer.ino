@@ -24,9 +24,9 @@ Encoder encoder_2; //z babystep
 
 VelocityGenerator velocity_gen;
 
-RatioGenerator1D z_gen;
+ScalingFilter1D z_gen;
 
-RatioGenerator2D e_gen; //generates extruder signal
+PathLengthGenerator2D e_gen; //generates extruder signal
 
 //CircleGenerator tiny_circles; // generates circle pattern
 WaveGenerator1D wave_generator1D; // 1D osscilation generator

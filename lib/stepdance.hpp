@@ -4,6 +4,7 @@
 #include "core.hpp"
 #include "digital_in.hpp"
 #include "encoders.hpp"
+#include "filters.hpp"
 #include "generators.hpp"
 #include "input_ports.hpp"
 #include "interface_ebb.hpp"

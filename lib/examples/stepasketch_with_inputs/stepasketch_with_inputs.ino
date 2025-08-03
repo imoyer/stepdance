@@ -12,6 +12,8 @@ A part of the Mixing Metaphors Project
                         // This configures pin assignments for the Teensy 4.1
 
 #include "stepdance.hpp"  // Import the stepdance library
+// -- Define Input Ports --
+InputPort input_a;
 
 // -- Define Output Ports --
 // Output ports generate step and direction electrical signals
@@ -44,6 +46,7 @@ Encoder encoder_2;  // right knob, controls vertical
 
 // -- Define Input Button --
 Button button_d1;
+Button button_d2;
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
@@ -61,17 +64,28 @@ void setup() {
   channel_a.begin(&output_a, SIGNAL_E); // Connects the channel to the "E" signal on "output_a".
                                         // We choose the "E" signal because it results in a step pulse of 7us,
                                         // which is more than long enough for the driver IC.
-  channel_a.set_ratio(25.4, 2874); // Sets the input/output transmission ratio for the channel.
+  channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
                                                 // This provides a convenience of converting between input units and motor (micro)steps
-                                                // For the axidraw, 25.4mm == 2874 steps
+                                                // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
   channel_a.invert_output();  // CALL THIS TO INVERT THE MOTOR DIRECTION IF NEEDED
 
   channel_b.begin(&output_b, SIGNAL_E);
-  channel_b.set_ratio(25.4, 2874);
+  channel_b.set_ratio(40, 3200);
   channel_b.invert_output();
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
-  channel_z.set_ratio(1, 1); //straight step pass-thru.
+  channel_z.set_ratio(1, 50); //straight step pass-thru.
+
+  // -- Configure and start the input port --
+  input_a.begin(INPUT_A);
+  input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_x.map(&axidraw_kinematics.input_x);
+
+  input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_y.map(&axidraw_kinematics.input_y);
+
+  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_z.map(&channel_z.input_target_position);
 
   // -- Configure and start the encoders --
   encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
@@ -94,9 +108,14 @@ void setup() {
 
   // -- Configure Button --
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
-  button_d1.set_mode(BUTTON_MODE_TOGGLE);
-  button_d1.set_callback_on_press(&pen_down);
-  button_d1.set_callback_on_release(&pen_up);
+  button_d1.set_mode(BUTTON_MODE_STANDARD);
+  button_d1.set_callback_on_press(&pen_up);
+  // button_d1.set_callback_on_release(&pen_up);
+
+  button_d2.begin(IO_D2, INPUT_PULLDOWN);
+  button_d2.set_mode(BUTTON_MODE_TOGGLE);
+  button_d2.set_callback_on_press(&motors_enable);
+  button_d2.set_callback_on_release(&motors_disable);
 
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
@@ -110,19 +129,28 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  // overhead_delay.periodic_call(&report_overhead, 500);
+  overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
 void pen_down(){
-  position_gen.go(-200, ABSOLUTE, 2000);
+  position_gen.go(-4, ABSOLUTE, 2000);
 }
 
 void pen_up(){
-  position_gen.go(200, ABSOLUTE, 2000);
+  position_gen.go(0.2, INCREMENTAL, 2000);
+}
+
+void motors_enable(){
+  enable_drivers();
+}
+
+void motors_disable(){
+  disable_drivers();
 }
 
 void report_overhead(){
+  Serial.println(channel_z.target_position, 4);
   Serial.println(stepdance_get_cpu_usage(), 4);
 }

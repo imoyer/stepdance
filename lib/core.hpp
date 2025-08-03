@@ -42,6 +42,7 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define PLUGIN_FRAME_POST_CHANNEL 1 //runs on the frame, after channels are evaluated
 #define PLUGIN_KILOHERTZ          2 //runs in an independent 1khz context
 #define PLUGIN_LOOP               3 //runs in the main loop
+#define PLUGIN_INPUT_PORT         4 //runs on the frame, at the start before all other plugins
 
 // Block Mode
 // Throughout stepdance, there is a question of whether to operate incrementally or in absolute coordinates.
@@ -64,6 +65,7 @@ static volatile uint32_t stepdance_interrupt_entry_cycle_count = 0; //stores the
 // -- Plug-In Base Class --
 //
 // This provides a common interface for any filters, synthesizers, kinematics, etc that need access to the core frame.
+#define MAX_NUM_INPUT_PORT_FRAME_PLUGINS   10 //plugins that execute at the start of the frame. This is reserved for input ports
 #define MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS   10 //plugins that execute in the frame, before the channels are evaluated
 #define MAX_NUM_POST_CHANNEL_FRAME_PLUGINS  10 //plugins that execute in the frame, after the channels are evaluated
 #define MAX_NUM_KILOHERTZ_PLUGINS 10 //plugins that execute at a 1khz rate, independent of the frame, and with a lower priority
@@ -73,16 +75,19 @@ class Plugin{
   // Base class for all plugins that need to run in the core frame.
   public:
     Plugin();
+    static void run_input_port_frame_plugins(); //runs all input port frame plugins.
     static void run_pre_channel_frame_plugins(); //runs all pre-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_post_channel_frame_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_kilohertz_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_loop_plugins(); //runs all loop plugins, in the order they appear in the registered_plugins list
 
   private:
+    static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins
     static Plugin* registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS]; //stores all registered pre-channel frame plugins
     static Plugin* registered_post_channel_frame_plugins[MAX_NUM_POST_CHANNEL_FRAME_PLUGINS]; //stores all registered post-channel frame plugins
     static Plugin* registered_kilohertz_plugins[MAX_NUM_KILOHERTZ_PLUGINS]; //stores all registered kilohertz plugins
     static Plugin* registered_loop_plugins[MAX_NUM_LOOP_PLUGINS]; //stores all registered loop plugins
+    static uint8_t num_registered_input_port_frame_plugins; //tracks the number of registered input port frame plugins
     static uint8_t num_registered_pre_channel_frame_plugins; //tracks the number of registered pre-channel frame plugins
     static uint8_t num_registered_post_channel_frame_plugins; //tracks the number of registered post-channel frame plugins
     static uint8_t num_registered_kilohertz_plugins; //tracks the number of registered kilohertz plugins
@@ -149,6 +154,7 @@ class BlockPort{
     void begin(volatile float64_t *target); //initializes the BlockPort
     void set_target(volatile float64_t *target); //sets a target variable for the BlockPort
     void update(); //called by the block, to update the target and the buffers. Note that this does not handle pulling or pushing, which must be done first or after update.
+    void reverse_update(); //updates the buffers based on changes made by direct writes to the target. Used by input_ports, which run before all other blocks.
     void set(float64_t value, uint8_t mode); //sets a new value for the target.
     inline void set(float64_t value){ //default for set is ABSOLUTE
       set(value, ABSOLUTE);
@@ -164,6 +170,10 @@ class BlockPort{
     inline void pull(){
       pull(this->mode); //uses internal mode
     }
+
+    void enable(); // enables push/pull on blockport
+    void disable(); // disables push/pull
+
     volatile float64_t incremental_buffer = 0;
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
 
@@ -174,11 +184,14 @@ class BlockPort{
       return world_units / world_to_block_ratio;
     }
 
+    volatile float64_t* target = nullptr;
+
   private:
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
     uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
-
-    volatile float64_t* target = nullptr;
+    volatile uint8_t push_pull_enabled = true; //controlled by enable() and disable(). This enables/disables push and pull. NOTE: We could optimize by removing volatile,
+                                          // but then this couldn't be operated inside any interrupts incl. the kilohertz interrupt, which could be confusing.
+                                          // Can re-examine if we start running out of compute overhead.
     float64_t world_to_block_ratio = 1;
 
     BlockPort* target_BlockPort = nullptr;

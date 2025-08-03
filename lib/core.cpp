@@ -48,6 +48,8 @@ void on_frame(){
 // -- OVERALL SYSTEM --
 
 void dance_start(){
+  // activate input port plugins
+  add_function_to_frame(Plugin::run_input_port_frame_plugins);
   // activate all pre-channel frame plugins
   add_function_to_frame(Plugin::run_pre_channel_frame_plugins);
   // activate channels
@@ -76,6 +78,8 @@ void stepdance_metrics_reset(){
 
 // -- PLUGINS --
 Plugin::Plugin(){};
+uint8_t Plugin::num_registered_input_port_frame_plugins = 0;
+Plugin* Plugin::registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS];
 
 uint8_t Plugin::num_registered_pre_channel_frame_plugins = 0;
 Plugin* Plugin::registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS];
@@ -95,6 +99,13 @@ void Plugin::register_plugin(){ //default to pre-channel frame plugin
 
 void Plugin::register_plugin(uint8_t execution_target){
   switch(execution_target){
+    case PLUGIN_INPUT_PORT:
+      if(num_registered_input_port_frame_plugins < MAX_NUM_INPUT_PORT_FRAME_PLUGINS){
+        registered_input_port_frame_plugins[num_registered_input_port_frame_plugins] = this;
+        num_registered_input_port_frame_plugins ++;
+      }
+      break;
+
     case PLUGIN_FRAME_PRE_CHANNEL:
       if(num_registered_pre_channel_frame_plugins < MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS){
         registered_pre_channel_frame_plugins[num_registered_pre_channel_frame_plugins] = this;
@@ -128,6 +139,12 @@ void Plugin::register_plugin(uint8_t execution_target){
 void Plugin::run(){};
 
 void Plugin::loop(){};
+
+void Plugin::run_input_port_frame_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_input_port_frame_plugins; plugin_index++){
+    registered_input_port_frame_plugins[plugin_index]->run();
+  }
+}
 
 void Plugin::run_pre_channel_frame_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_pre_channel_frame_plugins; plugin_index++){
@@ -227,6 +244,15 @@ void BlockPort::update(){
   }
 }
 
+void BlockPort::reverse_update(){
+  // Performs an update of the buffers based on direct changes made to the target position.
+  update_has_run = true;
+  if(target != nullptr){ //make sure we even have a target.
+    incremental_buffer = *target - absolute_buffer;
+    absolute_buffer = *target;
+  }
+}
+
 void BlockPort::set(float64_t value, uint8_t mode){
   update_has_run = true; //we set this to reflect that the buffers contain the current state of the target
   if(mode == INCREMENTAL){
@@ -256,7 +282,7 @@ void BlockPort::push(uint8_t mode){
   // Note that for pushing, we are using the incremental and absolute buffers slightly differently;
   // we don't have the notion of pre and post- update, because these values are being set internally.
 
-  if(target_BlockPort != nullptr){
+  if((target_BlockPort != nullptr) && push_pull_enabled){
     if(mode == INCREMENTAL){
       target_BlockPort->write(convert_block_to_world_units(incremental_buffer), INCREMENTAL);
     }else{
@@ -268,9 +294,17 @@ void BlockPort::push(uint8_t mode){
 void BlockPort::pull(uint8_t mode){
   // pulls the buffer state of a target BlockPort onto this BlockPort
   // THIS NEEDS TO BE CALLED BEFORE update();
-  if(target_BlockPort != nullptr){
+  if((target_BlockPort != nullptr) && push_pull_enabled){
     write(target_BlockPort->read(mode), mode);
   }
+}
+
+void BlockPort::enable(){
+  push_pull_enabled = true;
+}
+
+void BlockPort::disable(){
+  push_pull_enabled = false;
 }
 
 // -- TRANSMISSION --
