@@ -14,26 +14,93 @@ A part of the Mixing Metaphors Project
 
 */
 
-CircleGenerator::CircleGenerator(){};
+WaveGenerator1D::WaveGenerator1D(){};
 
-void CircleGenerator::begin(){
+void WaveGenerator1D::begin(){
+  input.begin(&input_position);
+  output.begin(&output_position);
   register_plugin();
 }
 
-void CircleGenerator::map(Transmission* x_target_transmission, Transmission* y_target_transmission){
-  x_output_transmission = x_target_transmission;
-  y_output_transmission = y_target_transmission;
+void WaveGenerator1D::debugPrint(){
+  Serial.print("input_position: ");
+  Serial.print(input.read(INCREMENTAL));
+  Serial.print(",");
+  Serial.print(input.read(ABSOLUTE));
+  Serial.print(",");
+  Serial.print(input_position);
+  Serial.print("amplitude: ");
+  Serial.print(amplitude);
+  Serial.print(", delta_value: ");
+  Serial.print(delta);
+   Serial.print(", previous_pos: ");
+  Serial.print(previousTime);
+  Serial.print(", output read: ");
+  Serial.println(output.read(ABSOLUTE));
+
+}
+
+void WaveGenerator1D::run(){
+  input.pull();
+  input.update();
+  
+  //float64_t time = CORE_FRAME_PERIOD_S
+
+  float64_t delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+  current_angle_rad += delta_angle_rad;
+
+  if(current_angle_rad > (2*PI)){ //let's keep the angle values small
+     current_angle_rad -= 2*PI;
+  }
+  float64_t delta_x = amplitude * delta_angle_rad * std::cos(current_angle_rad);
+
+  delta = delta_x;
+
+  output.set(delta,INCREMENTAL);
+  output.push();
+}
+
+
+
+
+
+CircleGenerator::CircleGenerator(){};
+
+void CircleGenerator::begin(){
+  output_x.begin(&output_x_position);
+  output_y.begin(&output_y_position);
+  register_plugin();
+}
+
+void CircleGenerator::debugPrint(){
+  Serial.print("Core Frame Period: ");
+  Serial.print(CORE_FRAME_PERIOD_S,6);
+  Serial.print(", rotational_speed_rev_per_sec: ");
+  Serial.print(rotational_speed_rev_per_sec,6);
+  Serial.print(", current_angle_rad: ");
+  Serial.print(current_angle_rad,6);
+    Serial.print(", radius: ");
+  Serial.print(radius,6);
+  Serial.print(", current_radius: ");
+  Serial.print(current_radius,6);
+  Serial.print(", radial_delta_mm: ");
+  Serial.print(radial_delta_mm,6);
+  Serial.print(", max_radial_change: ");
+  Serial.println( max_radial_change,6);
 }
 
 void CircleGenerator::run(){
-  
+  float64_t time = CORE_FRAME_PERIOD_S;
+
   //calculate new angle
-  float64_t angle_delta_rad = rotational_speed_rev_per_sec * 2 * PI * CORE_FRAME_PERIOD_S; //change in angle this frame
+  float64_t angle_delta_rad = rotational_speed_rev_per_sec * 2 * PI * time; //change in angle this frame
   current_angle_rad += angle_delta_rad;
+ 
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
     current_angle_rad -= 2*PI;
   }
 
+ 
   // pre-calculate sin and cos of current angle
   float64_t sin_angle = sin(current_angle_rad);
   float64_t cos_angle = cos(current_angle_rad);
@@ -43,8 +110,9 @@ void CircleGenerator::run(){
   DecimalPosition delta_y = 0;
 
   //calculate changes in radius
-  float32_t radial_delta_mm = radius - current_radius;
-  float32_t max_radial_change = max_radial_speed_mm_per_sec * CORE_FRAME_PERIOD_S; //maximum allowable change in radius
+  radial_delta_mm = radius - current_radius;
+  max_radial_change = max_radial_speed_mm_per_sec * CORE_FRAME_PERIOD_S; //maximum allowable change in radius
+
 
   if(radial_delta_mm > max_radial_change){
     radial_delta_mm = max_radial_change;
@@ -60,13 +128,23 @@ void CircleGenerator::run(){
   delta_x += current_radius * angle_delta_rad * sin_angle;
   delta_y += current_radius * angle_delta_rad * cos_angle;
 
+ //Serial.print("delta_x, delta_y");
+  //Serial.print(delta_x);
+  //Serial.print(" ,");
+  //Serial.println(delta_y);
+
   //add to target transmissions
-  if(x_output_transmission != nullptr){
-    x_output_transmission->increment(delta_x);
-  }
-  if(y_output_transmission != nullptr){
-    y_output_transmission->increment(delta_y);
-  }
+  //if(x_output_transmission != nullptr){
+    //x_output_transmission->increment(delta_x);
+  //}
+  //if(y_output_transmission != nullptr){
+    //y_output_transmission->increment(delta_y);
+  //}
+  output_x.set(delta_x);
+  output_x.push();
+
+  output_y.set(delta_y);
+  output_y.push();
 }
 
 // -- VELOCITY GENERATOR --

@@ -17,20 +17,52 @@ A part of the Mixing Metaphors Project
 #ifndef generators_h //prevent importing twice
 #define generators_h
 
+class WaveGenerator1D : public Plugin{
+  public:
+    WaveGenerator1D();
+    volatile ControlParameter amplitude = 1.0;
+    volatile ControlParameter phase = 0.0;
+    volatile ControlParameter rotational_speed_rev_per_sec = 6.1;
+    void begin();
+    void debugPrint();
+
+    BlockPort input; //optional if you want to control the update relative to change in position
+    BlockPort output;
+
+    private:
+    DecimalPosition input_position; 
+    DecimalPosition output_position;
+
+    protected:
+      volatile float64_t current_angle_rad = 0;
+      volatile float64_t previousTime = 0;
+      volatile float64_t delta = 0;
+
+      void run();
+};
+
+
 class CircleGenerator : public Plugin{
   public:
     CircleGenerator();
-    volatile ControlParameter rotational_speed_rev_per_sec = 1; // circle generation speed
-    volatile ControlParameter radius = 0; //radius of circle
+    volatile ControlParameter rotational_speed_rev_per_sec = 5; // circle generation speed
+    volatile ControlParameter radius = 20; //radius of circle
     volatile ControlParameter max_radial_speed_mm_per_sec = 10; // maximum radial speed
     void begin();
-    void map(Transmission* x_target_transmission, Transmission* y_target_transmission);
+    void debugPrint();
+  
+  // BlockPorts
+  BlockPort output_x;
+  BlockPort output_y;
 
   private:
-    Transmission* x_output_transmission = nullptr;
-    Transmission* y_output_transmission = nullptr;
     volatile float32_t current_radius = 0;
     volatile float64_t current_angle_rad = 0;
+    DecimalPosition output_x_position;
+    DecimalPosition output_y_position;
+    float32_t radial_delta_mm;
+    float32_t max_radial_change;
+
   
   protected:
     void run();
