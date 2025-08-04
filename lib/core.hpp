@@ -37,6 +37,10 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define SIGNAL_Z  4
 #define SIGNAL_E  5 // Extruder
 
+// Standard Step Ratio
+#define STANDARD_RATIO_MM  0.01 // world mm / steps. At 25KHz this provides a max velocity of 250mm/sec.
+#define STANDARD_RATIO_IN  0.0003937 // world inches / step
+
 // Plugin Execution Context
 #define PLUGIN_FRAME_PRE_CHANNEL  0 //runs on the frame, before channels are evaluated
 #define PLUGIN_FRAME_POST_CHANNEL 1 //runs on the frame, after channels are evaluated
@@ -131,8 +135,8 @@ class BlockPort{
     BlockPort();
 
     // -- User Functions -- these are called within user code, not (just) the library
-    void set_ratio(float world_units, float block_units);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
-                                                            // conversion always happens within the write/read functions when data enters and exits the BlockPort
+    void set_ratio(float world_units, float block_units = 1.0);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
+                                                                // conversion always happens within the write/read functions when data enters and exits the BlockPort
     
     void map(BlockPort *map_target, uint8_t mode); //maps this BlockPort's pipe to a target BlockPort
     inline void map(BlockPort *map_target){

@@ -33,7 +33,7 @@ class Channel{
     void set_max_pulse_rate(float max_pulses_per_sec); // sets the maximum allowable pulse rate
     void run(); //Drives the current position to the target position by one pulse, and generates a signal
     void pulse(int8_t direction); // generates a step pulse and releases a signal on the output port
-    void set_ratio(float input_units, float channel_units); //sets the transmission ratio for all target transmissions
+    void set_ratio(float input_units, float channel_units = 1.0); //sets the transmission ratio for all target transmissions
     void set_upper_limit(DecimalPosition upper_limit_input_units); //sets the upper limit, using input (world) units.
     void set_lower_limit(DecimalPosition lower_limit_input_units); //sets the lower limit, using input (world) units.
     void disable_upper_limit();

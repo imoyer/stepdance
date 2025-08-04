@@ -35,7 +35,7 @@ class Encoder : public Plugin{
     void reset(); //resets the encoder value to zero
     void set(DecimalPosition value); //resets the encoder value to a provided value, in world units
     void set_latch(DecimalPosition value_world_units, uint8_t min_or_max);
-    void set_ratio(float output_units, float encoder_units);
+    void set_ratio(float output_units, float encoder_units = 1.0);
 
     // BlockPorts
     BlockPort output;
