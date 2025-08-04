@@ -17,23 +17,89 @@ A part of the Mixing Metaphors Project
 #ifndef generators_h //prevent importing twice
 #define generators_h
 
+class WaveGenerator1D : public Plugin{
+  public:
+    WaveGenerator1D();
+    volatile ControlParameter amplitude = 1.0;
+    volatile ControlParameter phase = 0.0;
+    volatile ControlParameter rotational_speed_rev_per_sec = 8;
+
+    void begin();
+    void setNoInput();
+    void debugPrint();
+
+    BlockPort input;
+    BlockPort output;
+
+    private:
+    DecimalPosition input_position; 
+    DecimalPosition output_position;
+    bool no_input = false; //if set to true uses the frame value to update the output
+
+
+    protected:
+      volatile float64_t current_angle_rad = 0;
+      volatile float64_t delta = 0;
+
+      void run();
+};
+
+//removing because it's currently not needed with WaveGenerator1D
+/*class WaveGenerator2D : public Plugin{
+  public:
+    WaveGenerator2D();
+    volatile ControlParameter amplitude = 1.0;
+    volatile ControlParameter phase = 0.0;
+    volatile ControlParameter rotational_speed_rev_per_sec = 6;
+    volatile bool no_input = false; //if set to true uses the frame value to update the output
+
+    void begin();
+    void setNoInput();
+
+    void debugPrint();
+
+    BlockPort input; 
+    BlockPort output_x;
+    BlockPort output_y;
+
+    private:
+    DecimalPosition input_position; 
+    DecimalPosition output_x_position;
+    DecimalPosition output_y_position;
+
+    protected:
+      volatile float64_t current_angle_rad = 0;
+      volatile float64_t delta = 0;
+
+      void run();
+};*/
+
 class CircleGenerator : public Plugin{
   public:
     CircleGenerator();
-    volatile ControlParameter rotational_speed_rev_per_sec = 1; // circle generation speed
-    volatile ControlParameter radius = 0; //radius of circle
-    volatile ControlParameter max_radial_speed_mm_per_sec = 10; // maximum radial speed
-    void begin();
-    void map(Transmission* x_target_transmission, Transmission* y_target_transmission);
+    volatile ControlParameter radius = 1.0;
+    volatile ControlParameter rotational_speed_rev_per_sec = 6;
 
-  private:
-    Transmission* x_output_transmission = nullptr;
-    Transmission* y_output_transmission = nullptr;
-    volatile float32_t current_radius = 0;
-    volatile float64_t current_angle_rad = 0;
-  
-  protected:
-    void run();
+    void begin();
+    void setNoInput();
+    void debugPrint();
+
+    BlockPort input; 
+    BlockPort output_x;
+    BlockPort output_y;
+
+    private:
+    DecimalPosition input_position; 
+    DecimalPosition output_x_position;
+    DecimalPosition output_y_position;
+    bool no_input = false; //if set to true uses the frame value to update the output
+
+
+    protected:
+      volatile float64_t current_angle_rad = 0;
+      volatile float64_t delta = 0;
+
+      void run();
 };
 
 class VelocityGenerator : public Plugin{

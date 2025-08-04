@@ -15,7 +15,7 @@ Channel channel_e;
 KinematicsPolarToCartesian polar_kinematics;
 
 AnalogInput analog_a1; //foot pedal
-AnalogInput analog_a2; //linear pot
+AnalogInput analog_a3; //linear pot
 
 
 Encoder encoder_1; //hand lever
@@ -62,11 +62,11 @@ void setup() {
   velocity_gen.output.map(&polar_kinematics.input_angle);
 
   encoder_1.begin(ENCODER_1);
-  encoder_1.set_ratio(10, 2400); //25mm per revolution
+  encoder_1.set_ratio(1, 2400); //25mm per revolution
   encoder_1.output.map(&polar_kinematics.input_radius);
 
   encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(10, 2400); //25mm per revolution
+  encoder_2.set_ratio(1, 2400); //25mm per revolution
   encoder_2.output.map(&channel_z.input_target_position);
   encoder_2.invert();
 
@@ -88,15 +88,17 @@ void setup() {
   e_gen.output.map(&channel_e.input_target_position);
 
   analog_a1.set_floor(0, 25);
-  analog_a1.set_ceiling(6.28, 1020); //radians per second
+  analog_a1.set_ceiling(3.28, 1020); //radians per second
   analog_a1.map(&velocity_gen.speed_units_per_sec);
   analog_a1.begin(IO_A1);
 
-  analog_a2.set_floor(1, 25);
-  analog_a2.set_ceiling(20, 1020); // extrusion multiplier
-  //analog_a1.map(&velocity_gen.speed_units_per_sec);
- 
-  analog_a2.begin(IO_A2);
+
+
+
+  analog_a3.set_floor(0, 1020);
+  analog_a3.set_ceiling(5, 25); // extrusion multiplier 
+  analog_a3.begin(IO_A3);
+
 
   dance_start();
 }
@@ -106,7 +108,7 @@ LoopDelay overhead_delay;
 void loop() {
  
   overhead_delay.periodic_call(&report_overhead, 500);
-  extrusionMultiplier = analog_a2.read();
+  extrusionMultiplier = analog_a3.read();
   float64_t segmentLength = 1.0;
   extrusionRate = (4*layerHeight * extrusionMultiplier * nozzleDiameter * segmentLength) / (PI*nozzleDiameter*nozzleDiameter);
   e_gen.set_ratio(extrusionRate);
