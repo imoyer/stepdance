@@ -108,9 +108,9 @@ void setup() {
 
   // -- Configure Button --
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
-  button_d1.set_mode(BUTTON_MODE_STANDARD);
+  button_d1.set_mode(BUTTON_MODE_TOGGLE);
   button_d1.set_callback_on_press(&pen_up);
-  // button_d1.set_callback_on_release(&pen_up);
+  button_d1.set_callback_on_release(&pen_down);
 
   button_d2.begin(IO_D2, INPUT_PULLDOWN);
   button_d2.set_mode(BUTTON_MODE_TOGGLE);
@@ -129,17 +129,17 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  overhead_delay.periodic_call(&report_overhead, 500);
+  // overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
 void pen_down(){
-  position_gen.go(-4, ABSOLUTE, 2000);
+  position_gen.go(-4, ABSOLUTE, 100);
 }
 
 void pen_up(){
-  position_gen.go(0.2, INCREMENTAL, 2000);
+  position_gen.go(4, ABSOLUTE, 100);
 }
 
 void motors_enable(){
