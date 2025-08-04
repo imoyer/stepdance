@@ -274,6 +274,13 @@ void InputPort::isr(){
   // input_interrupt_cycles = ARM_DWT_CYCCNT - interrupt_entry_cycle_count;
 }
 
+void InputPort::set_ratio(float output_units, float input_units){
+  // sets ratios for ALL input signals.
+  for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
+    signal_BlockPort_targets[signal_index]->set_ratio(output_units, input_units);
+  }  
+}
+
 void InputPort::enable_signal(uint8_t signal_index){
   signal_enable_flags[signal_index] = true;
 }
