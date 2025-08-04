@@ -276,20 +276,36 @@ void AnalogInput::begin(uint8_t pin_reference){
   }
 }
 
+void AnalogInput::invert(){
+  inversion_multiplier *= -1;
+}
+
 // Public Utility Methods
 ControlParameter AnalogInput::read(){
   // Returns the last read value, converted into real-world units.
   
+  ControlParameter converted_value;
+
   // convert
-  ControlParameter converted_value =  static_cast<ControlParameter>(last_value_raw) * conversion_slope + conversion_intercept;
+  if(deadband_enabled){
+    if(last_value_raw < adc_deadband_lower){
+      converted_value = static_cast<ControlParameter>(last_value_raw) * conversion_slope_1 + conversion_intercept_1;
+    }else if(last_value_raw > adc_deadband_upper){
+      converted_value = static_cast<ControlParameter>(last_value_raw) * conversion_slope_2 + conversion_intercept_2;
+    }else{
+      converted_value = output_at_deadband;
+    }
+  }else{ //deadband NOT enabled
+    converted_value =  static_cast<ControlParameter>(last_value_raw) * conversion_slope_1 + conversion_intercept_1;
+  }
 
   // latch value
   if(converted_value < output_at_floor){
-    return output_at_floor;
+    return output_at_floor * inversion_multiplier;
   }else if(converted_value > output_at_ceiling){
-    return output_at_ceiling;
+    return output_at_ceiling * inversion_multiplier;
   }else{
-    return converted_value;
+    return converted_value * inversion_multiplier;
   }
 }
 
@@ -308,8 +324,7 @@ void AnalogInput::set_floor(ControlParameter output_at_floor, uint16_t adc_lower
   // adc_lower_limit -- the adc value at which this minimum applies.
   this->output_at_floor = output_at_floor;
   this->adc_lower_limit = adc_lower_limit;
-  this->conversion_slope = (this->output_at_ceiling - this->output_at_floor) / static_cast<ControlParameter>(this->adc_upper_limit - this->adc_lower_limit);
-  this->conversion_intercept = this->output_at_floor - this->conversion_slope * static_cast<ControlParameter>(this->adc_lower_limit);
+  set_slope_intercept();
 }
 
 void AnalogInput::set_ceiling(ControlParameter output_at_ceiling){
@@ -322,10 +337,36 @@ void AnalogInput::set_ceiling(ControlParameter output_at_ceiling, uint16_t adc_u
   // adc_lower_limit -- the adc value at which this maximum applies.
   this->output_at_ceiling = output_at_ceiling;
   this->adc_upper_limit = adc_upper_limit;
-  this->conversion_slope = (this->output_at_ceiling - this->output_at_floor) / static_cast<ControlParameter>(this->adc_upper_limit - this->adc_lower_limit);
-  this->conversion_intercept = this->output_at_floor - this->conversion_slope * static_cast<ControlParameter>(this->adc_lower_limit);
+  set_slope_intercept();
 }
 
+void AnalogInput::set_slope_intercept(){
+  // sets the slope and intercept whenever floor, ceiling, or deadband are updated.
+  // if there's no deadband, we just use slope_1 and intercept_1
+  if(deadband_enabled){
+    this->conversion_slope_1 = (this->output_at_deadband - this->output_at_floor) / static_cast<ControlParameter>(this->adc_deadband_lower - this->adc_lower_limit);
+    this->conversion_intercept_1 = this->output_at_floor - this->conversion_slope_1 * static_cast<ControlParameter>(this->adc_lower_limit);
+    this->conversion_slope_2 = (this->output_at_ceiling - this->output_at_deadband) / static_cast<ControlParameter>(this->adc_upper_limit - this->adc_deadband_upper);
+    this->conversion_intercept_2 = this->output_at_deadband - this->conversion_slope_2 * static_cast<ControlParameter>(this->adc_deadband_upper);    
+  }else{
+    this->conversion_slope_1 = (this->output_at_ceiling - this->output_at_floor) / static_cast<ControlParameter>(this->adc_upper_limit - this->adc_lower_limit);
+    this->conversion_intercept_1 = this->output_at_floor - this->conversion_slope_1 * static_cast<ControlParameter>(this->adc_lower_limit);
+  }
+}
+
+void AnalogInput::set_deadband_here(ControlParameter output_at_deadband, uint16_t adc_deadband_width){
+  if(adc_deadband_width == 1){ //let's make sure it doesn't end up at zero when /2.
+    adc_deadband_width = 2;
+  }
+  this->deadband_enabled = true;
+  this->output_at_deadband = output_at_deadband;
+  this->adc_deadband_width = adc_deadband_width;
+  delay(ANALOG_DEADBAND_STARTUP_DELAY_MS); // we need to wait for a first reading before setting the deadband location
+  this->adc_deadband_location = last_value_raw;
+  this->adc_deadband_lower = this->adc_deadband_location - (this->adc_deadband_width/2);
+  this->adc_deadband_upper = this->adc_deadband_location + (this->adc_deadband_width/2);
+  set_slope_intercept();
+}
 
 // Interrupt Routines
 void AnalogInput::adc1_on_interrupt(){
