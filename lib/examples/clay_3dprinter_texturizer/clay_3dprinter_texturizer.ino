@@ -16,7 +16,10 @@ KinematicsPolarToCartesian polar_kinematics;
 
 AnalogInput analog_a1; //foot pedal
 AnalogInput analog_a2; //linear pot
-AnalogInput analog_a3; //rotary pot
+AnalogInput analog_a3; //linear pot
+AnalogInput analog_a4; //rotary pot
+Button button_1; //pushbutton
+Button button_2; //pushbutton
 
 
 Encoder encoder_1; //hand lever
@@ -28,14 +31,13 @@ ScalingFilter1D z_gen;
 
 PathLengthGenerator2D e_gen; //generates extruder signal
 
-//CircleGenerator tiny_circles; // generates circle pattern
-WaveGenerator1D wave_generator1D; // 1D osscilation generator
+WaveGenerator1D z_wave_generator; // 1D wave generator
+WaveGenerator1D xy_wave_generator;
 
 float64_t layerHeight = 2.0;
 float64_t nozzleDiameter = 4.0;
 volatile float64_t extrusionMultiplier = 1.0;
 volatile float64_t extrusionRate = 0.0;
-
 
 
 void setup() {
@@ -47,11 +49,11 @@ void setup() {
   enable_drivers();
 
   channel_a.begin(&output_a, SIGNAL_E);
-  channel_a.set_ratio(1, 40); //axidraw: 1" == 2874 steps
+  channel_a.set_ratio(1, 40);
   channel_a.invert_output();
 
   channel_b.begin(&output_b, SIGNAL_E);
-  channel_b.set_ratio(1, 40); //axidraw: 1" == 2874 steps
+  channel_b.set_ratio(1, 40);
   //channel_b.invert_output();
 
   channel_z.begin(&output_c, SIGNAL_E);
@@ -67,14 +69,24 @@ void setup() {
   velocity_gen.output.map(&polar_kinematics.input_angle);
 
   encoder_1.begin(ENCODER_1);
-  encoder_1.set_ratio(10, 2400); //25mm per revolution
+  encoder_1.set_ratio(1, 2400); //25mm per revolution
   encoder_1.output.map(&polar_kinematics.input_radius);
   encoder_1.invert();
 
   encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(10, 2400); //25mm per revolution
+  encoder_2.set_ratio(1, 2400); //25mm per revolution
   encoder_2.output.map(&channel_z.input_target_position);
   encoder_2.invert();
+
+  xy_wave_generator.input.map(&polar_kinematics.input_angle,INCREMENTAL);
+  xy_wave_generator.output.map(&polar_kinematics.input_radius);
+  xy_wave_generator.begin();
+
+
+  z_wave_generator.input.map(&polar_kinematics.input_angle,INCREMENTAL);
+  z_wave_generator.output.map(&channel_z.input_target_position);
+  z_wave_generator.begin();
+
 
   polar_kinematics.output_x.map(&channel_a.input_target_position);
   polar_kinematics.output_y.map(&channel_b.input_target_position);
@@ -87,31 +99,37 @@ void setup() {
 
   e_gen.begin();
 
-  
   e_gen.input_1.map(&channel_a.input_target_position);
   e_gen.input_2.map(&channel_b.input_target_position);
   e_gen.output.map(&channel_e.input_target_position);
 
-  //tiny_circles.begin();
-  //tiny_circles.output_x.map(&channel_a.input_target_position);
-  //tiny_circles.output_y.map(&channel_b.input_target_position);
-  wave_generator1D.input.map(&polar_kinematics.input_angle,INCREMENTAL);
-  wave_generator1D.output.map(&channel_z.input_target_position);
-  wave_generator1D.begin();
-
+  //pedal
   analog_a1.set_floor(0, 25);
-  analog_a1.set_ceiling(6.28, 1020); //radians per second
+  analog_a1.set_ceiling(2.75, 1020); //radians per second
   analog_a1.map(&velocity_gen.speed_units_per_sec);
   analog_a1.begin(IO_A1);
 
-  analog_a2.set_floor(0, 25);
-  analog_a2.set_ceiling(5, 1020); // extrusion multiplier
-  analog_a2.map(&wave_generator1D.amplitude);
+  //extrusion rate
+  analog_a2.set_floor(1, 1020);
+  analog_a2.set_ceiling(10, 25); // extrusion multiplier 
   analog_a2.begin(IO_A2);
 
-  analog_a3.set_floor(1, 1020);
-  analog_a3.set_ceiling(20, 25); // extrusion multiplier 
+  //xy amplitude
+  analog_a3.set_floor(0, 25);
+  analog_a3.set_ceiling(10, 1020);
+  analog_a3.map(&xy_wave_generator.amplitude);
   analog_a3.begin(IO_A3);
+  
+  //xy frequency
+  analog_a4.set_floor(0, 25);
+  analog_a4.set_ceiling(10, 1020);
+  analog_a4.map(&xy_wave_generator.rotational_speed_rev_per_sec);
+  analog_a4.begin(IO_A4);
+
+
+  button_1.set_callback_on_toggle(&toggleXYTexturizer);
+  button_2.set_callback_on_toggle(&toggleZTexturizer);
+
 
   dance_start();
 }
@@ -131,8 +149,16 @@ void loop() {
 
 }
 
+void toggleXYTexturizer(){
+
+}
+
+void toggleZTexturizer(){
+
+}
+
 void report_overhead(){
-  wave_generator1D.debugPrint();
+  //wave_generator1D.debugPrint();
   //Serial.println(stepdance_get_cpu_usage(), 4);
  // Serial.println(e_gen.input_1_position, 4);
  // Serial.println(e_gen.input_2_position, 4); 

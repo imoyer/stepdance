@@ -22,6 +22,10 @@ void WaveGenerator1D::begin(){
   register_plugin();
 }
 
+void WaveGenerator1D::setNoInput(){
+  no_input = true;
+}
+
 void WaveGenerator1D::debugPrint(){
   Serial.print("input_position: ");
   Serial.print(input.read(INCREMENTAL));
@@ -41,10 +45,14 @@ void WaveGenerator1D::debugPrint(){
 void WaveGenerator1D::run(){
   input.pull();
   input.update();
+  float64_t delta_angle_rad;
+  if(no_input){
+    delta_angle_rad = rotational_speed_rev_per_sec * CORE_FRAME_PERIOD_S;
+  }
+  else{
+   delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+  }
   
-  //float64_t time = CORE_FRAME_PERIOD_S
-
-  float64_t delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
   current_angle_rad += delta_angle_rad;
 
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
@@ -59,89 +67,78 @@ void WaveGenerator1D::run(){
 }
 
 
+/*WaveGenerator2D::WaveGenerator2D(){};
 
+void WaveGenerator2D::begin(){
+  input.begin(&input_position);
+  output_x.begin(&output_x_position);
+  output_y.begin(&output_y_position);
+
+  register_plugin();
+}
+
+void WaveGenerator2D::debugPrint(){
+
+}
+
+void WaveGenerator2D::run(){
+  input.pull();
+  input.update();
+  
+  float64_t delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+  current_angle_rad += delta_angle_rad;
+
+  if(current_angle_rad > (2*PI)){ //let's keep the angle values small
+     current_angle_rad -= 2*PI;
+  }
+  float64_t delta_x = amplitude * delta_angle_rad * std::cos(current_angle_rad);
+  float64_t delta_y = amplitude * delta_angle_rad * std::sin(current_angle_rad);
+
+  output_x.set(delta_x,INCREMENTAL);
+  output_x.push();
+  output_y.set(delta_y,INCREMENTAL);
+  output_y.push();
+}*/
 
 
 CircleGenerator::CircleGenerator(){};
 
 void CircleGenerator::begin(){
+  input.begin(&input_position);
   output_x.begin(&output_x_position);
   output_y.begin(&output_y_position);
   register_plugin();
 }
 
+void CircleGenerator::setNoInput(){
+  no_input = true;
+}
+
 void CircleGenerator::debugPrint(){
-  Serial.print("Core Frame Period: ");
-  Serial.print(CORE_FRAME_PERIOD_S,6);
-  Serial.print(", rotational_speed_rev_per_sec: ");
-  Serial.print(rotational_speed_rev_per_sec,6);
-  Serial.print(", current_angle_rad: ");
-  Serial.print(current_angle_rad,6);
-    Serial.print(", radius: ");
-  Serial.print(radius,6);
-  Serial.print(", current_radius: ");
-  Serial.print(current_radius,6);
-  Serial.print(", radial_delta_mm: ");
-  Serial.print(radial_delta_mm,6);
-  Serial.print(", max_radial_change: ");
-  Serial.println( max_radial_change,6);
 }
 
 void CircleGenerator::run(){
-  float64_t time = CORE_FRAME_PERIOD_S;
+  input.pull();
+  input.update();
+  float64_t delta_angle_rad;
+  if(no_input){
+    delta_angle_rad = rotational_speed_rev_per_sec * CORE_FRAME_PERIOD_S;
+  }
+  else{
+   delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+  }
+   
+  current_angle_rad += delta_angle_rad;
 
-  //calculate new angle
-  float64_t angle_delta_rad = rotational_speed_rev_per_sec * 2 * PI * time; //change in angle this frame
-  current_angle_rad += angle_delta_rad;
- 
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
-    current_angle_rad -= 2*PI;
+     current_angle_rad -= 2*PI;
   }
+  float64_t delta_x = radius * delta_angle_rad * std::cos(current_angle_rad);
+  float64_t delta_y = radius * delta_angle_rad * std::sin(current_angle_rad);
 
- 
-  // pre-calculate sin and cos of current angle
-  float64_t sin_angle = sin(current_angle_rad);
-  float64_t cos_angle = cos(current_angle_rad);
-
-  // begin tracking delta_x and delta_y
-  DecimalPosition delta_x = 0;
-  DecimalPosition delta_y = 0;
-
-  //calculate changes in radius
-  radial_delta_mm = radius - current_radius;
-  max_radial_change = max_radial_speed_mm_per_sec * CORE_FRAME_PERIOD_S; //maximum allowable change in radius
-
-
-  if(radial_delta_mm > max_radial_change){
-    radial_delta_mm = max_radial_change;
-  }else if(radial_delta_mm < -max_radial_change){
-    radial_delta_mm = -max_radial_change;
-  }
-
-  delta_x += radial_delta_mm * cos_angle;
-  delta_y += radial_delta_mm * sin_angle;
-  current_radius += radial_delta_mm;
-
-  //calculate change in position due to rotation
-  delta_x += current_radius * angle_delta_rad * sin_angle;
-  delta_y += current_radius * angle_delta_rad * cos_angle;
-
- //Serial.print("delta_x, delta_y");
-  //Serial.print(delta_x);
-  //Serial.print(" ,");
-  //Serial.println(delta_y);
-
-  //add to target transmissions
-  //if(x_output_transmission != nullptr){
-    //x_output_transmission->increment(delta_x);
-  //}
-  //if(y_output_transmission != nullptr){
-    //y_output_transmission->increment(delta_y);
-  //}
-  output_x.set(delta_x);
+  output_x.set(delta_x,INCREMENTAL);
   output_x.push();
-
-  output_y.set(delta_y);
+  output_y.set(delta_y,INCREMENTAL);
   output_y.push();
 }
 
