@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <sys/types.h>
 /*
 Filters Module of the StepDance Control System
 
@@ -20,7 +22,7 @@ class ScalingFilter1D : public Plugin{
   public:
     ScalingFilter1D();
 
-    void begin();
+    void begin(uint8_t mode = INCREMENTAL);
     void set_ratio(ControlParameter ratio);
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
@@ -34,11 +36,42 @@ class ScalingFilter1D : public Plugin{
 
   private:
     DecimalPosition input_position;
-    DecimalPosition output_position; 
+    DecimalPosition output_position;
+    uint8_t mode = INCREMENTAL;
 
   protected:
     void run();
 };
 
+class ScalingFilter2D : public Plugin{
+  // Generates two output signals, each in proportion to an input signal.
+
+  public:
+    ScalingFilter2D();
+
+    void begin(uint8_t mode = INCREMENTAL);
+    void set_ratio(ControlParameter ratio);
+    inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
+      set_ratio(output_distance / input_distance);
+    }
+
+    ControlParameter ratio = 1.0; // output / input
+
+    // BlockPorts
+    BlockPort input_1;
+    BlockPort input_2;
+    BlockPort output_1;
+    BlockPort output_2;
+
+  private:
+    DecimalPosition input_1_position;
+    DecimalPosition input_2_position;
+    DecimalPosition output_1_position;
+    DecimalPosition output_2_position;
+    uint8_t mode = INCREMENTAL;
+
+  protected:
+    void run();
+};
 
 #endif
