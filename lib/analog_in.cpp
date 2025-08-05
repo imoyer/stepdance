@@ -368,6 +368,19 @@ void AnalogInput::set_deadband_here(ControlParameter output_at_deadband, uint16_
   set_slope_intercept();
 }
 
+void AnalogInput::set_deadband(ControlParameter output_at_deadband, uint16_t adc_deadband_center, uint16_t adc_deadband_width){
+  if(adc_deadband_width == 1){ //let's make sure it doesn't end up at zero when /2.
+    adc_deadband_width = 2;
+  }
+  this->deadband_enabled = true;
+  this->output_at_deadband = output_at_deadband;
+  this->adc_deadband_width = adc_deadband_width;
+  this->adc_deadband_location = adc_deadband_center;
+  this->adc_deadband_lower = this->adc_deadband_location - (this->adc_deadband_width/2);
+  this->adc_deadband_upper = this->adc_deadband_location + (this->adc_deadband_width/2);
+  set_slope_intercept();  
+}
+
 // Interrupt Routines
 void AnalogInput::adc1_on_interrupt(){
   AnalogInput *this_module = AnalogInput::adc1_inputs[AnalogInput::module_current_input_index[ADC_MODULE_1]];
