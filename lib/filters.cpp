@@ -62,8 +62,8 @@ void ScalingFilter2D::run(){
   input_2.update();
 
   if(mode == INCREMENTAL){
-    output_1.set(input_1.incremental_buffer * ratio);
-    output_2.set(input_2.incremental_buffer * ratio);
+    output_1.set(input_1.incremental_buffer * ratio, INCREMENTAL);
+    output_2.set(input_2.incremental_buffer * ratio, INCREMENTAL);
   }else{ //ABSOLUTE
     output_1.set(input_1_position * ratio);
     output_2.set(input_2_position * ratio);
