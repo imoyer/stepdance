@@ -85,6 +85,9 @@ class Plugin{
     static void run_kilohertz_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_loop_plugins(); //runs all loop plugins, in the order they appear in the registered_plugins list
 
+    virtual void enable();
+    virtual void disable();
+
   private:
     static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins
     static Plugin* registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS]; //stores all registered pre-channel frame plugins
@@ -142,6 +145,7 @@ class BlockPort{
     inline void map(BlockPort *map_target){
       map(map_target, INCREMENTAL); //default internal mode is INCREMENTAL
     }
+    
 
     // -- External Functions -- these are called outside the block that contains this BlockPort
     void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers

@@ -92,9 +92,6 @@ void setup() {
   analog_a1.map(&velocity_gen.speed_units_per_sec);
   analog_a1.begin(IO_A1);
 
-
-
-
   analog_a3.set_floor(0, 1020);
   analog_a3.set_ceiling(5, 25); // extrusion multiplier 
   analog_a3.begin(IO_A3);

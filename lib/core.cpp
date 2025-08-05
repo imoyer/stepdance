@@ -136,6 +136,10 @@ void Plugin::register_plugin(uint8_t execution_target){
   }
 }
 
+void Plugin::disable(){};
+
+void Plugin::enable(){};
+
 void Plugin::run(){};
 
 void Plugin::loop(){};
@@ -169,6 +173,8 @@ void Plugin::run_loop_plugins(){
     registered_loop_plugins[plugin_index]->loop();
   }  
 }
+
+
 
 // -- BLOCKPORT --
 BlockPort::BlockPort(){};

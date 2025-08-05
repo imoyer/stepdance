@@ -66,6 +66,13 @@ void WaveGenerator1D::run(){
   output.push();
 }
 
+void WaveGenerator1D::enable(){
+  output.enable();
+}
+
+void WaveGenerator1D::disable(){
+  output.disable();
+}
 
 /*WaveGenerator2D::WaveGenerator2D(){};
 

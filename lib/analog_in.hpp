@@ -70,10 +70,13 @@ class AnalogInput{
     void set_resolution(int8_t resolution);
     void set_clock(int8_t clock);
     void map(ControlParameter *target_parameter);
+    void map(DecimalPosition *target_parameter);
+
     void set_callback(void (*callback_function)());
     volatile uint16_t last_value_raw = 0;
     void (*callback_function)() = nullptr;
-    ControlParameter *target = nullptr;
+    ControlParameter *target_control_param = nullptr;
+    DecimalPosition *target_decimal_pos = nullptr;
     static AnalogInput *adc1_inputs[MAX_NUM_ADC_INPUTS]; //keeps pointers to all instantiated analog inputs on the ADC1 module
     static AnalogInput *adc2_inputs[MAX_NUM_ADC_INPUTS];
     static uint8_t module_num_inputs[NUM_ADC_MODULES]; //tracks the number of instantiated analog inputs on the ADC module; indexed by ADC module
