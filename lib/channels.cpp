@@ -153,6 +153,7 @@ void Channel::run(){
     }
     
     // 2. Calculate pulse distance between target and current position. Both target positions contribute.
+    
     float64_t delta_position = target_position + target_position_2 - current_position;
 
     // 3. Determine direction of motion

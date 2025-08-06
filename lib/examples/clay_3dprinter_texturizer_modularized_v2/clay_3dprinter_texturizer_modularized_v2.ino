@@ -30,6 +30,8 @@ Encoder encoder_2; //z babystep
 VelocityGenerator velocity_gen;
 
 ScalingFilter1D z_gen;
+ScalingFilter1D x_stretch;
+
 
 PathLengthGenerator2D e_gen; //generates extruder signal
 
@@ -96,6 +98,7 @@ void setup() {
   z_wave_generator.begin();
 
   polar_kinematics.output_x.map(&channel_a.input_target_position);
+  //polar_kinematics.output_x.map(&x_stretch.input);
   polar_kinematics.output_y.map(&channel_b.input_target_position);
   polar_kinematics.begin();
 
@@ -103,6 +106,10 @@ void setup() {
   z_gen.set_ratio(layerHeight, TWO_PI); //1mm per rev
   z_gen.input.map(&polar_kinematics.input_angle);
   z_gen.output.map(&channel_z.input_target_position);
+
+  x_stretch.begin(ABSOLUTE);
+  x_stretch.output.map(&channel_a.input_target_position);
+
 
   e_gen.begin();
 
@@ -152,6 +159,9 @@ void loop() {
   float64_t z_amp = input_a.output_x.read(ABSOLUTE);
   float64_t z_freq = input_a.output_y.read(ABSOLUTE);
   float64_t z_phase =  input_a.output_z.read(ABSOLUTE);
+  //x_stretch.ratio = (input_a.output_z.absolute_buffer*0.015) + 0.5; //0->1 --> 0.5->2
+
+  
   z_wave_generator.amplitude = z_amp;
   z_wave_generator.rotational_speed_rev_per_sec = z_freq;
   z_wave_generator.phase = z_phase;
@@ -161,6 +171,8 @@ void loop() {
 
   dance_loop();
   report_overhead();
+  overhead_delay.periodic_call(&report_overhead, 100);
+
 
 
 }
@@ -215,7 +227,9 @@ void report_overhead(){
   Serial.print(", z_freq:");
   Serial.print(z_wave_generator.rotational_speed_rev_per_sec);
   Serial.print(", z_phase:");
-  Serial.println(z_wave_generator.phase);
+  Serial.print(z_wave_generator.phase);
+  Serial.print(", x_stretch:");
+  Serial.println(x_stretch.ratio);
   //wave_generator1D.debugPrint();
   //Serial.println(stepdance_get_cpu_usage(), 4);
  // Serial.println(e_gen.input_1_position, 4);
