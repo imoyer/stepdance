@@ -88,6 +88,7 @@ class AnalogInput{
     void set_ceiling(ControlParameter output_at_ceiling);
     void set_ceiling(ControlParameter output_at_ceiling, uint16_t adc_upper_limit);
     void set_deadband_here(ControlParameter output_at_deadband = 0, uint16_t adc_deadband_width = 4); //sets the deadband to the current value.
+    void set_deadband(ControlParameter output_at_deadband, uint16_t adc_deadband_center, uint16_t adc_deadband_width = 4);
     void invert(); //inverts the output
     ControlParameter read(); //returns the last read value, based on the internal conversion factor
     float32_t full_scale_volts = VREF_3V3; //we'll default to this for now, until we support changing the reference voltage.

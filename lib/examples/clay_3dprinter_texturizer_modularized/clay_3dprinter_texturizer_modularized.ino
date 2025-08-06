@@ -43,6 +43,8 @@ volatile float64_t extrusionRate = 0;
 
 void setup() {
   input_a.begin(INPUT_A);
+  input_a.set_ratio(0.05); //needs to match the output ratio in physical_ui_module.ino
+  input_a.output_y.set_ratio(1); //frequency should be an integer
 
   output_a.begin(OUTPUT_A);
   output_b.begin(OUTPUT_B);

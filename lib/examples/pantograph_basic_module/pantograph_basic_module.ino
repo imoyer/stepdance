@@ -37,6 +37,10 @@ Encoder encoder_t; //ENC_A -- tilt encoder
 
 // -- Analog Inputs --
 AnalogInput z_tuning_knob_a1;
+AnalogInput scaling_slider_a2;
+
+// -- Scaling --
+ScalingFilter2D scaling_filter;
 
 void setup() {
   // -- Configure and start the output ports --
@@ -77,12 +81,25 @@ void setup() {
 
   // -- Configure and start the kinematics modules --
   pantograph_kinematics.begin(60, 145.75, 134, 169, 178.3, 28.82, 2.9019);
-  pantograph_kinematics.output_x.map(&channel_x.input_target_position);
-  pantograph_kinematics.output_y.map(&channel_y.input_target_position);
+  pantograph_kinematics.output_x.map(&scaling_filter.input_1);
+  pantograph_kinematics.output_y.map(&scaling_filter.input_2);
+  // pantograph_kinematics.output_x.map(&channel_x.input_target_position);
+  // pantograph_kinematics.output_y.map(&channel_y.input_target_position);
 
   pantograph_yz_kinematics.begin();
   pantograph_yz_kinematics.input_radius.map(&pantograph_kinematics.output_y, ABSOLUTE);
   pantograph_yz_kinematics.output_y.map(&channel_z.input_target_position, ABSOLUTE);
+
+  // -- Scaling Filter --
+  scaling_filter.begin(); //defaults to incremental mode
+  scaling_filter.output_1.map(&channel_x.input_target_position);
+  scaling_filter.output_2.map(&channel_y.input_target_position);
+
+  scaling_slider_a2.begin(IO_A2);
+  scaling_slider_a2.set_floor(0.1);
+  scaling_slider_a2.set_ceiling(10);
+  scaling_slider_a2.set_deadband(1, 509, 4);
+  scaling_slider_a2.map(&scaling_filter.ratio);
 
   // -- Configure the Z Tuning Position Generator
   z_tuning_generator.output.map(&channel_z.input_target_position_2);
@@ -116,5 +133,6 @@ void loop() {
 void report_overhead(){
   Serial.println(stepdance_get_cpu_usage(), 4);
   Serial.println(channel_z.current_position, 6);
-  Serial.println(z_tuning_knob_a1.read());
+  Serial.println(scaling_slider_a2.last_value_raw);
+  Serial.println(scaling_slider_a2.read());
 }
