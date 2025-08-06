@@ -17,10 +17,35 @@ A part of the Mixing Metaphors Project
 #ifndef generators_h //prevent importing twice
 #define generators_h
 
+class ThresholdGenerator : public Plugin{
+  public:
+    ThresholdGenerator();
+    volatile ControlParameter threshold = 0;
+    BlockPort input_a;
+    BlockPort input_b;
+    BlockPort output;
+
+    void begin();
+    void debugPrint();
+    void enable();
+    void disable();
+
+    private:
+    DecimalPosition input_a_position; 
+    DecimalPosition input_b_position; 
+    DecimalPosition output_position;
+    DecimalPosition current_value;
+
+    protected:
+      void run();
+
+
+};
+
 class WaveGenerator1D : public Plugin{
   public:
     WaveGenerator1D();
-    volatile ControlParameter amplitude = 1.0;
+    volatile ControlParameter amplitude = 0;
     volatile ControlParameter phase = 0.0;
     volatile ControlParameter rotational_speed_rev_per_sec = 8;
 

@@ -14,6 +14,45 @@ A part of the Mixing Metaphors Project
 
 */
 
+ThresholdGenerator::ThresholdGenerator(){};
+
+void ThresholdGenerator::begin(){
+  input_a.begin(&input_a_position);
+  input_b.begin(&input_b_position);
+  output.begin(&output_position);
+  register_plugin();
+}
+
+void ThresholdGenerator::enable(){
+  output.enable();
+}
+
+void ThresholdGenerator::disable(){
+  output.disable();
+}
+
+void ThresholdGenerator::debugPrint(){
+  Serial.print("threshold: ");
+  Serial.print(threshold);
+  Serial.print(", current_value:");
+  Serial.print(current_value);
+}
+
+void ThresholdGenerator::run(){
+  input_a.pull();
+  input_a.update();
+  input_b.pull();
+  input_b.update();
+
+  current_value += input_a.read(INCREMENTAL);
+  if(current_value >= threshold){
+    current_value = 0;
+    
+  }
+
+}
+
+
 WaveGenerator1D::WaveGenerator1D(){};
 
 void WaveGenerator1D::begin(){
