@@ -37,13 +37,9 @@ void setup() {
  
 
   channel_amp.begin(&output_a, SIGNAL_X);
-  channel_amp.set_ratio(0.05);
   channel_freq.begin(&output_a, SIGNAL_Y);
-  channel_freq.set_ratio(1);
   channel_phase.begin(&output_a, SIGNAL_Z);
-  channel_phase.set_ratio(0.05);
   channel_ext.begin(&output_a, SIGNAL_E);
-  channel_ext.set_ratio(1);
 
   channel_amp.enable();
   channel_freq.enable();
@@ -51,13 +47,13 @@ void setup() {
 
    //extrusion rate
   analog_a1.set_floor(0, 1020);
-  analog_a1.set_ceiling(10, 25); // extrusion multiplier 
+  analog_a1.set_ceiling(10*20, 25); // extrusion multiplier 
   analog_a1.begin(IO_A1);
 
 
   //amplitude
-  analog_a2.set_floor(-4, 1020);
-  analog_a2.set_ceiling(4, 25); 
+  analog_a2.set_floor(-4*20, 1020);
+  analog_a2.set_ceiling(4*20, 25); 
   analog_a2.begin(IO_A2);
   analog_a2.map(&channel_amp.input_target_position.absolute_buffer);
 
@@ -68,8 +64,8 @@ void setup() {
   analog_a4.map(&channel_freq.input_target_position.absolute_buffer);
 
   //phase
-  analog_a3.set_floor(0, 1020);
-  analog_a3.set_ceiling(1, 25);
+  analog_a3.set_floor(0*100, 1020);
+  analog_a3.set_ceiling(1*100, 25);
   analog_a3.begin(IO_A3);
   analog_a3.map(&channel_phase.input_target_position.absolute_buffer);
 

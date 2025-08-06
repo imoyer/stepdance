@@ -45,6 +45,7 @@ void setup() {
   input_a.begin(INPUT_A);
   input_a.set_ratio(0.05); //needs to match the output ratio in physical_ui_module.ino
   input_a.output_y.set_ratio(1); //frequency should be an integer
+  input_a.output_z.set_ratio(0.01);
 
   output_a.begin(OUTPUT_A);
   output_b.begin(OUTPUT_B);
@@ -148,14 +149,14 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  float64_t z_amp = input_a.output_x.absolute_buffer;
-  float64_t z_freq = input_a.output_y.absolute_buffer;
-  float64_t z_phase =  input_a.output_z.absolute_buffer;
+  float64_t z_amp = input_a.output_x.read(ABSOLUTE);
+  float64_t z_freq = input_a.output_y.read(ABSOLUTE);
+  float64_t z_phase =  input_a.output_z.read(ABSOLUTE);
   z_wave_generator.amplitude = z_amp;
   z_wave_generator.rotational_speed_rev_per_sec = z_freq;
   z_wave_generator.phase = z_phase;
 
-  extrusionRate = input_a.output_e.absolute_buffer;
+  extrusionRate = input_a.output_e.read(ABSOLUTE);
   e_gen.set_ratio(extrusionRate);
 
   dance_loop();
