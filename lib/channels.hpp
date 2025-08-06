@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include <sys/_stdint.h>
 #include "output_ports.hpp"
 #include "core.hpp"
@@ -26,6 +27,10 @@ class Channel{
     DecimalPosition target_position_2; // secondary target position, used for coordinate transforms.
     DecimalPosition current_position; //tracks the current position, in pulses.
 
+    DecimalPosition filtered_target_position; // filtered target position
+    float32_t num_averaging_samples = 20; //samples in the averaging window
+    bool filtering_on = false;
+
     // Public Methods
     Channel();
     void begin(); //channel with no output port
@@ -40,6 +45,8 @@ class Channel{
     void disable_lower_limit();
     void disable();
     void enable();
+    void enable_filtering(uint16_t num_samples = 20);
+    void disable_filtering();
     
     inline void disable_limits(){
       disable_upper_limit();
