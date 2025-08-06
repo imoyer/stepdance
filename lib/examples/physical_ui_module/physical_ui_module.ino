@@ -37,9 +37,13 @@ void setup() {
  
 
   channel_amp.begin(&output_a, SIGNAL_X);
+  channel_amp.set_ratio(0.05);
   channel_freq.begin(&output_a, SIGNAL_Y);
+  channel_freq.set_ratio(1);
   channel_phase.begin(&output_a, SIGNAL_Z);
+  channel_phase.set_ratio(0.05);
   channel_ext.begin(&output_a, SIGNAL_E);
+  channel_ext.set_ratio(0.05);
 
   channel_amp.enable();
   channel_freq.enable();
@@ -64,8 +68,8 @@ void setup() {
   analog_a3.map(&channel_freq.input_target_position.absolute_buffer);
 
   //phase
-  analog_a4.set_floor(1, 1020);
-  analog_a4.set_ceiling(10, 25);
+  analog_a4.set_floor(0, 1020);
+  analog_a4.set_ceiling(1, 25);
   analog_a4.begin(IO_A4);
   analog_a4.map(&channel_phase.input_target_position.absolute_buffer);
 
