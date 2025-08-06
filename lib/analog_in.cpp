@@ -311,7 +311,12 @@ ControlParameter AnalogInput::read(){
 
 // Setup Methods
 void AnalogInput::map(ControlParameter *target_parameter){
-  this->target = target_parameter;
+  this->target_control_param = target_parameter;
+}
+
+// Setup Methods
+void AnalogInput::map(DecimalPosition *target_parameter){
+  this->target_decimal_pos = target_parameter;
 }
 
 void AnalogInput::set_floor(ControlParameter output_at_floor){
@@ -387,8 +392,11 @@ void AnalogInput::adc1_on_interrupt(){
 
   // Read and Store ADC Value
   this_module->last_value_raw = ADC1_R0;
-  if(this_module->target != nullptr){
-    *(this_module->target) = this_module->read();
+  if(this_module->target_control_param != nullptr){
+    *(this_module->target_control_param) = this_module->read();
+  }
+  else if(this_module->target_decimal_pos != nullptr){
+    *(this_module->target_decimal_pos) = this_module->read();
   }
 
   // Increment ADC input
@@ -413,8 +421,11 @@ void AnalogInput::adc2_on_interrupt(){
 
   // Read and Store ADC Value
   this_module->last_value_raw = ADC2_R0;
-  if(this_module->target != nullptr){
-    *(this_module->target) = this_module->read();
+  if(this_module->target_control_param != nullptr){
+    *(this_module->target_control_param) = this_module->read();
+  }
+  else if (this_module->target_decimal_pos != nullptr){
+    *(this_module->target_decimal_pos) = this_module->read();
   }
 
   // Increment ADC input

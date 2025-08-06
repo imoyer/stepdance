@@ -27,6 +27,8 @@ class WaveGenerator1D : public Plugin{
     void begin();
     void setNoInput();
     void debugPrint();
+    void enable();
+    void disable();
 
     BlockPort input;
     BlockPort output;

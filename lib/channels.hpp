@@ -38,6 +38,9 @@ class Channel{
     void set_lower_limit(DecimalPosition lower_limit_input_units); //sets the lower limit, using input (world) units.
     void disable_upper_limit();
     void disable_lower_limit();
+    void disable();
+    void enable();
+    
     inline void disable_limits(){
       disable_upper_limit();
       disable_lower_limit();
@@ -69,6 +72,7 @@ class Channel{
     DecimalPosition lower_limit;
     bool upper_limit_enabled = false;
     bool lower_limit_enabled = false;
+    bool enabled = true;
 
     // Private Methods
     void initialize_state(); // initializes all state variables

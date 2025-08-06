@@ -82,6 +82,14 @@ void Channel::disable_lower_limit(){
   lower_limit_enabled = false;
 }
 
+void Channel::disable(){
+  enabled = false;
+}
+
+void Channel::enable(){
+  enabled = true;
+}
+
 int8_t Channel::is_outside_limits(){
   if(upper_limit_enabled && current_position > upper_limit){
     return 1;
@@ -126,51 +134,53 @@ void Channel::register_channel(){
 }
 
 void Channel::run(){
-  // This function should be called every signal frame period.
-  // It attempts to drive the channel's current position to the target position,
-  // by generating a signal if a) there is a non-zero distance to the target, and
-  // b) doing so would not violate the maximum pulse rate for the channel.
+  if(enabled){
+    // This function should be called every signal frame period.
+    // It attempts to drive the channel's current position to the target position,
+    // by generating a signal if a) there is a non-zero distance to the target, and
+    // b) doing so would not violate the maximum pulse rate for the channel.
 
-  // 0. Update the target positions
-  input_target_position.pull();
-  input_target_position_2.pull();
-  input_target_position.update();
-  input_target_position_2.update();
+    // 0. Update the target positions
+    input_target_position.pull();
+    input_target_position_2.pull();
+    input_target_position.update();
+    input_target_position_2.update();
 
-  // 1. Increment the accumulator. This is used to determine if generating a pulse
-  //    signal would exceed the maximum pulse frequency on the channel. 
-  if(accumulator < 2*ACCUMULATOR_THRESHOLD){ //only bother incrementing if meaningful (avoids overruns)
-    accumulator += accumulator_velocity;
-  }
-  
-  // 2. Calculate pulse distance between target and current position. Both target positions contribute.
-  float64_t delta_position = target_position + target_position_2 - current_position;
+    // 1. Increment the accumulator. This is used to determine if generating a pulse
+    //    signal would exceed the maximum pulse frequency on the channel. 
+    if(accumulator < 2*ACCUMULATOR_THRESHOLD){ //only bother incrementing if meaningful (avoids overruns)
+      accumulator += accumulator_velocity;
+    }
+    
+    // 2. Calculate pulse distance between target and current position. Both target positions contribute.
+    float64_t delta_position = target_position + target_position_2 - current_position;
 
-  // 3. Determine direction of motion
-  int direction;
-  if(delta_position >= 0.5){
-    direction = DIRECTION_FORWARD;
-  }else if (delta_position < -0.5){
-    direction = DIRECTION_REVERSE;
-  }else{
-    direction = last_direction;
-  }
-
-  // 4. Try to close pulse distance
-  if(delta_position > 0.5 || delta_position < -0.5){
-
-    // calculate active accumulator threshold. This catches the case where we reverse direction.
-    float accumulator_active_threshold;
-    if(direction != last_direction){
-      accumulator_active_threshold = ACCUMULATOR_THRESHOLD * 2;
+    // 3. Determine direction of motion
+    int direction;
+    if(delta_position >= 0.5){
+      direction = DIRECTION_FORWARD;
+    }else if (delta_position < -0.5){
+      direction = DIRECTION_REVERSE;
     }else{
-      accumulator_active_threshold = ACCUMULATOR_THRESHOLD;
+      direction = last_direction;
     }
 
-    // check if we're taking a pulse
-    if(accumulator >= accumulator_active_threshold){
-      pulse(direction);
-      accumulator = 0;
+    // 4. Try to close pulse distance
+    if(delta_position > 0.5 || delta_position < -0.5){
+
+      // calculate active accumulator threshold. This catches the case where we reverse direction.
+      float accumulator_active_threshold;
+      if(direction != last_direction){
+        accumulator_active_threshold = ACCUMULATOR_THRESHOLD * 2;
+      }else{
+        accumulator_active_threshold = ACCUMULATOR_THRESHOLD;
+      }
+
+      // check if we're taking a pulse
+      if(accumulator >= accumulator_active_threshold){
+        pulse(direction);
+        accumulator = 0;
+      }
     }
   }
 }
