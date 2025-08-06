@@ -66,6 +66,15 @@ void Channel::set_upper_limit(DecimalPosition upper_limit_input_units){
   upper_limit_enabled = true;
 }
 
+void Channel::enable_filtering(uint16_t num_samples){
+  filtering_on = true;
+  this->num_averaging_samples = static_cast<float32_t>(num_samples);
+}
+
+void Channel::disable_filtering(){
+  filtering_on = false;
+}
+
 void Channel::set_lower_limit(DecimalPosition lower_limit_input_units){
   // Sets the lower limit of current_position. Oustide this, the channel will no longer output, and current_position will be capped.
 
@@ -152,8 +161,15 @@ void Channel::run(){
       accumulator += accumulator_velocity;
     }
     
-    // 2. Calculate pulse distance between target and current position. Both target positions contribute.
-    float64_t delta_position = target_position + target_position_2 - current_position;
+    // 2.   Running Average Filter
+    if(filtering_on){
+      filtered_target_position = (filtered_target_position * (num_averaging_samples-1) + target_position + target_position_2)/num_averaging_samples; 
+    }else{
+      filtered_target_position = target_position + target_position_2;
+    }
+    
+    // 2.5  Calculate pulse distance between target and current position. Both target positions contribute.
+    float64_t delta_position = filtered_target_position - current_position;
 
     // 3. Determine direction of motion
     int direction;
