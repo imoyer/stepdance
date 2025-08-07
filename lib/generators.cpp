@@ -97,7 +97,7 @@ void WaveGenerator1D::run(){
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
      current_angle_rad -= 2*PI;
   }
-  float64_t delta_x = amplitude * delta_angle_rad * std::cos(current_angle_rad);
+  float64_t delta_x = (amplitude+phase) * delta_angle_rad * std::cos(current_angle_rad);
 
   delta = delta_x;
 

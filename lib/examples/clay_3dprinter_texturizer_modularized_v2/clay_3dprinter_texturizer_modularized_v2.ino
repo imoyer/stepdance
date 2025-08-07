@@ -59,9 +59,11 @@ void setup() {
   channel_a.begin(&output_a, SIGNAL_E);
   channel_a.set_ratio(1, 40);
   channel_a.invert_output();
+  channel_a.enable_filtering(200);
 
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.set_ratio(1, 40);
+  channel_b.enable_filtering(200);
   //channel_b.invert_output();
 
   channel_z.begin(&output_c, SIGNAL_E);
@@ -72,6 +74,7 @@ void setup() {
   channel_e.begin(&output_d, SIGNAL_E);
   channel_e.set_ratio(1,  8.75); // testing with an 8mm lead leadscrew
   channel_e.invert_output();
+  channel_e.enable_filtering(1000);
 
   velocity_gen.begin();
   velocity_gen.output.map(&polar_kinematics.input_angle);
@@ -98,7 +101,7 @@ void setup() {
   z_wave_generator.begin();
 
   polar_kinematics.output_x.map(&channel_a.input_target_position);
-  //polar_kinematics.output_x.map(&x_stretch.input);
+  polar_kinematics.output_x.map(&x_stretch.input);
   polar_kinematics.output_y.map(&channel_b.input_target_position);
   polar_kinematics.begin();
 
@@ -158,8 +161,9 @@ LoopDelay overhead_delay;
 void loop() {
   float64_t z_amp = input_a.output_x.read(ABSOLUTE);
   float64_t z_freq = input_a.output_y.read(ABSOLUTE);
-  float64_t z_phase =  input_a.output_z.read(ABSOLUTE);
-  //x_stretch.ratio = (input_a.output_z.absolute_buffer*0.015) + 0.5; //0->1 --> 0.5->2
+  // float64_t z_phase =  input_a.output_z.read(ABSOLUTE);
+  x_stretch.ratio = (input_a.output_z.absolute_buffer*0.015) + 0.5; //0->1 --> 0.5->2
+  float64_t z_phase = 1.0;
 
   
   z_wave_generator.amplitude = z_amp;
@@ -170,7 +174,7 @@ void loop() {
   e_gen.set_ratio(extrusionRate);
 
   dance_loop();
-  report_overhead();
+  // report_overhead();
   overhead_delay.periodic_call(&report_overhead, 100);
 
 
