@@ -84,9 +84,11 @@ class Plugin{
     static void run_post_channel_frame_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_kilohertz_plugins(); //runs all post-channel frame plugins, in the order they appear in the registered_plugins list
     static void run_loop_plugins(); //runs all loop plugins, in the order they appear in the registered_plugins list
-
+    
     virtual void enable();
     virtual void disable();
+
+    bool enabled = true;
 
   private:
     static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins

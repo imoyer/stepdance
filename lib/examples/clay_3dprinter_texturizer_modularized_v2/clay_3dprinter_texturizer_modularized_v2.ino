@@ -129,13 +129,13 @@ void setup() {
   analog_a2.map(&xy_wave_generator.amplitude);
   analog_a2.begin(IO_A2);
   
-  //xy frequency
+  //xy phase
   analog_a3.set_floor(0, 25);
-  analog_a3.set_ceiling(10, 1020);
+  analog_a3.set_ceiling(1, 1020);
   analog_a3.map(&xy_wave_generator.phase);
   analog_a3.begin(IO_A3);
 
-  //xy phase
+  //xy frequency
   analog_a4.set_floor(0, 25);
   analog_a4.set_ceiling(10, 1020);
   analog_a4.map(&xy_wave_generator.rotational_speed_rev_per_sec);
@@ -200,28 +200,22 @@ void button_toggle2(){
 
 void report_overhead(){
 
-   /*Serial.print(", input_x:");
-  Serial.print(input_a.output_x.absolute_buffer);
- Serial.print(", input_y:");
-  Serial.print(input_a.output_y.absolute_buffer);
-   Serial.print(", input_z:");
-  Serial.print(input_a.output_z.absolute_buffer);
-   Serial.print(", input_e:");
-  Serial.print(input_a.output_e.absolute_buffer);*/
- 
-
-
-
-
-
+  Serial.print("radius:");
+  Serial.print(polar_kinematics.input_radius.read(ABSOLUTE));
+  Serial.print(", angle:");
+  Serial.print(polar_kinematics.input_angle.read(ABSOLUTE));
   Serial.print(", extrusionRate:");
   Serial.print(extrusionRate);
+  Serial.print(", xy_enabled:");
+  Serial.print(xy_wave_generator.enabled);
   Serial.print(", xy_amp:");
   Serial.print(xy_wave_generator.amplitude);
   Serial.print(", xy_freq:");
   Serial.print(xy_wave_generator.rotational_speed_rev_per_sec);
   Serial.print(", xy_phase:");
-  Serial.print(xy_wave_generator.phase);
+  Serial.print(z_wave_generator.phase);
+  Serial.print(", z_enabled:");
+  Serial.print(z_wave_generator.enabled);
   Serial.print(",z_amp:");
   Serial.print(z_wave_generator.amplitude);
   Serial.print(", z_freq:");

@@ -86,7 +86,7 @@ void WaveGenerator1D::run(){
   input.update();
   float64_t delta_angle_rad;
   if(no_input){
-    delta_angle_rad = rotational_speed_rev_per_sec * CORE_FRAME_PERIOD_S;
+    delta_angle_rad = std::round(rotational_speed_rev_per_sec) * CORE_FRAME_PERIOD_S;
   }
   else{
    delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
@@ -106,11 +106,13 @@ void WaveGenerator1D::run(){
 }
 
 void WaveGenerator1D::enable(){
-  output.enable();
+  output.enable();  
+  enabled = true;
 }
 
 void WaveGenerator1D::disable(){
   output.disable();
+  enabled = false;
 }
 
 /*WaveGenerator2D::WaveGenerator2D(){};
