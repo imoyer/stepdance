@@ -15,7 +15,7 @@ A part of the Mixing Metaphors Project
 (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
 */
 
-#include "interface_ebb.hpp"
+#include "interfaces.hpp"
 #include "interpolators.hpp"
 
 #define EBB_INPUT_IDLE 0 //waiting on a new line

@@ -7,7 +7,7 @@
 #include "filters.hpp"
 #include "generators.hpp"
 #include "input_ports.hpp"
-#include "interface_ebb.hpp"
+#include "interfaces.hpp"
 #include "interpolators.hpp"
 #include "kinematics.hpp"
 #include "output_ports.hpp"

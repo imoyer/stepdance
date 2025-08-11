@@ -4,8 +4,8 @@
 #include "core.hpp"
 #include "interpolators.hpp"
 
-#ifndef interface_ebb_h //prevent importing twice
-#define interface_ebb_h
+#ifndef interfaces_h //prevent importing twice
+#define interfaces_h
 
 
 /*
