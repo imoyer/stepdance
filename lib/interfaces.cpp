@@ -1,13 +1,17 @@
+#include "Arduino.h"
+#include "usb_serial.h"
 #include "core_pins.h"
 #include "arm_math.h"
 #include <cstdlib>
 #include <cstring>
 #include <sys/_stdint.h>
 /*
-EiBotBoard Interface Module of the StepDance Control System
+Interface Module of the StepDance Control System
 
-This module provides an input interface that emulates the EiBotBoard, which allows standard AxiDraw workflows
-to provide direct input. It is anticipated that this interface will feed a standard downstream motion generation synthesizer.
+This module provides several interfaces for pre-planned control.
+
+1) An Eibotboard interface, which allows standard AxiDraw workflows to provide direct input. It is anticipated that this 
+interface will feed a standard downstream motion generation synthesizer. 
 
 [More Details to be Added]
 
@@ -40,34 +44,41 @@ Eibotboard::Eibotboard(){};
 void Eibotboard::begin(TimeBasedInterpolator* interpolator){
   target_interpolator = interpolator;
   Serial.begin(115200);
+  // SerialUSB1.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
+  ebb_serial_port = &Serial; //hard-code the primary and debug serial ports
+  debug_serial_port = &SerialUSB1;
   register_plugin(PLUGIN_LOOP);
 }
 
-void Eibotboard::set_steps_to_mm(float steps, float mm){
-  transmission_xy_steps_to_mm.begin(steps, mm);
+void Eibotboard::set_ratio_xy(float output_units_mm, float input_units_steps){
+  xy_conversion_mm_per_step = output_units_mm / input_units_steps;
+}
+
+void Eibotboard::set_ratio_z(float output_units_mm, float input_units_steps){
+  z_conversion_mm_per_step = output_units_mm / input_units_steps;
 }
 
 void Eibotboard::loop(){
-  if(debug_port_identified == 0){ // identify the debug port based on the first port with an available character.
-    if(Serial.available() > 0){
-      uint8_t character = Serial.read();
-      process_character(character);
-      SerialUSB1.write(character); //echo
-      debug_port_identified = 1;
-      ebb_serial_port = &Serial;
-      debug_serial_port = &SerialUSB1;
-    }
-    if(SerialUSB1.available() > 0){
-      uint8_t character = SerialUSB1.read();
-      process_character(character);
-      Serial.write(character); //echo
-      debug_port_identified = 1;
-      ebb_serial_port = &SerialUSB1;
-      debug_serial_port = &Serial;
-    }
-  }else{
+  // if(debug_port_identified == 0){ // identify the debug port based on the first port with an available character.
+  //   if(Serial.available() > 0){
+  //     uint8_t character = Serial.read();
+  //     process_character(character);
+  //     SerialUSB1.write(character); //echo
+  //     debug_port_identified = 1;
+  //     ebb_serial_port = &Serial;
+  //     debug_serial_port = &SerialUSB1;
+  //   }
+  //   if(SerialUSB1.available() > 0){
+  //     uint8_t character = SerialUSB1.read();
+  //     process_character(character);
+  //     Serial.write(character); //echo
+  //     debug_port_identified = 1;
+  //     ebb_serial_port = &SerialUSB1;
+  //     debug_serial_port = &Serial;
+  //   }
+  // }else{
     if(block_pending_flag){ // if a block is pending, call that function first
       (this->*pending_block_function)();
     }
@@ -79,7 +90,7 @@ void Eibotboard::loop(){
       }
       process_character(character);
     }
-  }
+  // }
 }
 
 void Eibotboard::process_character(uint8_t character){
@@ -248,7 +259,7 @@ void Eibotboard::command_set_pen(){
       ebb_serial_port->print("OK\r\n");
       return;
     }else{ //load up the pending block
-      pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = 0, .y_mm = 0, .z_mm = servo_delta_steps, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
+      pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position_delta = {.x_mm = 0, .y_mm = 0, .z_mm = servo_delta_steps * z_conversion_mm_per_step, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
       block_pending_flag = EBB_BLOCK_PENDING;
       pending_block_function = &Eibotboard::command_set_pen; // tag this function as having originated the pending block
     }
@@ -316,8 +327,8 @@ void Eibotboard::command_stepper_move(){
     // Step 3: Convert parameters from command space (motor steps, move time in ms) to standard space (xy mm, move time in sec)
     //          NOTE: We assume an h-bot transform, which we hardcode here rather than use the kinematics module, for simplicity.
     float32_t move_time_s = move_time_ms / 1000;
-    float64_t motor_1_delta_mm = transmission_xy_steps_to_mm.convert(motor_1_delta_steps);
-    float64_t motor_2_delta_mm = transmission_xy_steps_to_mm.convert(motor_2_delta_steps);
+    float64_t motor_1_delta_mm = motor_1_delta_steps * xy_conversion_mm_per_step;
+    float64_t motor_2_delta_mm = motor_2_delta_steps * xy_conversion_mm_per_step;
     float64_t x_delta_mm = 0.5*(motor_1_delta_mm + motor_2_delta_mm);
     float64_t y_delta_mm = 0.5*(motor_1_delta_mm - motor_2_delta_mm);
 

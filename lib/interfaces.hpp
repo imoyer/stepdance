@@ -34,7 +34,8 @@ class Eibotboard : public Plugin{
   public:
     Eibotboard();
     void begin(TimeBasedInterpolator* interpolator); // setup routine
-    void set_steps_to_mm(float steps, float mm); //sets the conversion between steps and mm
+    void set_ratio_xy(float output_units_mm, float input_units_steps); //sets the xy conversion between steps and mm
+    void set_ratio_z(float output_units_mm, float input_units_steps); //sets the z conversion between steps and mm
 
   protected:
     void loop(); // should be run inside loop
@@ -45,8 +46,8 @@ class Eibotboard : public Plugin{
     Stream *ebb_serial_port; //stores a pointer to the ebb serial port
     Stream *debug_serial_port; //pointer to the debug port
 
-    // Transmission
-    Transmission transmission_xy_steps_to_mm;
+    float32_t xy_conversion_mm_per_step = 25.4 / 2874.0; //AxiDraw standard conversion
+    float32_t z_conversion_mm_per_step = 1.0 / 50.0; //50 steps per mm of travel
 
     // Interpolator
     TimeBasedInterpolator* target_interpolator;

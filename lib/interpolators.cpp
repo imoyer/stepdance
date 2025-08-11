@@ -19,9 +19,6 @@ A part of the Mixing Metaphors Project
 
 TimeBasedInterpolator::TimeBasedInterpolator(){};
 
-void TimeBasedInterpolator::map(uint8_t output_index, Transmission* target_transmission){
-  output_transmissions[output_index] = target_transmission;
-}
 
 int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
   // Adds a motion block to the interpolator
@@ -111,20 +108,23 @@ void TimeBasedInterpolator::run_frame_on_active_block(){
   for(uint8_t axis_index = 0; axis_index < (TBI_NUM_AXES-1); axis_index++){ //iterate over all axes EXCEPT the virtual axis
     if(active_axes[axis_index] == TBI_AXIS_ACTIVE){
       if(end_of_move){
-        if(output_transmissions[axis_index] != nullptr){
-          output_transmissions[axis_index]->increment(active_axes_remaining_distance_mm[axis_index]); //send out whatever is remaining
-        }
+        output_BlockPorts[axis_index]->set(active_axes_remaining_distance_mm[axis_index], INCREMENTAL);
       }else{
-        if(output_transmissions[axis_index] != nullptr){
-          output_transmissions[axis_index]->increment(speed_overide*active_axes_velocity_mm_per_frame[axis_index]); //move by the frame velocity
-        }
+        output_BlockPorts[axis_index]->set(speed_overide*active_axes_velocity_mm_per_frame[axis_index], INCREMENTAL);
         active_axes_remaining_distance_mm[axis_index] -= (speed_overide*active_axes_velocity_mm_per_frame[axis_index]);
       }
+      output_BlockPorts[axis_index]->push();
     }
   }  
 }
 
 void TimeBasedInterpolator::begin(){
+  output_x.begin(&output_position_x);
+  output_y.begin(&output_position_y);
+  output_z.begin(&output_position_z);
+  output_e.begin(&output_position_e);
+  output_r.begin(&output_position_r);
+  output_t.begin(&output_position_t);
   reset_block_queue();
   register_plugin();
 }
