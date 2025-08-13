@@ -17,154 +17,129 @@ A part of the Mixing Metaphors Project
 KinematicsCoreXY::KinematicsCoreXY(){};
 
 void KinematicsCoreXY::begin(){
-  begin(KINEMATICS_MODE_INCREMENTAL, nullptr, nullptr);
-}
-
-void KinematicsCoreXY::begin(uint8_t mode){
-  begin(mode, nullptr, nullptr);
-}
-
-void KinematicsCoreXY::begin(Transmission *output_transmission_a, Transmission *output_transmission_b){
-  begin(KINEMATICS_MODE_INCREMENTAL, output_transmission_a, output_transmission_b);
-}
-
-void KinematicsCoreXY::begin(uint8_t mode, Transmission *output_transmission_a, Transmission *output_transmission_b){
-  this->mode = mode;
-  if(output_transmission_a != nullptr){ //allows map() to be called before begin, if begin has no parameters.
-    map(COREXY_OUTPUT_A, output_transmission_a);
-  }
-  if(output_transmission_b != nullptr){
-    map(COREXY_OUTPUT_B, output_transmission_b);
-  }
-  input_transmission_x.begin(&input_position_x);
-  input_transmission_x.get_function = std::bind(&KinematicsCoreXY::get_position_x, this);
-  input_transmission_y.begin(&input_position_y);
-  input_transmission_y.get_function = std::bind(&KinematicsCoreXY::get_position_y, this);
-  reset();
+  input_x.begin(&position_x);
+  input_y.begin(&position_y);
+  output_a.begin(&position_a);
+  output_b.begin(&position_b);
   register_plugin();
-}
-
-void KinematicsCoreXY::reset(){
-  input_position_x = 0;
-  input_position_y = 0;
-}
-
-void KinematicsCoreXY::map(uint8_t output_index, Transmission* target_transmission){
-  output_transmissions[output_index] = target_transmission;
+  // input_transmission_y.get_function = std::bind(&KinematicsCoreXY::get_position_y, this);
 }
 
 void KinematicsCoreXY::run(){
-  float64_t output_position_a = input_position_x + input_position_y;
-  float64_t output_position_b = input_position_x - input_position_y;
-  if(mode == KINEMATICS_MODE_INCREMENTAL){
-    if(output_transmissions[COREXY_OUTPUT_A] != nullptr){
-      output_transmissions[COREXY_OUTPUT_A]->increment(output_position_a);
-    }
-    if(output_transmissions[COREXY_OUTPUT_B] != nullptr){
-      output_transmissions[COREXY_OUTPUT_B]->increment(output_position_b);
-    }
-    input_position_x = 0.0;
-    input_position_y = 0.0;  
-  }else if (mode == KINEMATICS_MODE_ABSOLUTE){
-    if(output_transmissions[COREXY_OUTPUT_A] != nullptr){
-      output_transmissions[COREXY_OUTPUT_A]->set(output_position_a);
-    }
-    if(output_transmissions[COREXY_OUTPUT_B] != nullptr){    
-      output_transmissions[COREXY_OUTPUT_B]->set(output_position_b);
-    }
-  }
+  input_x.pull();
+  input_y.pull();
+  input_x.update();
+  input_y.update();
+  
+  output_a.set(position_x + position_y);
+  output_b.set(position_x - position_y);
+  output_a.push();
+  output_b.push();
 }
 
-DecimalPosition KinematicsCoreXY::get_position_x(){
-  float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
-  float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
-  return (position_a + position_b)/2;
-}
+// DecimalPosition KinematicsCoreXY::get_position_x(){
+//   float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
+//   float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
+//   return (position_a + position_b)/2;
+// }
 
-DecimalPosition KinematicsCoreXY::get_position_y(){
-  float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
-  float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
-  return (position_a - position_b)/2;
-}
+// DecimalPosition KinematicsCoreXY::get_position_y(){
+//   float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
+//   float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
+//   return (position_a - position_b)/2;
+// }
 
 KinematicsPolarToCartesian::KinematicsPolarToCartesian(){};
 
-void KinematicsPolarToCartesian::begin(){
-  begin(KINEMATICS_MODE_INCREMENTAL, nullptr, nullptr);
-}
+void KinematicsPolarToCartesian::begin(float64_t fixed_radius){
+  input_radius.begin(&position_r);
+  input_angle.begin(&position_a);
+  output_x.begin(&position_x);
+  output_y.begin(&position_y);
 
-void KinematicsPolarToCartesian::begin(uint8_t mode){
-  begin(mode, nullptr, nullptr);
-}
-
-void KinematicsPolarToCartesian::begin(Transmission *output_transmission_x, Transmission *output_transmission_y){
-  begin(KINEMATICS_MODE_INCREMENTAL, output_transmission_x, output_transmission_y);
-}
-
-void KinematicsPolarToCartesian::begin(uint8_t mode, Transmission *output_transmission_x, Transmission *output_transmission_y){
-  this->mode = mode;
-  if(output_transmission_x != nullptr){ //allows map() to be called before begin, if begin has no parameters.
-    map(POLAR_OUTPUT_X, output_transmission_x);
+  if(fixed_radius > 0){
+    input_radius.reset(fixed_radius);
   }
-  if(output_transmission_y != nullptr){
-    map(POLAR_OUTPUT_Y, output_transmission_y);
-  }
-  input_transmission_r.begin(&input_position_r);
-  // input_transmission_r.get_function = std::bind(&KinematicsPolarToCartesian::get_position_r, this);
-  input_transmission_t.begin(&input_position_t);
-  // input_transmission_t.get_function = std::bind(&KinematicsPolarToCartesian::get_position_t, this);
-  reset();
+
   register_plugin();
 }
 
 void KinematicsPolarToCartesian::reset(){
-  input_position_r = 0;
-  input_position_t = 0;
-}
-
-void KinematicsPolarToCartesian::map(uint8_t output_index, Transmission* target_transmission){
-  output_transmissions[output_index] = target_transmission;
 }
 
 void KinematicsPolarToCartesian::run(){
-  if(mode == KINEMATICS_MODE_INCREMENTAL){ 
-    // Get current X and Y positions
-    float64_t current_x = output_transmissions[POLAR_OUTPUT_X]->get();
-    float64_t current_y = output_transmissions[POLAR_OUTPUT_Y]->get();
+  //update radius and angle positions
+  input_angle.pull();
+  input_radius.pull();
+  input_angle.update();
+  input_radius.update();
 
-    // Convert to R and T
-    float64_t current_r = std::sqrt(std::pow(current_x, 2) + std::pow(current_y, 2));
-    float64_t current_t = atan2(current_y, current_x);
+  float64_t angle_reduced = std::remainder(position_a, TWO_PI); // Reduce current_t to range of 2 PI; I believe this may speed up sin and cos functions...
 
-    // Increment based on inputs
-    current_r += input_position_r;
-    current_t += input_position_t;
+  output_x.set(position_r * std::cos(angle_reduced));
+  output_y.set(position_r * std::sin(angle_reduced));
 
-    // Reduce current_t to range of 2 PI; I believe this may speed up sin and cos functions...
-    current_t = std::remainder(current_t, TWO_PI);
-
-    float64_t target_x = current_r * std::cos(current_t);
-    float64_t target_y = current_r * std::sin(current_t);
-
-    float64_t delta_x = target_x - current_x;
-    float64_t delta_y = target_y - current_y;
-    output_transmissions[POLAR_OUTPUT_X]->increment(delta_x);
-    output_transmissions[POLAR_OUTPUT_Y]->increment(delta_y);
-
-    input_position_r = 0.0;
-    input_position_t = 0.0;
-  
-  }else if (mode == KINEMATICS_MODE_ABSOLUTE){
-    //todo
-  }
+  output_x.push();
+  output_y.push();
 }
 
-DecimalPosition KinematicsPolarToCartesian::get_position_r(){
-  //todo
-  return 0;
+KinematicsFiveBarForward::KinematicsFiveBarForward(){};
+
+void KinematicsFiveBarForward::begin(float32_t s, float32_t l1, float32_t l2, float32_t l3, float32_t l4, float32_t l5, float32_t a){
+  this->S = s;
+  this->L1 = l1;
+  this->L2 = l2;
+  this->L3 = l3;
+  this->L4 = l4;
+  this->L5 = l5;
+  this->A6 = a;
+  this->Xa = s/2;
+  this->Xb = -s/2;
+  this->Ya = 0;
+  this->Yb = 0;
+
+  input_r.begin(&position_r);
+  input_l.begin(&position_l);
+  output_x.begin(&position_x);
+  output_y.begin(&position_y);
+  register_plugin();
 }
 
-DecimalPosition KinematicsPolarToCartesian::get_position_t(){
-  //todo
-  return 0;
+void KinematicsFiveBarForward::run(){
+  //update input angles
+  input_r.pull(); // in most cases, user should set up mapping for ABSOLUTE. Consider forcing ABSOLUTE here to avoid user errors.
+  input_l.pull();
+  input_r.update();
+  input_l.update();
+
+  float32_t A1 = static_cast<float32_t>(position_r); //right encoder angle
+  float32_t A2 = static_cast<float32_t>(position_l); //left encoder angle
+
+  float32_t Xc = Xa + L1 * std::cos(A1);
+  float32_t Yc = Ya - L1 * std::sin(A1);
+  float32_t Xd = Xb + L2 * std::cos(A2);
+  float32_t Yd = Yb - L2 * std::sin(A2);
+
+  float32_t L6 = Yd - Yc;
+  float32_t L7 = Xc - Xd;
+
+  float32_t A3 = std::atan2(L6, L7);
+  float32_t L8 = std::sqrt((L6 * L6) + (L7 * L7));
+
+  float32_t A4 = std::acos((L8*L8 + L3*L3 - L4*L4)/(2*L8*L3));
+
+  float32_t A5 = PI/2.0 + A3 - A4;
+
+  float32_t Xe = Xc - L3 * sin(A5);
+  float32_t Ye = Yc - L3 * cos(A5);
+
+  float32_t A7 = A6 - PI/2.0 + A5;
+  float32_t Xt = Xe + L5 * std::cos(A7);
+  float32_t Yt = Ye - L5 * std::sin(A7);
+
+  output_x.set(static_cast<float64_t>(Xt));
+  output_y.set(-static_cast<float64_t>(Yt));
+
+  output_x.push();
+  output_y.push();
 }

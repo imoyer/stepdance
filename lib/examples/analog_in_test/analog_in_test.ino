@@ -8,7 +8,8 @@ A part of the Mixing Metaphors Project
 // (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
 */
 
-#define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
+// #define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
+#define module_basic   // tells compiler we're using the Stepdance Basic Module PCB
                         // This configures pin assignments for the Teensy 4.1
 
 #include "stepdance.hpp"  // Import the stepdance library

@@ -3,6 +3,8 @@ Set Motor Currents Utility
 
 This utility helps with setting the drive currents on motors, by reading back the VREF values
 
+!!! MOTOR POWER MUST BE PLUGGED IN FOR ACCURATE READINGS !!!
+
 A part of the Mixing Metaphors Project
 
 // (c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost

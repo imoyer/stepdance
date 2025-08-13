@@ -48,6 +48,8 @@ void on_frame(){
 // -- OVERALL SYSTEM --
 
 void dance_start(){
+  // activate input port plugins
+  add_function_to_frame(Plugin::run_input_port_frame_plugins);
   // activate all pre-channel frame plugins
   add_function_to_frame(Plugin::run_pre_channel_frame_plugins);
   // activate channels
@@ -76,6 +78,8 @@ void stepdance_metrics_reset(){
 
 // -- PLUGINS --
 Plugin::Plugin(){};
+uint8_t Plugin::num_registered_input_port_frame_plugins = 0;
+Plugin* Plugin::registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS];
 
 uint8_t Plugin::num_registered_pre_channel_frame_plugins = 0;
 Plugin* Plugin::registered_pre_channel_frame_plugins[MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS];
@@ -95,6 +99,13 @@ void Plugin::register_plugin(){ //default to pre-channel frame plugin
 
 void Plugin::register_plugin(uint8_t execution_target){
   switch(execution_target){
+    case PLUGIN_INPUT_PORT:
+      if(num_registered_input_port_frame_plugins < MAX_NUM_INPUT_PORT_FRAME_PLUGINS){
+        registered_input_port_frame_plugins[num_registered_input_port_frame_plugins] = this;
+        num_registered_input_port_frame_plugins ++;
+      }
+      break;
+
     case PLUGIN_FRAME_PRE_CHANNEL:
       if(num_registered_pre_channel_frame_plugins < MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS){
         registered_pre_channel_frame_plugins[num_registered_pre_channel_frame_plugins] = this;
@@ -125,9 +136,19 @@ void Plugin::register_plugin(uint8_t execution_target){
   }
 }
 
+void Plugin::disable(){};
+
+void Plugin::enable(){};
+
 void Plugin::run(){};
 
 void Plugin::loop(){};
+
+void Plugin::run_input_port_frame_plugins(){
+  for(uint8_t plugin_index = 0; plugin_index < num_registered_input_port_frame_plugins; plugin_index++){
+    registered_input_port_frame_plugins[plugin_index]->run();
+  }
+}
 
 void Plugin::run_pre_channel_frame_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_pre_channel_frame_plugins; plugin_index++){
@@ -153,59 +174,143 @@ void Plugin::run_loop_plugins(){
   }  
 }
 
-// -- TRANSMISSION --
-Transmission::Transmission(){};
 
-void Transmission::begin(){
-  begin(1, 1, nullptr);
+
+// -- BLOCKPORT --
+BlockPort::BlockPort(){};
+
+// - User Functions -
+// These are intended to be called from user code
+void BlockPort::set_ratio(float world_units, float block_units){
+  world_to_block_ratio = static_cast<float64_t>(world_units / block_units);
 }
 
-void Transmission::begin(DecimalPosition *output_position){
-  begin(1, 1, output_position);
+void BlockPort::map(BlockPort *map_target, uint8_t mode){
+  target_BlockPort = map_target;
+  this->mode = mode;
 }
 
-void Transmission::begin(float input_units, float output_units){
-  begin(input_units, output_units, nullptr);
-}
+// - Library Functions -
+// These are intended to be called from other library components, e.g. other blocks interfacing with this Blockport
 
-void Transmission::begin(float input_units, float output_units, DecimalPosition *output_position){
-  set_ratio(input_units, output_units);
-  target = output_position;
-}
-
-void Transmission::set_ratio(float input_units, float output_units){
-  transfer_ratio = static_cast<float64_t>(output_units / input_units);
-}
-
-void Transmission::set(float64_t input_value){
-  if(target != nullptr){
-    *target = input_value * transfer_ratio;
+void BlockPort::write(float64_t value, uint8_t mode){
+  if(update_has_run){
+    update_has_run = false;
+    incremental_buffer = 0;
+  }
+  if(mode == INCREMENTAL){
+    incremental_buffer += convert_world_to_block_units(value);
+  }else{ //ABSOLUTE
+    absolute_buffer = convert_world_to_block_units(value);
   }
 }
 
-float64_t Transmission::get(){
-  if(get_function == nullptr){ //no get override function
-    if(target != nullptr){
-      return *target / transfer_ratio;
+float64_t BlockPort::read(uint8_t mode){
+  if(update_has_run){
+    // we're post-update, so we can just return the buffers directly, because they reflect what's actually happened.
+    if(mode == INCREMENTAL){
+      return convert_block_to_world_units(incremental_buffer);
     }else{
-      return 0.0;
+      return convert_block_to_world_units(absolute_buffer);
     }
   }else{
-    return get_function();
+    // pre-update, so we provide an estimate of what the target state will be post-update.
+    if(mode == INCREMENTAL){
+      // We return an estimate of the CHANGE to target. 
+      return convert_block_to_world_units(incremental_buffer + (absolute_buffer - *target)); //this subtraction term will result in 0 if nothing has been written to the buffer
+
+    }else{ //ABSOLUTE
+      return convert_block_to_world_units(incremental_buffer + absolute_buffer);
+    }
   }
 }
 
-void Transmission::increment(float64_t input_value){
-  if(target != nullptr){
-    *target += (input_value * transfer_ratio);
+// - Block Functions -
+// Called by the block that has instantiated this BlockPort.
+void BlockPort::begin(volatile float64_t *target){
+  set_target(target);
+}
+
+void BlockPort::set_target(volatile float64_t *target){
+  this->target = target;
+}
+
+void BlockPort::update(){
+  // Updates the state of the target based on the buffers, and vice-versa.
+  if(update_has_run){ //nothing has changed since the last update.
+    incremental_buffer = 0;
+  }else{
+    update_has_run = true; // flag that we've updated the buffer states
+  }
+
+  if(target != nullptr){ //make sure we even have a target.
+    absolute_buffer += incremental_buffer; //update absolute buffer to reflect how we're about to set target
+    incremental_buffer = absolute_buffer - *target; //update incremental buffer to reflect changes to target
+    *target = absolute_buffer; //update target
   }
 }
 
-float64_t Transmission::convert(float64_t input_value){
-  return input_value * transfer_ratio;
+void BlockPort::reverse_update(){
+  // Performs an update of the buffers based on direct changes made to the target position.
+  update_has_run = true;
+  if(target != nullptr){ //make sure we even have a target.
+    incremental_buffer = *target - absolute_buffer;
+    absolute_buffer = *target;
+  }
 }
-float64_t Transmission::convert_reverse(float64_t output_value){
-  return output_value / transfer_ratio;
+
+void BlockPort::set(float64_t value, uint8_t mode){
+  update_has_run = true; //we set this to reflect that the buffers contain the current state of the target
+  if(mode == INCREMENTAL){
+    incremental_buffer = value;
+    *target += value;
+    absolute_buffer = *target;
+  }else{ //ABSOLUTE
+    incremental_buffer = value - *target;
+    absolute_buffer = value;
+    *target = value;
+  }
+}
+
+void BlockPort::reset(float64_t value, bool raw){
+  //resets the target and absolute_buffer to a particular value, BUT clears increment_buffer
+  if(raw == false){ //input is in world units
+    value = convert_world_to_block_units(value);
+  }
+  update_has_run = true;
+  incremental_buffer = 0;
+  absolute_buffer = value;
+  *target = value;
+}
+
+void BlockPort::push(uint8_t mode){
+  // pushes the buffer state of this BlockPort onto a target.
+  // Note that for pushing, we are using the incremental and absolute buffers slightly differently;
+  // we don't have the notion of pre and post- update, because these values are being set internally.
+
+  if((target_BlockPort != nullptr) && push_pull_enabled){
+    if(mode == INCREMENTAL){
+      target_BlockPort->write(convert_block_to_world_units(incremental_buffer), INCREMENTAL);
+    }else{
+      target_BlockPort->write(convert_block_to_world_units(absolute_buffer), ABSOLUTE);
+    }
+  }
+}
+
+void BlockPort::pull(uint8_t mode){
+  // pulls the buffer state of a target BlockPort onto this BlockPort
+  // THIS NEEDS TO BE CALLED BEFORE update();
+  if((target_BlockPort != nullptr) && push_pull_enabled){
+    write(target_BlockPort->read(mode), mode);
+  }
+}
+
+void BlockPort::enable(){
+  push_pull_enabled = true;
+}
+
+void BlockPort::disable(){
+  push_pull_enabled = false;
 }
 
 // -- STEPDANCE LOOP FUNCTIONS AND CLASSES --

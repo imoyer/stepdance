@@ -18,14 +18,14 @@ Channel* registered_channels[MAX_NUM_CHANNELS]; //stores all registered channels
 uint8_t num_registered_channels = 0; //tracks the number of registered channels
 
 // -- General Functions --
-void drive_all_registered_channels(){
+void run_all_registered_channels(){
   for(uint8_t channel_index = 0; channel_index < num_registered_channels; channel_index ++){
-    registered_channels[channel_index] ->drive_to_target();
+    registered_channels[channel_index] ->run();
   }
 }
 
 void activate_channels(){
-  add_function_to_frame(drive_all_registered_channels);
+  add_function_to_frame(run_all_registered_channels);
   add_function_to_frame(transmit_frames_on_all_output_ports);
 };
 
@@ -53,10 +53,60 @@ void Channel::set_max_pulse_rate(float max_pulses_per_sec){
   accumulator_velocity = (float)((float)ACCUMULATOR_THRESHOLD * pulses_per_tick);
 }
 
-void Channel::set_transmission_ratio(float input_units, float output_units){
-  target_position_transmission.set_ratio(input_units, output_units);
-  target_position_2_transmission.set_ratio(input_units, output_units);
-  current_position_transmission.set_ratio(input_units, output_units);
+void Channel::set_ratio(float input_units, float channel_units){
+  input_target_position.set_ratio(input_units, channel_units);
+  input_target_position_2.set_ratio(input_units, channel_units);
+}
+
+void Channel::set_upper_limit(DecimalPosition upper_limit_input_units){
+  // Sets the upper limit of current_position. Oustide this, the channel will no longer output, and current_position will be capped.
+
+  // convert into block units.
+  upper_limit = input_target_position.convert_world_to_block_units(upper_limit_input_units);
+  upper_limit_enabled = true;
+}
+
+void Channel::enable_filtering(uint16_t num_samples){
+  filtering_on = true;
+  this->num_averaging_samples = static_cast<float32_t>(num_samples);
+}
+
+void Channel::disable_filtering(){
+  filtering_on = false;
+}
+
+void Channel::set_lower_limit(DecimalPosition lower_limit_input_units){
+  // Sets the lower limit of current_position. Oustide this, the channel will no longer output, and current_position will be capped.
+
+  // convert into block units.
+  lower_limit = input_target_position.convert_world_to_block_units(lower_limit_input_units);
+  lower_limit_enabled = true;
+}
+
+void Channel::disable_upper_limit(){
+  upper_limit_enabled = false;
+}
+
+void Channel::disable_lower_limit(){
+  lower_limit_enabled = false;
+}
+
+void Channel::disable(){
+  enabled = false;
+}
+
+void Channel::enable(){
+  enabled = true;
+}
+
+int8_t Channel::is_outside_limits(){
+  if(upper_limit_enabled && current_position > upper_limit){
+    return 1;
+  }else if (lower_limit_enabled && current_position < lower_limit) {
+    return -1;
+  }else{
+    return 0;
+  }
 }
 
 void Channel::begin(){
@@ -71,20 +121,17 @@ void Channel::begin(OutputPort* target_output_port, uint8_t output_signal){
   // target_output_port -- a pointer to an output port on which this channel will generate signals.
   //                       If nullptr, the channel will not register for updates.
   // output_signal -- a signal ID
-  
-  if(target_output_port == nullptr){ // no output port provided
-    initialize_state();
-  }else{
-    initialize_state();
+  initialize_state();
+
+  // Initialize BlockPorts
+  input_target_position.begin(&target_position);
+  input_target_position_2.begin(&target_position_2);
+
+  if(target_output_port != nullptr){ // an output port is provided
     this->target_output_port = target_output_port;
     this->output_signal = output_signal;
     register_channel(); //register channel with pulse generator
   }
-
-  // Initialize transmissions
-  target_position_transmission.begin(&target_position);
-  target_position_2_transmission.begin(&target_position_2);
-  current_position_transmission.begin(&current_position);
 }
 
 void Channel::register_channel(){
@@ -95,46 +142,63 @@ void Channel::register_channel(){
   } // NOTE: should add a return value if it works
 }
 
-void Channel::drive_to_target(){
-  // This function should be called every signal frame period.
-  // It attempts to drive the channel's current position to the target position,
-  // by generating a signal if a) there is a non-zero distance to the target, and
-  // b) doing so would not violate the maximum pulse rate for the channel.
+void Channel::run(){
+  if(enabled){
+    // This function should be called every signal frame period.
+    // It attempts to drive the channel's current position to the target position,
+    // by generating a signal if a) there is a non-zero distance to the target, and
+    // b) doing so would not violate the maximum pulse rate for the channel.
 
-  // 1. Increment the accumulator. This is used to determine if generating a pulse
-  //    signal would exceed the maximum pulse frequency on the channel. 
-  if(accumulator < 2*ACCUMULATOR_THRESHOLD){ //only bother incrementing if meaningful (avoids overruns)
-    accumulator += accumulator_velocity;
-  }
-  
-  // 2. Calculate pulse distance between target and current position. Both target positions contribute.
-  float64_t delta_position = target_position + target_position_2 - current_position;
+    // 0. Update the target positions
+    input_target_position.pull();
+    input_target_position_2.pull();
+    input_target_position.update();
+    input_target_position_2.update();
 
-  // 3. Determine direction of motion
-  int direction;
-  if(delta_position >= 0.5){
-    direction = DIRECTION_FORWARD;
-  }else if (delta_position < -0.5){
-    direction = DIRECTION_REVERSE;
-  }else{
-    direction = last_direction;
-  }
+    // 1. Increment the accumulator. This is used to determine if generating a pulse
+    //    signal would exceed the maximum pulse frequency on the channel. 
+    if(accumulator < 2*ACCUMULATOR_THRESHOLD){ //only bother incrementing if meaningful (avoids overruns)
+      accumulator += accumulator_velocity;
+    }
+    
 
-  // 4. Try to close pulse distance
-  if(delta_position > 0.5 || delta_position < -0.5){
-
-    // calculate active accumulator threshold. This catches the case where we reverse direction.
-    float accumulator_active_threshold;
-    if(direction != last_direction){
-      accumulator_active_threshold = ACCUMULATOR_THRESHOLD * 2;
+    // 2.   Running Average Filter
+    if(filtering_on){
+      filtered_target_position = (filtered_target_position * (num_averaging_samples-1) + target_position + target_position_2)/num_averaging_samples; 
     }else{
-      accumulator_active_threshold = ACCUMULATOR_THRESHOLD;
+      filtered_target_position = target_position + target_position_2;
+    }
+    
+    // 2.5  Calculate pulse distance between target and current position. Both target positions contribute.
+    float64_t delta_position = filtered_target_position - current_position;
+
+
+    // 3. Determine direction of motion
+    int direction;
+    if(delta_position >= 0.5){
+      direction = DIRECTION_FORWARD;
+    }else if (delta_position < -0.5){
+      direction = DIRECTION_REVERSE;
+    }else{
+      direction = last_direction;
     }
 
-    // check if we're taking a pulse
-    if(accumulator >= accumulator_active_threshold){
-      pulse(direction);
-      accumulator = 0;
+    // 4. Try to close pulse distance
+    if(delta_position > 0.5 || delta_position < -0.5){
+
+      // calculate active accumulator threshold. This catches the case where we reverse direction.
+      float accumulator_active_threshold;
+      if(direction != last_direction){
+        accumulator_active_threshold = ACCUMULATOR_THRESHOLD * 2;
+      }else{
+        accumulator_active_threshold = ACCUMULATOR_THRESHOLD;
+      }
+
+      // check if we're taking a pulse
+      if(accumulator >= accumulator_active_threshold){
+        pulse(direction);
+        accumulator = 0;
+      }
     }
   }
 }
@@ -144,11 +208,15 @@ void Channel::pulse(int8_t direction){
   if(direction == DIRECTION_FORWARD){
     current_position ++;
     last_direction = DIRECTION_FORWARD;
-    target_output_port->add_signal(output_signal, (DIRECTION_FORWARD^output_inverted));
+    if((!upper_limit_enabled || (current_position < upper_limit)) && (!lower_limit_enabled || (current_position > lower_limit))){
+      target_output_port->add_signal(output_signal, (DIRECTION_FORWARD^output_inverted));
+    }
   }else{
     current_position --;
     last_direction = DIRECTION_REVERSE;
-    target_output_port->add_signal(output_signal, (DIRECTION_REVERSE^output_inverted));
+    if((!upper_limit_enabled || (current_position < upper_limit)) && (!lower_limit_enabled || (current_position > lower_limit))){
+      target_output_port->add_signal(output_signal, (DIRECTION_REVERSE^output_inverted));
+    }
   }
 }
 

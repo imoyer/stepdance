@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include <sys/_stdint.h>
 #include <Arduino.h>
 #include "core.hpp"
@@ -50,6 +51,8 @@ A part of the Mixing Metaphors Project
 // REFERENCE VOLTAGE
 #define VREF_3V3  3.3
 
+// DEADBAND STARTUP DELAY
+#define ANALOG_DEADBAND_STARTUP_DELAY_MS   20
 
 struct analog_pin_info_struct{ //hardware_specific 
     // Physical IO
@@ -67,10 +70,13 @@ class AnalogInput{
     void set_resolution(int8_t resolution);
     void set_clock(int8_t clock);
     void map(ControlParameter *target_parameter);
+    void map(DecimalPosition *target_parameter);
+
     void set_callback(void (*callback_function)());
     volatile uint16_t last_value_raw = 0;
     void (*callback_function)() = nullptr;
-    ControlParameter *target = nullptr;
+    ControlParameter *target_control_param = nullptr;
+    DecimalPosition *target_decimal_pos = nullptr;
     static AnalogInput *adc1_inputs[MAX_NUM_ADC_INPUTS]; //keeps pointers to all instantiated analog inputs on the ADC1 module
     static AnalogInput *adc2_inputs[MAX_NUM_ADC_INPUTS];
     static uint8_t module_num_inputs[NUM_ADC_MODULES]; //tracks the number of instantiated analog inputs on the ADC module; indexed by ADC module
@@ -81,8 +87,20 @@ class AnalogInput{
     void set_floor(ControlParameter output_at_floor, uint16_t adc_lower_limit); //allows the lower limit to be adjusted. ADC values below this will output at the floor
     void set_ceiling(ControlParameter output_at_ceiling);
     void set_ceiling(ControlParameter output_at_ceiling, uint16_t adc_upper_limit);
+    void set_deadband_here(ControlParameter output_at_deadband = 0, uint16_t adc_deadband_width = 4); //sets the deadband to the current value.
+    void set_deadband(ControlParameter output_at_deadband, uint16_t adc_deadband_center, uint16_t adc_deadband_width = 4);
+    void invert(); //inverts the output
     ControlParameter read(); //returns the last read value, based on the internal conversion factor
     float32_t full_scale_volts = VREF_3V3; //we'll default to this for now, until we support changing the reference voltage.
+
+    float32_t conversion_slope_1 = 1;
+    float32_t conversion_intercept_1 = 0;
+    float32_t conversion_slope_2 = 1;
+    float32_t conversion_intercept_2 = 0;
+    uint16_t adc_deadband_location = 0;
+    uint16_t adc_deadband_width = 0;
+    uint16_t adc_deadband_lower = 0;
+    uint16_t adc_deadband_upper = 0;
 
   private:
     // Static Parameters and Methods
@@ -91,6 +109,7 @@ class AnalogInput{
     static volatile uint8_t module_calibrating[NUM_ADC_MODULES]; //flag to indicate that ADC is currently calibrating
     static void adc1_on_interrupt();
     static void adc2_on_interrupt();
+    void set_slope_intercept(); //utility to set the slope and intercept values.
     
     // Instance Parameters and Methods
     void initialize_adc(); //initializes ADC modules
@@ -106,11 +125,13 @@ class AnalogInput{
     uint8_t adc_input_channel;
     uint8_t teensy_pin;
     ControlParameter output_at_floor = 0;
+    ControlParameter output_at_deadband = 512;
     ControlParameter output_at_ceiling = 1023;
     uint16_t adc_lower_limit = 0;
     uint16_t adc_upper_limit = 1023; //10 bit
-    float32_t conversion_slope = 1;
-    float32_t conversion_intercept = 0;
+    bool deadband_enabled = false;
+
+    int8_t inversion_multiplier = 1; //1 for straight thru, -1 for inverted
 };
 
 
