@@ -180,7 +180,8 @@ Each frame is 40us long, of which 32us is available for signals. A 2us inter-sig
 IMPORTANT NOTES:
 
 - Although we use the convention of XYRθZE to name signals based on their duration, it is up to the system designer to assign these signals to particular axes of their machine.
-- **Stepdance modules read the DIR line at the falling edge of the STEP pulse.** In this way we differ from stepper drivers, which read at the rising edge of STEP. We do this to improve performance by only needing to fire an interrupt once per pulse, but has implications for compatibility with non-stepdance signalling sources. Future work will introduce alternative input modes to restore this compatibility.
+- **Stepdance modules read the DIR line at the falling edge of the STEP pulse.** In this way we differ from stepper drivers, which read at the rising edge of STEP. We do this to improve performance by only needing to fire an interrupt once per pulse when reading an incoming signal, but has implications for compatibility with non-stepdance signalling sources. Future work will introduce alternative input modes to restore this compatibility.
+- Stepdance can be configured to output frames at higher frequencies, with corresponding limits to the number of signals that fit in a frame. This functionality is documented [here.](/doc/highspeed.md)
 
 ***
 ## Examples
@@ -199,9 +200,16 @@ This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in rea
 [Read the full Step-A-Setch example here.](/doc/examples/stepasketch.md)
 
 ### Axidraw "EBB" Controller Emulator
+![](/doc/images/axidraw_ebb_teaser.png)
+In this example, we drive the Axidraw from Inkscape to plot an SVG file. This is accomplished with a Stepdance Interface module that emulates the Axidraw EBB control board, for which an inkscape plugin has been developed. We will build on the Step-a-Sketch example code, that provides real-time jog dials for positioning the pen's starting position. We additionally provide a hardware knob to control the drawing speed in real-time. You will learn how to:
 
+- Use Interfaces to accept pre-planned motion commands in standard formats.
+- Use Interpolators to execute pre-planned motion commands as motion streams.
+- Read analog inputs (e.g. from potentiometers) via the analog-to-digital converter, and use it to adjust parameters of software modules (e.g. the speed of the interpolator).
 
+[Read the full EBB Controller Emulator example here.](/doc/examples/ebb.md)
 ***
+
 ## Stepdance Library User Manual
 
 Stepdance is a motion control operating system that scaffolds a wide range of modular software components. These can do things like:
