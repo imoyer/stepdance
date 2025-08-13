@@ -33,14 +33,25 @@ A part of the Mixing Metaphors Project
 class Eibotboard : public Plugin{
   public:
     Eibotboard();
-    void begin(TimeBasedInterpolator* interpolator); // setup routine
+    // void begin(TimeBasedInterpolator* interpolator); // setup routine
+    void begin();
     void set_ratio_xy(float output_units_mm, float input_units_steps); //sets the xy conversion between steps and mm
     void set_ratio_z(float output_units_mm, float input_units_steps); //sets the z conversion between steps and mm
+
+    BlockPort& output_x = target_interpolator.output_x;
+    BlockPort& output_y = target_interpolator.output_y;
+    BlockPort& output_z = target_interpolator.output_z;
+    BlockPort& output_e = target_interpolator.output_e;
+    BlockPort& output_r = target_interpolator.output_r;
+    BlockPort& output_t = target_interpolator.output_t;
 
   protected:
     void loop(); // should be run inside loop
     
   private:
+      // Interpolator
+    TimeBasedInterpolator target_interpolator;
+
     // Serial Debug State
     uint8_t debug_port_identified; //1 if debug port has been ID'd, otherwise 0
     Stream *ebb_serial_port; //stores a pointer to the ebb serial port
@@ -48,9 +59,6 @@ class Eibotboard : public Plugin{
 
     float32_t xy_conversion_mm_per_step = 25.4 / 2874.0; //AxiDraw standard conversion
     float32_t z_conversion_mm_per_step = 1.0 / 50.0; //50 steps per mm of travel
-
-    // Interpolator
-    TimeBasedInterpolator* target_interpolator;
 
     // Command Processing
     void process_character(uint8_t character);

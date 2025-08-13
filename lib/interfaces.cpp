@@ -41,15 +41,14 @@ struct Eibotboard::command Eibotboard::all_commands[] = {
 
 Eibotboard::Eibotboard(){};
 
-void Eibotboard::begin(TimeBasedInterpolator* interpolator){
-  target_interpolator = interpolator;
+void Eibotboard::begin(){
   Serial.begin(115200);
-  // SerialUSB1.begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
   ebb_serial_port = &Serial; //hard-code the primary and debug serial ports
   debug_serial_port = &SerialUSB1;
   register_plugin(PLUGIN_LOOP);
+  target_interpolator.begin();
 }
 
 void Eibotboard::set_ratio_xy(float output_units_mm, float input_units_steps){
@@ -266,7 +265,7 @@ void Eibotboard::command_set_pen(){
   }
 
   // Try adding the pending block to queue.
-  int16_t available_slots = target_interpolator->add_block(&pending_block);
+  int16_t available_slots = target_interpolator.add_block(&pending_block);
 
   if(available_slots >= 0){ //move successfully added
     if(delay_ms == 0){ //we don't need to add a delay
@@ -339,7 +338,7 @@ void Eibotboard::command_stepper_move(){
   }
   
   // Step 5:  Try adding the pending block to queue.
-  int16_t available_slots = target_interpolator->add_block(&pending_block);
+  int16_t available_slots = target_interpolator.add_block(&pending_block);
 
   // Step 6: Check if block was added, and respond
   if(available_slots >= 0){ //move successfully added
@@ -379,5 +378,5 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
   debug_serial_port->print(stepdance_get_cpu_usage()*100);
   debug_serial_port->println("%");
   debug_serial_port->print("  SLOTS REMAINING: ");
-  debug_serial_port->println(target_interpolator->slots_remaining);  
+  debug_serial_port->println(target_interpolator.slots_remaining);  
 }
