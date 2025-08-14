@@ -1,3 +1,4 @@
+#include <stdint.h>
 /*
 Recording Module of the StepDance Control System
 
@@ -15,6 +16,19 @@ A part of the Mixing Metaphors Project
 #ifndef recording_h //prevent importing twice
 #define recording_h
 
+class RecorderTrack {
+  // a single track used for recording
+  public:
+    RecorderTrack();
+    void begin();
+    int8_t run(); //returns 1 or -1 if step is taken, 0 if not.
+    BlockPort input_target_position;
+
+  private:
+    DecimalPosition target_position = 0;
+    DecimalPosition current_position = 0;
+};
+
 class FourTrackRecorder : public Plugin{
   // Simultaneously records four motion streams to an SD card file.
 
@@ -24,19 +38,17 @@ class FourTrackRecorder : public Plugin{
     void start(const char *recording_name = "recording", uint8_t recording_length_min = 30); // start recording
     void pause(); // pause recording
     void stop(); // stop recording
+    void set_resolution(float input_units, float per_steps = 1.0);
 
-    // BlockPorts
-    BlockPort input_1;
-    BlockPort input_2;
-    BlockPort input_3;
-    BlockPort input_4;
+    static const uint8_t NUM_CHANNELS = 4;
+    RecorderTrack recorder_tracks[NUM_CHANNELS];
+    BlockPort& input_1 = recorder_tracks[0].input_target_position;
+    BlockPort& input_2 = recorder_tracks[1].input_target_position;
+    BlockPort& input_3 = recorder_tracks[2].input_target_position;
+    BlockPort& input_4 = recorder_tracks[3].input_target_position;
     
   private:
-    // BlockPort input positions
-    DecimalPosition input_1_position;
-    DecimalPosition input_2_position;
-    DecimalPosition input_3_position;
-    DecimalPosition input_4_position;
+    float32_t resolution_units_per_step = STANDARD_RATIO_MM;
 
   protected:
     void run();
