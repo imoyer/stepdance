@@ -12,6 +12,8 @@ A part of the Mixing Metaphors Project
 */
 
 #include "core.hpp"
+#include <SD.h>
+#include <string>
 
 #ifndef recording_h //prevent importing twice
 #define recording_h
@@ -35,8 +37,9 @@ class FourTrackRecorder : public Plugin{
   public:
     FourTrackRecorder();
     void begin();
-    void start(const char *recording_name = "recording", uint8_t recording_length_min = 30); // start recording
+    void start(const char *recording_name, uint8_t recording_length_min = 30); // start recording
     void pause(); // pause recording
+    void resume(); //continues recording
     void stop(); // stop recording
     void set_resolution(float input_units, float per_steps = 1.0);
 
@@ -46,9 +49,17 @@ class FourTrackRecorder : public Plugin{
     BlockPort& input_2 = recorder_tracks[1].input_target_position;
     BlockPort& input_3 = recorder_tracks[2].input_target_position;
     BlockPort& input_4 = recorder_tracks[3].input_target_position;
-    
+
+    volatile long current_sample_index = 0;
+    long max_num_samples = 0;
+    volatile bool recorder_active = false;
+
   private:
     float32_t resolution_units_per_step = STANDARD_RATIO_MM;
+    volatile bool in_recording = false; //true when paused
+    char recording_filename[30];
+    char length_filename[30];
+    FsFile active_recording_file;
 
   protected:
     void run();
@@ -61,22 +72,37 @@ class FourTrackPlayer : public Plugin{
     void begin();
     void start(const char *recording_name = "recording");
     void pause();
+    void resume();
     void stop();
+    void set_resolution(float output_units, float per_steps = 1.0);
 
     //BlockPorts
-    BlockPort output_1;
-    BlockPort output_2;
-    BlockPort output_3;
-    BlockPort output_4;
+    static const uint8_t NUM_CHANNELS = 4;
+    BlockPort output_BlockPorts[NUM_CHANNELS];
+
+    BlockPort& output_1 = output_BlockPorts[0];
+    BlockPort& output_2 = output_BlockPorts[1];
+    BlockPort& output_3 = output_BlockPorts[2];
+    BlockPort& output_4 = output_BlockPorts[3];
   
+    volatile long current_sample_index = 0;
+    long max_num_playback_samples = 0;
+    volatile bool playback_active = false;
+
   private:
     // BlockPort output positions
-    DecimalPosition output_1_position;
-    DecimalPosition output_2_position;
-    DecimalPosition output_3_position;
-    DecimalPosition output_4_position;
+    DecimalPosition output_positions[NUM_CHANNELS];
+    float32_t resolution_units_per_step = STANDARD_RATIO_MM;
+    volatile bool in_playback = false; //true when paused
+    char recording_filename[30];
+    char length_filename[30];
+    FsFile active_playback_file;
   
   protected:
     void run();
 };
+
+// --- SD CARD UTILITIES ---
+void initialize_sd_card();
+
 #endif //recording_h
