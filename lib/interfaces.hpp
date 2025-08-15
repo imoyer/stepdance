@@ -1,3 +1,4 @@
+#include "arm_math.h"
 #include <stdint.h>
 #include "Stream.h"
 #include "Arduino.h"
@@ -33,7 +34,6 @@ A part of the Mixing Metaphors Project
 class Eibotboard : public Plugin{
   public:
     Eibotboard();
-    // void begin(TimeBasedInterpolator* interpolator); // setup routine
     void begin();
     void set_ratio_xy(float output_units_mm, float input_units_steps); //sets the xy conversion between steps and mm
     void set_ratio_z(float output_units_mm, float input_units_steps); //sets the z conversion between steps and mm
@@ -109,6 +109,96 @@ class Eibotboard : public Plugin{
     static void set_servo_rate(uint16_t pulse_rate_us_per_ms, float *servo_rate_register); //sets a servo rate register, see S2 command for units
     void debug_report_pending_block(bool waiting_for_slot); // outputs a report on the pending block to the debug port
 
+};
+
+class GCodeInterface : public Plugin{
+  public:
+    GCodeInterface();
+    void begin();
+
+    //BlockPorts
+    BlockPort& output_x = target_interpolator.output_x;
+    BlockPort& output_y = target_interpolator.output_y;
+    BlockPort& output_z = target_interpolator.output_z;
+    BlockPort& output_e = target_interpolator.output_e;
+    BlockPort& output_r = target_interpolator.output_r;
+    BlockPort& output_t = target_interpolator.output_t;
+  
+  protected:
+    void loop();
+  
+  private:
+    // Serial Ports
+    Stream *gcode_serial_port; //stores a pointer to the ebb serial port
+    Stream *debug_serial_port; //pointer to the debug port  
+
+    // State
+    static const uint8_t STATE_IDLE = 0;
+    static const uint8_t STATE_RECEIVING_BLOCK = 1;
+    static const uint8_t STATE_BLOCK_RECEIVED = 2;
+
+    uint8_t state = STATE_IDLE;
+
+    // Receiving Block Lines
+    //   We assume that each line contains at most one block, and that a newline represents the end of a block
+    char input_line_buffer[255]; //pre-allocate a string buffer to store the serial input stream.
+    uint8_t input_line_buffer_index; //stores the next position to write to in the input_line_buffer.
+    void reset_input_line_buffer(); //resets the input line buffer.
+    bool process_character(uint8_t character); //processes a single character input. Returns True if the line has ended.
+
+    // Interpolator
+    TimeBasedInterpolator target_interpolator;
+
+    // static const uint8_t UNITS_MM = 0;
+    // static const uint8_t UNITS_IN = 1;
+    // uint8_t input_units = UNITS_MM;
+    // float32_t feedrate_mm_per_sec = 0;
+
+    // struct phrase{ //stores a gcode phrase in the incoming block
+    //   char letter[2]; // one letter
+    //   char value[13];
+    //   uint16_t integer_value;
+    //   float64_t float_value;
+    // }
+
+    // struct phrase block_command;
+    // struct phrase block_noncommand_phrases[10]; //support up to 10 phrases in the incoming block
+    // uint8_t num_phrases = 0; //total number of received phrases, including the command phrase
+
+    // // Positional State
+    // struct axis{ //stores motion axis states, e.g. X, Y, Z
+    //   DecimalPosition position; //current axis position, in interpreter space
+    //   uint8_t mode = ABSOLUTE; // axis coordinates are provided in either ABSOLUTE or INCREMENTAL units.
+    //   bool updated = false;
+    // }
+    // struct axis all_axes[NUM_AXES];
+
+    // // Parameters
+    // static const uint8_t NUM_AXES = 6;
+
+    // // Command Processing
+    // void process_character(uint8_t character);
+    // void reset_input_buffer(); //resets the input buffer state
+    // void process_command(uint16_t command_value);
+    // static void initialize_all_commands_struct(); //initializes the all_commands struct by pre-calculating the command values.
+    // struct command{
+    //   uint32_t command_value; //the command string, converted into a command value during initialization.
+    //   void (GCodeInterface::*command_function)(); //pointer to the command function to execute when this command value shows up.
+    //   uint8_t execution; //0 -- immediate execution, 1 -- emergency execution, 2 -- add to queue
+    // };
+    // char input_buffer[255]; //pre-allocate a string buffer to store the serial input stream.
+    // uint8_t input_buffer_write_index; //stores the current index of the write buffer
+    // uint8_t input_state; //tracks the current state of the input process
+    // uint16_t input_command_value; //tracks the value of the current command
+    // int32_t input_parameters[EBB_MAX_NUM_INPUT_PARAMETERS]; // parameters that have been parsed from the input string
+    // uint8_t num_input_parameters; // number of parameters in the string
+
+    // // Block Generation
+    // uint16_t block_id = 0; //stores the current block ID, which simply increments each time a new motion-containing block is received
+    // TimeBasedInterpolator::motion_block pending_block; //stores motion block information that is pending being added to the queue
+    // uint8_t block_pending_flag = 0; //1 if a block is pending addition to the queue
+    // uint8_t debug_buffer_full_flag = 0; //1 if already sent a debug message
+    // void (GCodeInterface::*pending_block_function)(); //pointer to the command function whose block is pending
 };
 
 #endif

@@ -380,3 +380,45 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
   debug_serial_port->print("  SLOTS REMAINING: ");
   debug_serial_port->println(target_interpolator.slots_remaining);  
 }
+
+// ---- GCODE INTERFACE ----
+GCodeInterface::GCodeInterface(){};
+
+void GCodeInterface::begin(){
+  Serial.begin(115200);
+  reset_input_line_buffer();
+  // initialize_all_commands_struct();
+  gcode_serial_port = &Serial; //hard-code the primary and debug serial ports
+  debug_serial_port = &SerialUSB1;
+  register_plugin(PLUGIN_LOOP);
+  target_interpolator.begin();
+}
+
+void GCodeInterface::reset_input_line_buffer(){
+  input_line_buffer_index = 0;
+}
+
+void GCodeInterface::loop(){
+  if(state == STATE_IDLE || state == STATE_RECEIVING_BLOCK){
+    while(gcode_serial_port->available() > 0){
+      state = STATE_RECEIVING_BLOCK; //we're receiving a block
+      uint8_t character = gcode_serial_port->read();
+      bool end_of_block = process_character(character);
+      if(end_of_block){
+        state = STATE_BLOCK_RECEIVED;
+        break;
+      }
+    }
+  }
+}
+
+
+bool GCodeInterface::process_character(uint8_t character){
+  if(character == '\r' || character == ';'){
+    return true;
+  }else{
+    input_line_buffer[input_line_buffer_index] = character;
+    input_line_buffer_index ++;
+    return false;
+  }
+}
