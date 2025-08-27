@@ -54,11 +54,25 @@ class TimeBasedInterpolator : public Plugin{
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
     volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
     void begin();
-    void map(uint8_t output_index, Transmission* target_transmission);
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
     
+    // BlockPorts
+    BlockPort output_x;
+    BlockPort output_y;
+    BlockPort output_z;
+    BlockPort output_e;
+    BlockPort output_r;
+    BlockPort output_t;
+
   private:
-    Transmission* output_transmissions[TBI_NUM_AXES]; 
+    // BlockPort State Variables
+    DecimalPosition output_position_x;
+    DecimalPosition output_position_y;
+    DecimalPosition output_position_z;
+    DecimalPosition output_position_e;
+    DecimalPosition output_position_r;
+    DecimalPosition output_position_t;
+
     struct motion_block block_queue[TBI_BLOCK_QUEUE_SIZE]; // stores all pending motion blocks
     volatile uint16_t next_write_index; //next write index in the block queue
     volatile uint16_t next_read_index; //next read index in the block queue 
@@ -72,6 +86,7 @@ class TimeBasedInterpolator : public Plugin{
     volatile uint8_t active_axes[TBI_NUM_AXES]; //indexed by axis #, 0 if axis inactive, 1 if active
     volatile float64_t active_axes_remaining_distance_mm[TBI_NUM_AXES];
     volatile float32_t active_axes_velocity_mm_per_frame[TBI_NUM_AXES];
+    BlockPort* output_BlockPorts[TBI_NUM_AXES - 1] = {&output_x, &output_y, &output_z, &output_e, &output_r, &output_t};
     void run_frame_on_active_block(); //run a frame of the currently active block
   
   protected:
