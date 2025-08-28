@@ -86,10 +86,10 @@ void WaveGenerator1D::run(){
   input.update();
   float64_t delta_angle_rad;
   if(no_input){
-    delta_angle_rad = std::round(rotational_speed_rev_per_sec) * CORE_FRAME_PERIOD_S;
+    delta_angle_rad = (std::round(rotational_speed_rev_per_sec)+phase) * CORE_FRAME_PERIOD_S;
   }
   else{
-   delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+   delta_angle_rad = (std::round(rotational_speed_rev_per_sec)+ phase) * input.incremental_buffer;
   }
   
   current_angle_rad += delta_angle_rad;
@@ -97,7 +97,7 @@ void WaveGenerator1D::run(){
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
      current_angle_rad -= 2*PI;
   }
-  float64_t delta_x = (amplitude+phase) * delta_angle_rad * std::cos(current_angle_rad);
+  float64_t delta_x = (amplitude) * delta_angle_rad * std::cos(current_angle_rad);
 
   delta = delta_x;
 

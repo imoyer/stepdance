@@ -46,7 +46,7 @@ class WaveGenerator1D : public Plugin{
   public:
     WaveGenerator1D();
     volatile ControlParameter amplitude = 0;
-    volatile ControlParameter phase = 0.0;
+    volatile ControlParameter phase = 1;
     volatile ControlParameter rotational_speed_rev_per_sec = 8;
 
     void begin();

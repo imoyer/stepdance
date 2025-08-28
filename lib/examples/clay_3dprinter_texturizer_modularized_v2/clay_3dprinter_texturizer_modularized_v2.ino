@@ -139,8 +139,8 @@ void setup() {
   analog_a3.begin(IO_A3);
 
   //xy frequency
-  analog_a4.set_floor(0, 25);
-  analog_a4.set_ceiling(10, 1020);
+  analog_a4.set_floor(0, 1020);
+  analog_a4.set_ceiling(10, 25);
   analog_a4.map(&xy_wave_generator.rotational_speed_rev_per_sec);
   analog_a4.begin(IO_A4);
 
@@ -161,9 +161,9 @@ LoopDelay overhead_delay;
 void loop() {
   float64_t z_amp = input_a.output_x.read(ABSOLUTE);
   float64_t z_freq = input_a.output_y.read(ABSOLUTE);
-  // float64_t z_phase =  input_a.output_z.read(ABSOLUTE);
-  x_stretch.ratio = (input_a.output_z.absolute_buffer*0.015) + 0.5; //0->1 --> 0.5->2
-  float64_t z_phase = 1.0;
+  float64_t z_phase =  input_a.output_z.read(ABSOLUTE);
+  //x_stretch.ratio = (input_a.output_z.absolute_buffer*0.015) + 0.5; //0->1 --> 0.5->2
+  //float64_t z_phase = 1.0;
 
   
   z_wave_generator.amplitude = z_amp;
@@ -174,7 +174,6 @@ void loop() {
   e_gen.set_ratio(extrusionRate);
 
   dance_loop();
-  // report_overhead();
   overhead_delay.periodic_call(&report_overhead, 100);
 
 
@@ -217,7 +216,7 @@ void report_overhead(){
   Serial.print(", xy_freq:");
   Serial.print(xy_wave_generator.rotational_speed_rev_per_sec);
   Serial.print(", xy_phase:");
-  Serial.print(z_wave_generator.phase);
+  Serial.print(xy_wave_generator.phase);
   Serial.print(", z_enabled:");
   Serial.print(z_wave_generator.enabled);
   Serial.print(",z_amp:");
@@ -227,7 +226,9 @@ void report_overhead(){
   Serial.print(", z_phase:");
   Serial.print(z_wave_generator.phase);
   Serial.print(", x_stretch:");
-  Serial.println(x_stretch.ratio);
+  Serial.print(x_stretch.ratio);
+    Serial.print(", a 4:");
+  Serial.println(analog_a4.read());
   //wave_generator1D.debugPrint();
   //Serial.println(stepdance_get_cpu_usage(), 4);
  // Serial.println(e_gen.input_1_position, 4);
