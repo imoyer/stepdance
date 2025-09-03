@@ -35,6 +35,7 @@ struct Eibotboard::command Eibotboard::all_commands[] = {
   {.command_string = "QC", .command_function = &Eibotboard::command_query_current, .execution = EBB_EXECUTE_IMMEDIATE},
   {.command_string = "QB", .command_function = &Eibotboard::command_query_button, .execution = EBB_EXECUTE_IMMEDIATE},
   {.command_string = "QL", .command_function = &Eibotboard::command_query_variable, .execution = EBB_EXECUTE_IMMEDIATE},
+  {.command_string = "QP", .command_function = &Eibotboard::command_query_pen, .execution = EBB_EXECUTE_IMMEDIATE},
   {.command_string = "SC", .command_function = &Eibotboard::command_stepper_servo_configure, .execution = EBB_EXECUTE_IMMEDIATE}
 };
 
@@ -189,6 +190,9 @@ void Eibotboard::command_query_variable(){
   ebb_serial_port->print("000\r\nOK\r\n"); //temporary for now
 }
 
+void Eibotboard::command_query_pen(){
+  ebb_serial_port->print("1\r\nOK\r\n"); //temporary for now
+}
 void Eibotboard::set_servo_position(uint16_t pulse_duration_83_3_ns, int32_t *servo_position_register){
   // sets a servo position register (e.g. top and bottom positions) based on eibotboard protocol units.
   //  pulse_duration_83_3_ns -- the pulse duration, in units of 83.3 ns

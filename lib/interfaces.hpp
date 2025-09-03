@@ -98,6 +98,7 @@ class Eibotboard : public Plugin{
     void command_query_current(); //'QC' returns the supply voltage and motor currents
     void command_query_button(); //'QB' returns whether the PRG button has been pressed
     void command_query_variable(); //'QL' returns the value of a variable stored in memory
+    void command_query_pen(); //'QL' returns the pen state
     void command_stepper_servo_configure(); //'SC' configures the stepper and servo motors
     void command_stepper_move(); //'SM' moves the stepper motors
     void command_set_pen(); //'SP' sets pen position
