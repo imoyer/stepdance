@@ -36,7 +36,9 @@ Button button_d2; // start/stop replay
 PositionGenerator start_position_gen_x; // To bridge gap between end/start of layer path
 PositionGenerator start_position_gen_y; // To bridge gap between end/start of layer path
 
-PathLengthGenerator2D z_gen; //generates z signal
+
+PositionGenerator z_gen;
+// PathLengthGenerator2D z_gen; //generates z signal
 
 PathLengthGenerator2D e_gen; //generates extruder signal
 
@@ -54,8 +56,9 @@ float64_t start_pos_y;
 
 
 // TODO: need to update
-float64_t layerHeight = 0.2;
-float64_t nozzleDiameter = 0.4;
+float64_t layerHeight = 0.5;
+float64_t nozzleDiameter = 1.0;
+// float64_t nozzleDiameter = 0.4;
 volatile float64_t extrusionRate = 0;
 
 void setup() {
@@ -68,8 +71,8 @@ void setup() {
   input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
   input_a.output_y.map(&channel_b.input_target_position);
 
-  /*input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_z.map(&channel_z.input_target_position);*/
+  // input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
+  // input_a.output_z.map(&channel_z.input_target_position);
 
   output_a.begin(OUTPUT_A);
   output_b.begin(OUTPUT_B);
@@ -78,15 +81,18 @@ void setup() {
 
   enable_drivers();
 
-  // E: are all these ratios meaningful?
+  // We took these ration from default Ender steps/mm settings in menu
 
   channel_a.begin(&output_a, SIGNAL_E);
   channel_a.set_ratio(1, 80);
   //channel_a.invert_output();
+  channel_a.enable_filtering(200);
 
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.set_ratio(1, 80);
   channel_b.invert_output();
+  channel_b.enable_filtering(200);
+
 
   channel_z.begin(&output_c, SIGNAL_E);
   channel_z.set_ratio(1, 400);
@@ -94,7 +100,7 @@ void setup() {
 
 
   channel_e.begin(&output_d, SIGNAL_E);
-  channel_e.set_ratio(1, 93); // testing with an 8mm lead leadscrew
+  channel_e.set_ratio(1, 93); 
 
   encoder_1.begin(ENCODER_1);
   encoder_1.set_ratio(1, 2400); 
@@ -112,8 +118,9 @@ void setup() {
   analog_a1.set_ceiling(2, 1020);
   analog_a1.begin(IO_A1);
   
+  z_gen.output.map(&channel_z.input_target_position);
   z_gen.begin();
-  z_gen.set_ratio(layerHeight); //1mm per rev
+  // z_gen.set_ratio(layerHeight); //1mm per rev
   // z_gen.input_1.map(&channel_a.input_target_position);
   // z_gen.input_2.map(&channel_b.input_target_position);
   // z_gen.output.map(&channel_z.input_target_position);
@@ -187,7 +194,7 @@ void loop() {
     }
   }
 
-  if (replay_until_stopped && !player.playback_active) {
+  if (replay_until_stopped && !waiting_to_start_play && !player.playback_active) {
     // Toggle replay back on
     // Maybe: first launch position generator to reach start point again
     // float64_t pos_offset_x = start_pos_x - channel_a.input_target_position.read(ABSOLUTE);
@@ -203,6 +210,8 @@ void loop() {
     // Serial.println(pos_offset_y);
 
     // replay_until_stopped = false; // debug (stop loop)
+
+    initiate_playback(); // launch another layer
 
   }
 
@@ -258,6 +267,9 @@ void initiate_playback(){
   // start_position_gen_x.go(start_pos_x , ABSOLUTE, 50); // does not work because we actually have to set a relative target
   start_position_gen_y.go(start_pos_y - current_y , INCREMENTAL, 50);
 
+  // Go up a layer (trying it here instead of after start_playback)
+  z_gen.go(layerHeight, INCREMENTAL, 50);
+
   waiting_to_start_play = true;
 
 
@@ -273,6 +285,10 @@ void initiate_playback(){
 
 void start_playback(){
   waiting_to_start_play = false;
+
+  // // Go up a layer
+  // z_gen.go(layerHeight, INCREMENTAL, 50); // works
+
   player.start("eazao_layer_sketch");
   Serial.println("STARTED PLAYING");
   int duration_s = player.max_num_playback_samples / (CORE_FRAME_FREQ_HZ);
@@ -320,8 +336,8 @@ void report_overhead(){
   }  
   // Serial.println(channel_z.target_position, 4);
   // Serial.println(stepdance_get_cpu_usage(), 4);
-  // Serial.print("extrusion rate:");
-  // Serial.print(extrusionRate);
-  // Serial.print(", z-position:");
-  // Serial.println(channel_z.input_target_position.read(ABSOLUTE));
+  Serial.print("extrusion rate:");
+  Serial.println(extrusionRate);
+  Serial.print(", z-position:");
+  Serial.println(channel_z.input_target_position.read(ABSOLUTE));
 }
