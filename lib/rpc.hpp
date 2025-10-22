@@ -41,12 +41,23 @@ class RPC : public Plugin{
       });
     }
 
+
     // --- RPC Dispatch ---
     template<typename... Args, size_t... I>  // function with no return value
     void call_and_respond(void(*func)(Args...), JsonArray args, std::index_sequence<I...>){
       func(args[I].as<Args>()...); //calls function with args
       reset_outbound_state();
       outbound_json_doc["result"] = "ok";
+      serializeJson(outbound_json_doc, *rpc_stream);
+      rpc_stream->println();
+    }
+
+    template<typename Ret, typename... Args, size_t... I>
+    void call_and_respond(Ret(*func)(Args...), JsonArray args, std::index_sequence<I...>){
+      Ret ret = func(args[I].as<Args>()...); //calls function with args and returns type Ret
+      reset_outbound_state();
+      outbound_json_doc["result"] = "ok";
+      outbound_json_doc["return"] = ret;
       serializeJson(outbound_json_doc, *rpc_stream);
       rpc_stream->println();
     }

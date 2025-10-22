@@ -139,6 +139,7 @@ void setup() {
   rpc.begin(); // defaults to Serial
   rpc.register_function("hello", say_hello);
   rpc.register_function("hello2", say_hello_2);
+  rpc.register_function("add", add);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -183,4 +184,8 @@ void say_hello_2(uint8_t num_times){
   for(uint8_t i = 0; i<num_times; i++){
     Serial.println("Hello");
   }
+}
+
+DecimalPosition add(DecimalPosition X, DecimalPosition Y){
+  return X + Y;
 }
