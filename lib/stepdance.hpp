@@ -12,7 +12,7 @@
 #include "kinematics.hpp"
 #include "output_ports.hpp"
 #include "recording.hpp"
-
+#include "rpc.hpp"
 
 
 

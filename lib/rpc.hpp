@@ -1,0 +1,77 @@
+#include <utility>
+#include "WString.h"
+#include <sys/_stdint.h>
+#include "HardwareSerial.h"
+#include "Arduino.h"
+#include "usb_serial.h"
+#include <functional>
+#include <map>
+#include <ArduinoJson.h>
+
+/*
+Remote Procedure Call (RPC) Module of the StepDance Control System
+
+This module contains facilities for accessing internal stepdance functions and parameters over serial via remote procedure calls.
+
+[More Details to be Added]
+
+A part of the Mixing Metaphors Project
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+
+*/
+#include "Stream.h"
+#include "core.hpp"
+
+#ifndef rpc_h //prevent importing twice
+#define rpc_h
+
+class RPC : public Plugin{
+  public:
+    RPC();
+    void begin(); //defaults to Serial as the input stream
+    void begin(Stream *target_stream);
+    void begin(usb_serial_class *target_usb_serial);
+    void begin(HardwareSerialIMXRT *target_serial, uint32_t baud, uint16_t format = 0); //hardware serial
+
+    // --- RPC Registration ---
+    template<typename Ret, typename... Args>
+    void register_function(const String& name, Ret(*func)(Args...)){ //registers an RPC function with any signature, as handled by above templating
+      add_to_registry(name, [func, this](JsonArray args){ //creates a lambda function with access to func, that accepts a JsonArray of arguments (i.e. matching the registry map definition)
+        this->call_and_respond(func, args, std::index_sequence_for<Args...>{}); //the lambda function will then call a call_and_respond
+      });
+    }
+
+    // --- RPC Dispatch ---
+    template<typename... Args, size_t... I>  // function with no return value
+    void call_and_respond(void(*func)(Args...), JsonArray args, std::index_sequence<I...>){
+      func(args[I].as<Args>()...); //calls function with args
+      reset_outbound_state();
+      outbound_json_doc["result"] = "ok";
+      serializeJson(outbound_json_doc, *rpc_stream);
+      rpc_stream->println();
+    }
+
+  private:
+    void reset_inbound_state();
+    void reset_outbound_state();
+
+    Stream *rpc_stream; //pointer to an I/O stream for the remote call
+    String inbound_string;
+    JsonDocument inbound_json_doc; //stores JSON doc based on inbound stream
+    JsonDocument outbound_json_doc;
+
+    using RPCFunction = std::function<void(JsonArray)>; //function format as it goes into the registry
+    std::map<String, RPCFunction> rpc_registry; //registry for storing rpc functions. Note that these are lambda functions wrapping the actual function (or parameter) to be called/returned.
+
+    inline void add_to_registry(const String& name, RPCFunction rpc_function){
+      rpc_registry[name] = rpc_function;
+    };
+
+    void rpc_call(const String& name, JsonArray args); //makes an RPC call, and handles returning values etc.
+
+  protected:
+    void loop(); // should be run inside loop
+};
+
+
+#endif //rpc_h
