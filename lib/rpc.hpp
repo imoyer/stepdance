@@ -34,13 +34,31 @@ class RPC : public Plugin{
     void begin(HardwareSerialIMXRT *target_serial, uint32_t baud, uint16_t format = 0); //hardware serial
 
     // --- RPC Registration ---
-    template<typename Ret, typename... Args>
-    void register_function(const String& name, Ret(*func)(Args...)){ //registers an RPC function with any signature, as handled by above templating
+    template<typename Ret, typename... Args> //function registration
+    void enroll(const String& name, Ret(*func)(Args...)){ //registers an RPC function with any signature, as handled by above templating
       add_to_registry(name, [func, this](JsonArray args){ //creates a lambda function with access to func, that accepts a JsonArray of arguments (i.e. matching the registry map definition)
         this->call_and_respond(func, args, std::index_sequence_for<Args...>{}); //the lambda function will then call a call_and_respond
       });
     }
 
+    template<typename T>
+    void enroll(const String& name, T& parameter){
+      add_to_registry(name, [&parameter, this](JsonArray args){
+        if(!args.isNull() && args.size() > 0){ //we're setting the value of the parameter
+          parameter = args[0].as<T>();
+          reset_outbound_state();
+          outbound_json_doc["result"] = "ok";
+          serializeJson(outbound_json_doc, *rpc_stream);
+          rpc_stream->println();
+        }else{ //getting the value
+          reset_outbound_state();
+          outbound_json_doc["result"] = "ok";
+          outbound_json_doc["return"] = parameter;
+          serializeJson(outbound_json_doc, *rpc_stream);
+          rpc_stream->println();
+        }
+      });
+    }
 
     // --- RPC Dispatch ---
     template<typename... Args, size_t... I>  // function with no return value

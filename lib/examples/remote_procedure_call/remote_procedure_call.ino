@@ -136,10 +136,12 @@ void setup() {
   position_gen.begin();
 
   // -- RPC Configuration
+  DecimalPosition testValue;
   rpc.begin(); // defaults to Serial
-  rpc.register_function("hello", say_hello);
-  rpc.register_function("hello2", say_hello_2);
-  rpc.register_function("add", add);
+  rpc.enroll("hello", say_hello);
+  rpc.enroll("hello2", say_hello_2);
+  rpc.enroll("add", add);
+  rpc.enroll("testValue", testValue);
 
   // -- Start the stepdance library --
   // This activates the system.
