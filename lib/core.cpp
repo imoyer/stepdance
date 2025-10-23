@@ -144,6 +144,8 @@ void Plugin::run(){};
 
 void Plugin::loop(){};
 
+void Plugin::enroll(RPC *rpc, const String& instance_name){};
+
 void Plugin::run_input_port_frame_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_input_port_frame_plugins; plugin_index++){
     registered_input_port_frame_plugins[plugin_index]->run();

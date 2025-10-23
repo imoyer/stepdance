@@ -1,3 +1,4 @@
+#include "WString.h"
 #include <sys/_stdint.h>
 #include <cstddef>
 #include <stdint.h>
@@ -14,6 +15,8 @@ A part of the Mixing Metaphors Project
 */
 #ifndef core_h //prevent importing twice
 #define core_h
+
+class RPC; //forward declaration of RPC from rpc.hpp
 
 typedef volatile float64_t DecimalPosition; //used to store positions across the system. We are using double-precision to allow incremental moves with acceptable error (~0.05 steps/day at 25khz)
 typedef volatile int32_t IntegerPosition; //previously used to store positions
@@ -87,6 +90,7 @@ class Plugin{
 
     virtual void enable();
     virtual void disable();
+    virtual void enroll(RPC *rpc, const String& instance_name); //enrolls the plugin in an RPC. This should be overridden by the derived class, and is responsible for enrolling any members.
 
   private:
     static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins

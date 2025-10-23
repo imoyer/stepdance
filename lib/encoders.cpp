@@ -3,6 +3,7 @@
 #include "QuadEncoder.h"
 #include <stdint.h>
 #include "encoders.hpp"
+#include "rpc.hpp"
 
 // QuadEncoder quad_encoder_1(1, ENCODER_1A_PIN, ENCODER_1B_PIN, 1); //no pullups required
 // QuadEncoder quad_encoder_2(2, ENCODER_2A_PIN, ENCODER_2B_PIN, 1);
@@ -125,4 +126,8 @@ void Encoder::run(){
 
   output.set(encoder_reading_inverted);
   output.push();
+}
+
+void Encoder::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "read", *this, &Encoder::read);
 }

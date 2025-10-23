@@ -142,6 +142,7 @@ void setup() {
   rpc.enroll("hello2", say_hello_2);
   rpc.enroll("add", add);
   rpc.enroll("testValue", testValue);
+  rpc.enroll("encoder_1", encoder_1);
 
   // -- Start the stepdance library --
   // This activates the system.

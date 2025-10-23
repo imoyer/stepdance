@@ -1,3 +1,4 @@
+#include <type_traits>
 #include <utility>
 #include "WString.h"
 #include <sys/_stdint.h>
@@ -41,7 +42,18 @@ class RPC : public Plugin{
       });
     }
 
-    template<typename T>
+    template<typename Obj, typename Ret, typename... Args> //bound method registration
+    void enroll(const String& instance_name, const String& name, Obj& instance, Ret(Obj::*method)(Args...)){
+      add_to_registry(instance_name + "." + name, [&instance, method, this](JsonArray args){
+        this->call_and_respond(instance, method, args, std::index_sequence_for<Args...>{});
+      });
+    }
+
+    void enroll(const String& name, Plugin& instance){ //enrolls a plugin instance
+      instance.enroll(this, name);
+    }
+
+    template<typename T, typename = std::enable_if_t<!std::is_base_of_v<Plugin, T>>> //parameter registration
     void enroll(const String& name, T& parameter){
       add_to_registry(name, [&parameter, this](JsonArray args){
         if(!args.isNull() && args.size() > 0){ //we're setting the value of the parameter
@@ -70,9 +82,28 @@ class RPC : public Plugin{
       rpc_stream->println();
     }
 
+    template<typename Obj, typename... Args, size_t... I>  // bound method with no return value
+    void call_and_respond(Obj& instance, void(Obj::*method)(Args...), JsonArray args, std::index_sequence<I...>){
+      (instance.*method)(args[I].as<Args>()...); //calls function with args
+      reset_outbound_state();
+      outbound_json_doc["result"] = "ok";
+      serializeJson(outbound_json_doc, *rpc_stream);
+      rpc_stream->println();
+    }
+
     template<typename Ret, typename... Args, size_t... I>
     void call_and_respond(Ret(*func)(Args...), JsonArray args, std::index_sequence<I...>){
       Ret ret = func(args[I].as<Args>()...); //calls function with args and returns type Ret
+      reset_outbound_state();
+      outbound_json_doc["result"] = "ok";
+      outbound_json_doc["return"] = ret;
+      serializeJson(outbound_json_doc, *rpc_stream);
+      rpc_stream->println();
+    }
+
+    template<typename Obj, typename Ret, typename... Args, size_t... I>  // bound method with no return value
+    void call_and_respond(Obj& instance, Ret(Obj::*method)(Args...), JsonArray args, std::index_sequence<I...>){
+      Ret ret = (instance.*method)(args[I].as<Args>()...); //calls function with args
       reset_outbound_state();
       outbound_json_doc["result"] = "ok";
       outbound_json_doc["return"] = ret;

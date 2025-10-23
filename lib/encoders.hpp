@@ -45,6 +45,8 @@ class Encoder : public Plugin{
     int32_t min_latch_value = 0; //encoder units
     int32_t max_latch_value = 0;
 
+    void enroll(RPC *rpc, const String& instance_name);
+
   private:
     static const struct encoder_info_struct encoder_info[]; //stores configuration for all available encoder ports
     static QuadEncoder* all_encoders[MAX_NUM_ENCODERS];
