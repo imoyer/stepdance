@@ -40,13 +40,15 @@ class RPC : public Plugin{
       add_to_registry(name, [func, this](JsonArray args){ //creates a lambda function with access to func, that accepts a JsonArray of arguments (i.e. matching the registry map definition)
         this->call_and_respond(func, args, std::index_sequence_for<Args...>{}); //the lambda function will then call a call_and_respond
       });
+      rpc_index[name] = "function";
     }
 
-    template<typename Obj, typename Ret, typename... Args> //bound method registration
+    template<typename Obj, typename Ret, typename... Args> //bound method registration. This is intended to be called from within the enroll() method of a plugin
     void enroll(const String& instance_name, const String& name, Obj& instance, Ret(Obj::*method)(Args...)){
       add_to_registry(instance_name + "." + name, [&instance, method, this](JsonArray args){
         this->call_and_respond(instance, method, args, std::index_sequence_for<Args...>{});
       });
+      rpc_index[instance_name + "." + name] = "function";
     }
 
     void enroll(const String& name, Plugin& instance){ //enrolls a plugin instance
@@ -70,6 +72,7 @@ class RPC : public Plugin{
           rpc_stream->println();
         }
       });
+      rpc_index[name] = "parameter";
     }
 
     // --- RPC Dispatch ---
@@ -122,12 +125,14 @@ class RPC : public Plugin{
 
     using RPCFunction = std::function<void(JsonArray)>; //function format as it goes into the registry
     std::map<String, RPCFunction> rpc_registry; //registry for storing rpc functions. Note that these are lambda functions wrapping the actual function (or parameter) to be called/returned.
+    std::map<String, String> rpc_index; //index of all rpc strings and their type. This can be reported back to the remote system as a convenience.
 
     inline void add_to_registry(const String& name, RPCFunction rpc_function){
       rpc_registry[name] = rpc_function;
     };
 
     void rpc_call(const String& name, JsonArray args); //makes an RPC call, and handles returning values etc.
+    void send_index(); //returns an index of all the functions registered in the RPC.
 
   protected:
     void loop(); // should be run inside loop

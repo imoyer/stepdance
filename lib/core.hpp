@@ -111,7 +111,6 @@ class Plugin{
     virtual void loop(); //this can be overridden in the derived class. Runs in the main loop context.
 };
 
-
 // -- BlockPort --
 // BlockPorts provide a unified interface into and out of component blocks (i.e. "blocks")
 // These are designed to be flexibly used depending on the component to which they belong.

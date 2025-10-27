@@ -58,8 +58,8 @@ void Encoder::invert(){
   invert_flag ^= 1;
 }
 
-int32_t Encoder::read(){
-  return quad_encoder->read();
+DecimalPosition Encoder::read(){
+  return output.read(ABSOLUTE);
 }
 
 void Encoder::reset(){
@@ -130,4 +130,7 @@ void Encoder::run(){
 
 void Encoder::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "read", *this, &Encoder::read);
+  rpc->enroll(instance_name, "reset", *this, &Encoder::reset);
+  rpc->enroll(instance_name, "set", *this, &Encoder::set);
+  rpc->enroll(instance_name, "set_ratio", *this, &Encoder::set_ratio);
 }

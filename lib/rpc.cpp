@@ -44,7 +44,7 @@ void RPC::loop(){
     if(c == '\n'){ //end of JSON stream
       DeserializationError error = deserializeJson(inbound_json_doc, inbound_string);
       if(!error){
-        rpc_call(inbound_json_doc["func"], inbound_json_doc["args"]); //make RPC call
+        rpc_call(inbound_json_doc["name"], inbound_json_doc["args"]); //make RPC call
       }else{
         // return deserialization error
       }
@@ -56,14 +56,28 @@ void RPC::loop(){
 }
 
 void RPC::rpc_call(const String& name, JsonArray args){
-  auto result = rpc_registry.find(name); //find function in registry
-  if(result != rpc_registry.end()){
-    result->second(args); //calls the function mapped to name (e.g. the second value of the map)
+  if(name == "__index__"){ //calling internal index function
+    send_index();
   }else{
-    reset_outbound_state();
-    outbound_json_doc["error"] = "Unknown Function or Parameter";
-    serializeJson(outbound_json_doc, *rpc_stream);
-    rpc_stream->println(); //send newline character
+    auto result = rpc_registry.find(name); //find function in registry
+    if(result != rpc_registry.end()){
+      result->second(args); //calls the function mapped to name (e.g. the second value of the map)
+    }else{
+      reset_outbound_state();
+      outbound_json_doc["error"] = "Unknown Function or Parameter";
+      serializeJson(outbound_json_doc, *rpc_stream);
+      rpc_stream->println(); //send newline character
+    }
   }
 }
 
+void RPC::send_index(){ //returns an index of all functions and parameters that are currently mapped.
+      reset_outbound_state();
+      outbound_json_doc["result"] = "ok";
+      JsonObject index = outbound_json_doc["return"].to<JsonObject>();
+      for (auto const &key_value : rpc_index){
+        index[key_value.first] = key_value.second;
+      }
+      serializeJson(outbound_json_doc, *rpc_stream);
+      rpc_stream->println();
+}

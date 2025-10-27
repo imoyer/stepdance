@@ -58,6 +58,7 @@ PositionGenerator position_gen;
 
 // -- RPC Interface --
 RPC rpc;
+DecimalPosition testValue = 1.234;
 
 void setup() {
   // -- Configure and start the output ports --
@@ -136,7 +137,6 @@ void setup() {
   position_gen.begin();
 
   // -- RPC Configuration
-  DecimalPosition testValue;
   rpc.begin(); // defaults to Serial
   rpc.enroll("hello", say_hello);
   rpc.enroll("hello2", say_hello_2);
