@@ -494,6 +494,9 @@ SerialConnectionGenerator::SerialConnectionGenerator(){};
 void SerialConnectionGenerator::begin(){
   // Serial.println("serial connection begin");
   // Register the plugin on the main loop and on the frame
+  output_1.begin(&output_1_position);
+  output_2.begin(&output_2_position);
+
   register_plugin(); // on frame
   register_plugin(PLUGIN_LOOP); // on loop
 
@@ -533,7 +536,7 @@ void SerialConnectionGenerator::loop() {
     while (char_idx < MESSAGE_SIZE) {
       if (data[char_idx] == separator) {
         // TODO: make sure the offset doesn't go over a pre-determined limit to respect stepper capacity
-        target_per_frame_offsets[offset_idx] = curr_str.toFloat() * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US;
+        target_per_frame_offsets[offset_idx] = curr_str.toFloat() * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US; //I'm not sure about this math.
         offset_idx++;
         curr_str = "";
       }

@@ -655,6 +655,8 @@ class SerialConnectionGenerator : public Plugin{
     // BlockPorts (for now fixed to 2D XY)
     BlockPort output_1;
     BlockPort output_2;
+    DecimalPosition output_1_position;
+    DecimalPosition output_2_position;
 
   private:
     // const int MESSAGE_SIZE = DIMS * 8 + (DIMS - 1); // assuming a size of 8 per dimension for the target str, separated by separator characters in between
