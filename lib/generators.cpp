@@ -487,3 +487,70 @@ void PathLengthGenerator3D::enroll(RPC *rpc, const String& instance_name){
   output.enroll(rpc, instance_name + ".output");
   rpc->enroll(instance_name + ".ratio", ratio);
 }
+
+
+SerialConnectionGenerator::SerialConnectionGenerator(){};
+
+void SerialConnectionGenerator::begin(){
+  // Serial.println("serial connection begin");
+  // Register the plugin on the main loop and on the frame
+  register_plugin(); // on frame
+  register_plugin(PLUGIN_LOOP); // on loop
+
+  target_per_frame_offsets[0] = 0.0;
+  target_per_frame_offsets[1] = 0.0;
+  target_per_frame_offsets[2] = 0.0;
+
+  // TODO do I need to run output.begin()?
+
+}
+
+void SerialConnectionGenerator::run() {
+  // This runs every frame
+  // Interpolate values between the previous loop state and current loop state
+  // Serial.println("serial connection run");
+  // 
+  output_1.set(target_per_frame_offsets[0], INCREMENTAL);
+  output_1.push();
+
+  output_2.set(target_per_frame_offsets[1], INCREMENTAL);
+  output_2.push();
+}
+
+void SerialConnectionGenerator::loop() {
+  // Serial.println("serial connection loop");
+  // Read from Serial to set the target values for the current loop iteration
+  // Receive input from server
+  if (Serial.available()) {
+    // incomingByte = Serial.read(); // read only one byte and then execute the rest of the loop code (prevent delays?)
+    char data[MESSAGE_SIZE];
+    Serial.readBytes(data, MESSAGE_SIZE);
+
+    // Decode into the offset values
+    int char_idx = 0;
+    String curr_str = "";
+    int offset_idx = 0;
+    while (char_idx < MESSAGE_SIZE) {
+      if (data[char_idx] == separator) {
+        // TODO: make sure the offset doesn't go over a pre-determined limit to respect stepper capacity
+        target_per_frame_offsets[offset_idx] = curr_str.toFloat() * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US;
+        offset_idx++;
+        curr_str = "";
+      }
+      else {
+        curr_str += data[char_idx];
+      }
+      char_idx++;
+    }
+
+    // send receive notification to server
+    // Serial.printf("received: %d, %d, %d\n", incoming_offsets[0], incoming_offsets[1], incoming_offsets[2]);
+    Serial.print("received:");
+    Serial.print(data);
+    // Serial.print(incoming_str[0]);
+    // Serial.print(" to float: ");
+    // Serial.print(target_per_frame_offsets[0]);
+    Serial.print("\n");
+
+  }
+}
