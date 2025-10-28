@@ -675,7 +675,36 @@ class Attractor2D : public Plugin {
     DecimalPosition target_x = 0;
     DecimalPosition target_y = 0;
     uint8_t mode = ABSOLUTE;
+}
 
+const int DIMS = 3;
+
+
+class SerialConnectionGenerator : public Plugin{
+  // Generates output signals based on received values from a serial connection
+
+  public:
+    SerialConnectionGenerator();
+
+    void begin();
+
+    // BlockPorts (for now fixed to 2D XY)
+    BlockPort output_1;
+    BlockPort output_2;
+
+  private:
+    // const int MESSAGE_SIZE = DIMS * 8 + (DIMS - 1); // assuming a size of 8 per dimension for the target str, separated by separator characters in between
+    const int MESSAGE_SIZE = 26; // assuming a size of 8 per dimension for the target str, separated by separator characters in between
+    const char separator = ' ';
+    // DecimalPosition target_positions[DIMS];
+    // DecimalPosition current_positions[DIMS];
+
+    // DecimalPosition target_per_frame_offsets[DIMS];
+    DecimalPosition target_per_frame_offsets[3];
+
+  protected:
+    void loop();
+    void run();
 
 };
 
