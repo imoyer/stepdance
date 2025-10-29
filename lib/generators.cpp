@@ -500,11 +500,11 @@ void SerialConnectionGenerator::begin(){
   register_plugin(); // on frame
   register_plugin(PLUGIN_LOOP); // on loop
 
-  target_per_frame_offsets[0] = 0.0;
-  target_per_frame_offsets[1] = 0.0;
-  target_per_frame_offsets[2] = 0.0;
+  // target_per_frame_offsets[0] = 0.0;
+  // target_per_frame_offsets[1] = 0.0;
+  // target_per_frame_offsets[2] = 0.0;
 
-  // TODO do I need to run output.begin()?
+  // TODO do I need to run output.begin()? yes
 
 }
 
@@ -513,11 +513,46 @@ void SerialConnectionGenerator::run() {
   // Interpolate values between the previous loop state and current loop state
   // Serial.println("serial connection run");
   // 
-  output_1.set(target_per_frame_offsets[0], INCREMENTAL);
+
+  // compute velocity value (increase until it matches the target)
+  DecimalPosition delta_v = target_velocity_1 - current_velocity_1;
+  DecimalPosition new_velocity = current_velocity_1;
+
+  if (delta_v > 0){
+    // accelerate
+    new_velocity += acceleration_1;
+  
+    // clamp to target value (don't go over it)
+    if (new_velocity > target_velocity_1){
+      new_velocity = target_velocity_1;
+    }
+  }
+
+  if (delta_v < 0){
+    // decelerate
+    new_velocity -= acceleration_1;
+
+    // clamp to target value (don't go over it)
+    if (new_velocity < target_velocity_1){
+      new_velocity = target_velocity_1;
+    }
+  }
+
+  current_velocity_1 = new_velocity;
+
+  // Serial.print("current velocity:");
+  // Serial.print(current_velocity_1);
+  // Serial.print("\n");
+
+  // here i'm unsure whether to set it as incremental or absolute?
+  output_1.set(current_velocity_1, INCREMENTAL);
   output_1.push();
 
-  output_2.set(target_per_frame_offsets[1], INCREMENTAL);
-  output_2.push();
+  // output_1.set(target_per_frame_offsets[0], INCREMENTAL);
+  // output_1.push();
+
+  // output_2.set(target_per_frame_offsets[1], INCREMENTAL);
+  // output_2.push();
 }
 
 void SerialConnectionGenerator::loop() {
@@ -533,10 +568,11 @@ void SerialConnectionGenerator::loop() {
     int char_idx = 0;
     String curr_str = "";
     int offset_idx = 0;
+    DecimalPosition target_per_frame_offsets[3]; // moved this to a local var since I'm trying to control just 1 dimension currently
     while (char_idx < MESSAGE_SIZE) {
       if (data[char_idx] == separator) {
         // TODO: make sure the offset doesn't go over a pre-determined limit to respect stepper capacity
-        target_per_frame_offsets[offset_idx] = curr_str.toFloat() * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US; //I'm not sure about this math.
+        target_per_frame_offsets[offset_idx] = curr_str.toFloat();// * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US; //I'm not sure about this math.
         offset_idx++;
         curr_str = "";
       }
@@ -546,14 +582,27 @@ void SerialConnectionGenerator::loop() {
       char_idx++;
     }
 
+    target_velocity_1 = target_per_frame_offsets[0];
+
+    // Set the private variable holding the target motion impulse set for that frame
+
     // send receive notification to server
     // Serial.printf("received: %d, %d, %d\n", incoming_offsets[0], incoming_offsets[1], incoming_offsets[2]);
-    Serial.print("received:");
-    Serial.print(data);
+    Serial.print("target:");
+    // Serial.print(data);
     // Serial.print(incoming_str[0]);
-    // Serial.print(" to float: ");
-    // Serial.print(target_per_frame_offsets[0]);
+    // Serial.print(" to small steps: ");
+    Serial.print(target_velocity_1);
+    Serial.print(", current:");
+    Serial.print(current_velocity_1);
     Serial.print("\n");
 
+  }
+
+  else {
+    target_velocity_1 = 0.0;
+    // target_per_frame_offsets[0] = 0.0;
+    // target_per_frame_offsets[1] = 0.0;
+    // target_per_frame_offsets[2] = 0.0;
   }
 }

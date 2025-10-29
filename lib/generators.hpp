@@ -666,7 +666,15 @@ class SerialConnectionGenerator : public Plugin{
     // DecimalPosition current_positions[DIMS];
 
     // DecimalPosition target_per_frame_offsets[DIMS];
-    DecimalPosition target_per_frame_offsets[3];
+    // DecimalPosition target_per_frame_offsets[3];
+
+    // DecimalPosition target_position_1;
+    // DecimalPosition current_position_1;
+
+    DecimalPosition target_velocity_1;
+    DecimalPosition current_velocity_1;
+
+    DecimalPosition acceleration_1 = 1.0;
 
   protected:
     void loop();
