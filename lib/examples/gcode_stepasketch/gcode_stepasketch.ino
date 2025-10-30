@@ -137,6 +137,9 @@ void setup() {
 
   // -- Start the G-Code interface
   gcode_interface.begin(&Serial);
+  gcode_interface.output_x.map(&axidraw_kinematics.input_x);
+  gcode_interface.output_y.map(&axidraw_kinematics.input_y);
+  gcode_interface.output_z.map((&channel_z.input_target_position));
 
   // -- Start the stepdance library --
   // This activates the system.

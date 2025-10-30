@@ -51,6 +51,19 @@ void TimeBasedInterpolator::reset_block_queue(){
   next_write_index = 0;
 }
 
+bool TimeBasedInterpolator::is_idle(){
+  //returns true if the interpolator is idle
+  if(slots_remaining == TBI_BLOCK_QUEUE_SIZE && in_block == 0){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+bool TimeBasedInterpolator::queue_is_full(){
+  return (slots_remaining == 0);
+};
+
 void TimeBasedInterpolator::run(){
   if((in_block == 0) && (slots_remaining < TBI_BLOCK_QUEUE_SIZE)){ //idle, but a new block is available
     pull_block();

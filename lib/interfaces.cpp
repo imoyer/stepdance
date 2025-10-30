@@ -1,3 +1,6 @@
+#include <cmath>
+#include "WString.h"
+#include "avr/pgmspace.h"
 #include <cctype>
 #include <cstddef>
 #include "Arduino.h"
@@ -389,8 +392,8 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
 
 // ---- GCODE INTERFACE ----
 struct GCodeInterface::code GCodeInterface::all_codes[] = {
-  {.code_string = "G0", .code_function = &GCodeInterface::g0_rapid, .execution = EXECUTE_NOW},
-  {.code_string = "G1", .code_function = &GCodeInterface::g1_move, .execution = EXECUTE_NOW}
+  {.code_string = "G0", .code_function = &GCodeInterface::g0_rapid, .execution = EXECUTE_INTERPOLATOR},
+  {.code_string = "G1", .code_function = &GCodeInterface::g1_move, .execution = EXECUTE_INTERPOLATOR}
 };
 
 GCodeInterface::GCodeInterface(){};
@@ -446,14 +449,41 @@ void GCodeInterface::loop(){
     if(tokenize_block()){ //a block with tokens, and at least one key token, was returned.
       if(preprocess_block()){  //load block with target function and execution scope. Returns false if no matching function
         if(dispatch_block()){ //block was successfully dispatched
-
-        }
-      };
+          send_ok();
+          receiver_state = RECEIVER_READY;
+        }else{
+          receiver_state = RECEIVER_BLOCKED;
+        };
+      }else{
+        send_error(ERROR_UNSUPPORTED_CODE);
+        receiver_state = RECEIVER_READY;
+      }
+    }else{
+      send_error(ERROR_NO_KEY);
+      receiver_state = RECEIVER_READY;
     }
-    receiver_state = RECEIVER_READY;
-    reset_input_line_buffer();
   }
 
+  if(receiver_state == RECEIVER_BLOCKED){
+    if(dispatch_block()){
+      send_ok();
+      receiver_state = RECEIVER_READY;      
+    }
+  }
+
+  if(!queue_is_empty()){ //start to execute on the queue
+    if(next_block_execution() == EXECUTE_INTERPOLATOR){ //run if the interpolator has space
+      if(!target_interpolator.queue_is_full()){
+        struct block *target_block = pull_block();
+        execute_block(target_block);
+      }
+    }else{ //run if the interpolator is idle
+      if(target_interpolator.is_idle()){
+        struct block *target_block = pull_block();
+        execute_block(target_block);
+      }
+    }
+  }
 }
 
 bool GCodeInterface::process_character(uint8_t character){
@@ -525,7 +555,6 @@ int8_t GCodeInterface::find_code(char *code_string){
 bool GCodeInterface::preprocess_block(){
   int8_t code_index = find_code(inbound_block.tokens[inbound_block.key_token_index].token_string);
   if(code_index == -1){
-    Serial.println("?");
     return false;
   }else{
     inbound_block.code_function = all_codes[code_index].code_function;
@@ -549,7 +578,35 @@ bool GCodeInterface::dispatch_block(){
 }
 
 bool GCodeInterface::queue_block(){
+  if(block_queue_slots_remaining){ //OK to place block
+    block *target_block = &block_queue[block_queue_write_index];
+    memcpy(target_block, &inbound_block, sizeof(struct block));
+    block_queue_slots_remaining --;
+    advance_head(&block_queue_write_index);
+    return true;
+  }else{
+    return false;
+  }
+}
 
+struct GCodeInterface::block* GCodeInterface::pull_block(){
+  struct block *return_block = &block_queue[block_queue_read_index];
+  advance_head(&block_queue_read_index);
+  block_queue_slots_remaining ++;
+  return return_block;
+}
+
+void GCodeInterface::advance_head(uint8_t* target_head){
+  (*target_head)++;
+  if(*target_head == BLOCK_QUEUE_SIZE){
+    *target_head = 0;
+  }
+}
+
+void GCodeInterface::reset_block_queue(){
+  block_queue_slots_remaining = BLOCK_QUEUE_SIZE;
+  block_queue_read_index = 0;
+  block_queue_write_index = 0;
 }
 
 void GCodeInterface::execute_block(block *target_block){
@@ -566,16 +623,81 @@ void GCodeInterface::load_tokens(block *target_block){
   }
 }
 
+bool GCodeInterface::queue_is_empty(){
+  return !(block_queue_slots_remaining < BLOCK_QUEUE_SIZE);
+}
+
+uint8_t GCodeInterface::next_block_execution(){
+  //returns the execution type of the next block
+  return block_queue[block_queue_read_index].execution;
+}
+
+void GCodeInterface::send_ok(){
+  gcode_stream->println("ok");
+}
+
+void GCodeInterface::send_error(uint8_t error_type){
+  gcode_stream->print("error:");
+  switch(error_type){
+    case ERROR_NO_KEY:
+      gcode_stream->println("1");
+      break;
+    case ERROR_BAD_FORMAT:
+      gcode_stream->println("2");
+      break;
+    case ERROR_UNSUPPORTED_CODE:
+      gcode_stream->println("20");
+      break;
+  }
+}
 
 // --- GCODE FUNCTIONS ---
 
 void GCodeInterface::g0_rapid(){
-  Serial.println("G0");
   auto result = execution_tokens.find("X"); //find X
   if(result != execution_tokens.end()){
     Serial.println(result->second);
   }
 }
 void GCodeInterface::g1_move(){
-  Serial.println("G1");
+  struct TimeBasedInterpolator::motion_block interpolator_block;
+  const char* AXES = "XYZE"; //need to be in same order as TimeBasedInterpolator::position
+  const char* FEED_AXES = "XYZ";
+  DecimalPosition sum_feed_delta_squared = 0; //used for calculating euclidean distance of "feed" axes (i.e. axes whose distance is used in feed rate calc.)
+  DecimalPosition* current_position = &machine_position.x_mm; //pointer to first member of machine position
+  DecimalPosition* delta_position = &interpolator_block.block_position_delta.x_mm; //pointer to first member of block delta position
+
+  // 1. Load all delta positions
+  for(uint8_t axis_index =0; axis_index < sizeof(AXES); axis_index ++){
+    auto result = execution_tokens.find(String(AXES[axis_index]));
+    if(result != execution_tokens.end()){ //token was found
+      delta_position[axis_index] = result->second - current_position[axis_index];
+      current_position[axis_index] = result->second; //update current position
+      if(strchr(FEED_AXES, AXES[axis_index])){ //feeding axis
+        sum_feed_delta_squared += (delta_position[axis_index] * delta_position[axis_index]);
+      }
+    }else{
+      delta_position[axis_index] = 0; //not moving in this axis
+    }
+  }
+
+  // 2. Update feedrate
+  auto feed_token = execution_tokens.find("F");
+  if(feed_token != execution_tokens.end()){
+    modal_feedrate_mm_per_min = feed_token->second;
+  }
+
+  // 3. Calculate move time
+  float move_time_s = 0;
+  if(sum_feed_delta_squared > 0){ //we're moving in the XYZ plane, so base move time on that.
+    move_time_s = std::sqrt(sum_feed_delta_squared) / (modal_feedrate_mm_per_min / 60);
+  }else if(interpolator_block.block_position_delta.e_mm != 0){ //we're moving in E, base move time on that
+    move_time_s = fabs(interpolator_block.block_position_delta.e_mm) / (modal_feedrate_mm_per_min / 60);
+  }
+  interpolator_block.block_time_s = move_time_s;
+
+  // 4. Load block
+  if(move_time_s > 0){
+    target_interpolator.add_block(&interpolator_block);
+  }
 };

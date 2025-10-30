@@ -55,6 +55,8 @@ class TimeBasedInterpolator : public Plugin{
     volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
     void begin();
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
+    bool is_idle(); //returns true if the interpolator is idle
+    bool queue_is_full();
     
     // BlockPorts
     BlockPort output_x;
