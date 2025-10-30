@@ -1,3 +1,5 @@
+#include <cctype>
+#include <cstddef>
 #include "Arduino.h"
 #include "usb_serial.h"
 #include "core_pins.h"
@@ -386,15 +388,37 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
 }
 
 // ---- GCODE INTERFACE ----
+struct GCodeInterface::code GCodeInterface::all_codes[] = {
+  {.code_string = "G0", .code_function = &GCodeInterface::g0_rapid, .execution = EXECUTE_NOW},
+  {.code_string = "G1", .code_function = &GCodeInterface::g1_move, .execution = EXECUTE_NOW}
+};
+
 GCodeInterface::GCodeInterface(){};
 
 void GCodeInterface::begin(){
-  Serial.begin(115200);
+  begin(&Serial);
+}
+
+void GCodeInterface::begin(Stream *target_stream){
+  this->gcode_stream = target_stream; //sets the RPC interface
+  register_plugin(PLUGIN_LOOP); //this runs in the main program loop
   reset_input_line_buffer();
-  // initialize_all_commands_struct();
-  gcode_serial_port = &Serial; //hard-code the primary and debug serial ports
-  debug_serial_port = &SerialUSB1;
-  register_plugin(PLUGIN_LOOP);
+  target_interpolator.begin();
+}
+
+void GCodeInterface::begin(usb_serial_class *target_usb_serial){
+  target_usb_serial -> begin(115200); //baud rate is unused
+  this->gcode_stream = target_usb_serial; //sets the RPC interface
+  register_plugin(PLUGIN_LOOP); //this runs in the main program loop
+  reset_input_line_buffer();
+  target_interpolator.begin();
+};
+
+void GCodeInterface::begin(HardwareSerialIMXRT *target_serial, uint32_t baud, uint16_t format){
+  target_serial->begin(baud, format);
+  this->gcode_stream = target_serial; //sets the RPC interface
+  register_plugin(PLUGIN_LOOP); //this runs in the main program loop
+  reset_input_line_buffer();
   target_interpolator.begin();
 }
 
@@ -403,22 +427,37 @@ void GCodeInterface::reset_input_line_buffer(){
 }
 
 void GCodeInterface::loop(){
-  if(state == STATE_IDLE || state == STATE_RECEIVING_BLOCK){
-    while(gcode_serial_port->available() > 0){
-      state = STATE_RECEIVING_BLOCK; //we're receiving a block
-      uint8_t character = gcode_serial_port->read();
-      bool end_of_block = process_character(character);
-      if(end_of_block){
-        state = STATE_BLOCK_RECEIVED;
+  if(receiver_state == RECEIVER_READY){
+    reset_input_line_buffer();
+    receiver_state = RECEIVER_READING; //kick over to reading state immediately   
+  }
+
+  if(receiver_state == RECEIVER_READING){ //read in a line
+    while(gcode_stream->available() > 0){
+      uint8_t character = gcode_stream->read();
+      if(process_character(character)){ //newline character received, done with line
+        receiver_state = RECEIVER_PROCESSING;
         break;
       }
     }
   }
+
+  if(receiver_state == RECEIVER_PROCESSING){
+    if(tokenize_block()){ //a block with tokens, and at least one key token, was returned.
+      if(preprocess_block()){  //load block with target function and execution scope. Returns false if no matching function
+        if(dispatch_block()){ //block was successfully dispatched
+
+        }
+      };
+    }
+    receiver_state = RECEIVER_READY;
+    reset_input_line_buffer();
+  }
+
 }
 
-
 bool GCodeInterface::process_character(uint8_t character){
-  if(character == '\r' || character == ';'){
+  if(character == '\n'){
     return true;
   }else{
     input_line_buffer[input_line_buffer_index] = character;
@@ -426,3 +465,117 @@ bool GCodeInterface::process_character(uint8_t character){
     return false;
   }
 }
+
+bool GCodeInterface::tokenize_block(){
+  // processes the input line buffer into block tokens.
+  
+  //reset state
+  int8_t token_index = -1;
+  inbound_block.key_token_index = -1;
+  uint8_t char_index = 0;
+
+  //iterate through the input line buffer
+  for(uint8_t index = 0; index < input_line_buffer_index; index ++){
+    char this_char = toupper(input_line_buffer[index]);
+    if(this_char == ' '){ //skip spaces
+      continue;
+    }
+    if(this_char == ';'){ //end line on a comment
+      break;
+    }
+
+    if(strchr(GCODE_LETTERS, this_char)){ //new token
+      if(token_index > -1){ //close out the old token
+        inbound_block.tokens[token_index].token_string[char_index] = '\0';
+      }
+      token_index ++;
+      char_index = 0;
+      if(token_index == MAX_NUM_TOKENS){ //stop processing when we reach the max num tokens.
+        break;
+      }
+      if(this_char == 'G' || this_char == 'M'){ //identify the "key" token so we don't need to do it later.
+        inbound_block.key_token_index = token_index;
+      }
+    }
+    inbound_block.tokens[token_index].token_string[char_index] = this_char;
+    char_index++;
+    if(char_index == MAX_TOKEN_SIZE){
+      break;
+    }
+  }
+  inbound_block.tokens[token_index].token_string[char_index] = '\0'; //close out the last token
+  inbound_block.num_tokens = token_index + 1;
+  if(token_index > -1 && inbound_block.key_token_index > -1){
+    return true;
+  }else{
+    return false;
+  }
+}
+
+int8_t GCodeInterface::find_code(char *code_string){
+  uint8_t num_codes = sizeof(GCodeInterface::all_codes) / sizeof(GCodeInterface::all_codes[0]);
+  for(uint8_t code_index = 0; code_index < num_codes; code_index++){ //iterate over all codes
+    if(strcmp(code_string, all_codes[code_index].code_string) == 0){ //found the code
+      return code_index;
+    }
+  }  
+  return -1; //code not found 
+}
+
+bool GCodeInterface::preprocess_block(){
+  int8_t code_index = find_code(inbound_block.tokens[inbound_block.key_token_index].token_string);
+  if(code_index == -1){
+    Serial.println("?");
+    return false;
+  }else{
+    inbound_block.code_function = all_codes[code_index].code_function;
+    inbound_block.execution = all_codes[code_index].execution;
+    // (this->*inbound_block.code_function)(); //call function
+    return true;
+  }
+}
+
+bool GCodeInterface::dispatch_block(){
+  if(inbound_block.execution == EXECUTE_NOW){ //execute now.
+    execute_block(&inbound_block);
+    return true;
+  }else{
+    if(queue_block()){  //put in queue
+      return true;
+    }else{
+      return false;
+    }
+  }
+}
+
+bool GCodeInterface::queue_block(){
+
+}
+
+void GCodeInterface::execute_block(block *target_block){
+  load_tokens(target_block);
+  (this->*target_block->code_function)(); //call code function in target block
+}
+
+void GCodeInterface::load_tokens(block *target_block){
+  execution_tokens.clear();
+  for(uint8_t token_index = 0; token_index < target_block->num_tokens; token_index ++){ //iterate over all tokens in block
+    char letter = target_block->tokens[token_index].token_string[0];
+    DecimalPosition value = std::strtod(&target_block->tokens[token_index].token_string[1], NULL);
+    execution_tokens[String(letter)] = value;
+  }
+}
+
+
+// --- GCODE FUNCTIONS ---
+
+void GCodeInterface::g0_rapid(){
+  Serial.println("G0");
+  auto result = execution_tokens.find("X"); //find X
+  if(result != execution_tokens.end()){
+    Serial.println(result->second);
+  }
+}
+void GCodeInterface::g1_move(){
+  Serial.println("G1");
+};
