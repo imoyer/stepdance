@@ -393,7 +393,15 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
 // ---- GCODE INTERFACE ----
 struct GCodeInterface::code GCodeInterface::all_codes[] = {
   {.code_string = "G0", .code_function = &GCodeInterface::g0_rapid, .execution = EXECUTE_INTERPOLATOR},
-  {.code_string = "G1", .code_function = &GCodeInterface::g1_move, .execution = EXECUTE_INTERPOLATOR}
+  {.code_string = "G1", .code_function = &GCodeInterface::g1_move, .execution = EXECUTE_INTERPOLATOR},
+  {.code_string = "$", .code_function = &GCodeInterface::_help, .execution = EXECUTE_NOW},
+  {.code_string = "$$", .code_function = &GCodeInterface::_report_parameters, .execution = EXECUTE_NOW},
+  {.code_string = "\x18", .code_function = &GCodeInterface::_soft_reset, .execution = EXECUTE_NOW},
+  {.code_string = "?", .code_function = &GCodeInterface::_status_report, .execution = EXECUTE_NOW},
+  {.code_string = "~", .code_function = &GCodeInterface::_cycle_start, .execution = EXECUTE_NOW},
+  {.code_string = "!", .code_function = &GCodeInterface::_feed_hold, .execution = EXECUTE_NOW},
+  {.code_string = "$G", .code_function = &GCodeInterface::_parser_state, .execution = EXECUTE_NOW},
+  {.code_string = "G4", .code_function = &GCodeInterface::g4_dwell, .execution = EXECUTE_QUEUE}
 };
 
 GCodeInterface::GCodeInterface(){};
@@ -438,6 +446,10 @@ void GCodeInterface::loop(){
   if(receiver_state == RECEIVER_READING){ //read in a line
     while(gcode_stream->available() > 0){
       uint8_t character = gcode_stream->read();
+      if(strchr(REALTIME_LETTERS, character)){ //it's a realtime command. We extract and process seperately.
+        execute_realtime(character);
+        continue;
+      }
       if(process_character(character)){ //newline character received, done with line
         receiver_state = RECEIVER_PROCESSING;
         break;
@@ -446,6 +458,10 @@ void GCodeInterface::loop(){
   }
 
   if(receiver_state == RECEIVER_PROCESSING){
+    for (int i = 0; i<20; i++){
+      SerialUSB1.printf("%02X ", (unsigned char)input_line_buffer[i]);
+    }
+    SerialUSB1.print('\n');
     if(tokenize_block()){ //a block with tokens, and at least one key token, was returned.
       if(preprocess_block()){  //load block with target function and execution scope. Returns false if no matching function
         if(dispatch_block()){ //block was successfully dispatched
@@ -459,7 +475,9 @@ void GCodeInterface::loop(){
         receiver_state = RECEIVER_READY;
       }
     }else{
-      send_error(ERROR_NO_KEY);
+      if(input_line_buffer_index != 0){ //don't send an error if line is empty (as when only a realtime command is received)
+        send_error(ERROR_NO_KEY);
+      }
       receiver_state = RECEIVER_READY;
     }
   }
@@ -503,6 +521,7 @@ bool GCodeInterface::tokenize_block(){
   int8_t token_index = -1;
   inbound_block.key_token_index = -1;
   uint8_t char_index = 0;
+  bool token_lock = false; //if True, we'll stay in the current token until the lock is released.
 
   //iterate through the input line buffer
   for(uint8_t index = 0; index < input_line_buffer_index; index ++){
@@ -514,7 +533,11 @@ bool GCodeInterface::tokenize_block(){
       break;
     }
 
-    if(strchr(GCODE_LETTERS, this_char)){ //new token
+    if(this_char == '=' || this_char == '$'){ //we disable token lock when we receive an '=' or '$'
+      token_lock = false;
+    }
+
+    if(strchr(TOKEN_LETTERS, this_char) && !token_lock){ //new token, if token lock is not enabled
       if(token_index > -1){ //close out the old token
         inbound_block.tokens[token_index].token_string[char_index] = '\0';
       }
@@ -523,8 +546,11 @@ bool GCodeInterface::tokenize_block(){
       if(token_index == MAX_NUM_TOKENS){ //stop processing when we reach the max num tokens.
         break;
       }
-      if(this_char == 'G' || this_char == 'M'){ //identify the "key" token so we don't need to do it later.
+      if(this_char == 'G' || this_char == 'M' || this_char == '$'){ //identify the "key" token so we don't need to do it later.
         inbound_block.key_token_index = token_index;
+      }
+      if(this_char == '$'){
+        token_lock = true; //we'll enter a token lock until we receive an '='
       }
     }
     inbound_block.tokens[token_index].token_string[char_index] = this_char;
@@ -559,7 +585,6 @@ bool GCodeInterface::preprocess_block(){
   }else{
     inbound_block.code_function = all_codes[code_index].code_function;
     inbound_block.execution = all_codes[code_index].execution;
-    // (this->*inbound_block.code_function)(); //call function
     return true;
   }
 }
@@ -614,12 +639,22 @@ void GCodeInterface::execute_block(block *target_block){
   (this->*target_block->code_function)(); //call code function in target block
 }
 
+void GCodeInterface::execute_realtime(char command){
+  char str[2] = { command, '\0' };
+  int8_t code_index = find_code(str);
+  if(code_index > -1){
+    (this->*all_codes[code_index].code_function)(); //run function
+  }
+}
+
 void GCodeInterface::load_tokens(block *target_block){
   execution_tokens.clear();
   for(uint8_t token_index = 0; token_index < target_block->num_tokens; token_index ++){ //iterate over all tokens in block
-    char letter = target_block->tokens[token_index].token_string[0];
-    DecimalPosition value = std::strtod(&target_block->tokens[token_index].token_string[1], NULL);
-    execution_tokens[String(letter)] = value;
+    if(token_index != target_block->key_token_index){ //don't load the key token, b/c it may be non-numeric
+      char letter = target_block->tokens[token_index].token_string[0];
+      DecimalPosition value = std::strtod(&target_block->tokens[token_index].token_string[1], NULL);
+      execution_tokens[String(letter)] = value;
+    }
   }
 }
 
@@ -648,6 +683,9 @@ void GCodeInterface::send_error(uint8_t error_type){
     case ERROR_UNSUPPORTED_CODE:
       gcode_stream->println("20");
       break;
+    case ERROR_NO_FEED_RATE:
+      gcode_stream->println("22");
+      break;      
   }
 }
 
@@ -667,7 +705,17 @@ void GCodeInterface::g1_move(){
   DecimalPosition* current_position = &machine_position.x_mm; //pointer to first member of machine position
   DecimalPosition* delta_position = &interpolator_block.block_position_delta.x_mm; //pointer to first member of block delta position
 
-  // 1. Load all delta positions
+  // 1. Update feedrate
+  auto feed_token = execution_tokens.find("F");
+  if(feed_token != execution_tokens.end()){
+    modal_feedrate_mm_per_min = feed_token->second;
+  }
+  if(modal_feedrate_mm_per_min <= 0){ //feed must be positive
+    send_error(ERROR_NO_FEED_RATE);
+    return;
+  }
+
+  // 2. Load all delta positions
   for(uint8_t axis_index =0; axis_index < sizeof(AXES); axis_index ++){
     auto result = execution_tokens.find(String(AXES[axis_index]));
     if(result != execution_tokens.end()){ //token was found
@@ -679,12 +727,6 @@ void GCodeInterface::g1_move(){
     }else{
       delta_position[axis_index] = 0; //not moving in this axis
     }
-  }
-
-  // 2. Update feedrate
-  auto feed_token = execution_tokens.find("F");
-  if(feed_token != execution_tokens.end()){
-    modal_feedrate_mm_per_min = feed_token->second;
   }
 
   // 3. Calculate move time
@@ -701,3 +743,49 @@ void GCodeInterface::g1_move(){
     target_interpolator.add_block(&interpolator_block);
   }
 };
+
+void GCodeInterface::g4_dwell(){
+  //need to implement
+}
+
+// -- SYSTEM FUNCTIONS --
+void GCodeInterface::_help(){
+  Serial.println("HELP");
+}
+
+void GCodeInterface::_report_parameters(){
+  Serial.println("REPORT");
+}
+
+void GCodeInterface::_soft_reset(){
+
+}
+
+void GCodeInterface::_status_report(){
+  gcode_stream->print("<");
+  if(target_interpolator.is_idle()){
+    gcode_stream->print("Idle|MPos:");
+  }else{
+    gcode_stream->print("Run|MPos:");
+  }
+  gcode_stream->print(target_interpolator.output_x.read_target(),3);
+  gcode_stream->print(",");
+  gcode_stream->print(target_interpolator.output_y.read_target(),3);
+  gcode_stream->print(",");
+  gcode_stream->print(target_interpolator.output_z.read_target(),3);
+  gcode_stream->print(",|FS:");
+  gcode_stream->print(modal_feedrate_mm_per_min, 1);
+  gcode_stream->println(">");
+}
+
+void GCodeInterface::_parser_state(){
+  gcode_stream->println("[GC:G0 G54 G17 G21 G90 G94 M0 M5 M9]"); //TEMPORARY. NEED TO UPDATE WITH ACTUAL STATE
+}
+
+void GCodeInterface::_cycle_start(){
+
+}
+
+void GCodeInterface::_feed_hold(){
+
+}

@@ -227,6 +227,10 @@ float64_t BlockPort::read(uint8_t mode){
   }
 }
 
+float64_t BlockPort::read_target(){
+  return *this->target;
+}
+
 // - Block Functions -
 // Called by the block that has instantiated this BlockPort.
 void BlockPort::begin(volatile float64_t *target){

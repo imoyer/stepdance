@@ -137,7 +137,7 @@ class BlockPort{
                                   // In some cases this function can be overridden by a custom read function.
 
     void write_now(float64_t); //writes directly to the target. REMEMBER TO UPDATE ABSOLUTE_BUFFER AT SAME TIME.
-    float64_t read_now(); //reads directly from the target
+    float64_t read_target(); //reads directly from the target
 
     // -- Internal Functions -- called by the block containing this BlockPort
     void begin(volatile float64_t *target); //initializes the BlockPort

@@ -157,7 +157,8 @@ class GCodeInterface : public Plugin{
     bool process_character(uint8_t character);
 
     // 2. Tokenize Block
-    const char *GCODE_LETTERS = "GMXYZEABCSTHDFPN"; //a string containing all g-code letters
+    const char *REALTIME_LETTERS = "\x18?~!";
+    const char *TOKEN_LETTERS = "GMXYZEABCSTHDFPN$="; //a string containing all token letters. Most are G-code except for $ and =.
     static const uint8_t MAX_NUM_TOKENS = 10; //support up to 10 phrases in the incoming block
     static const uint8_t MAX_TOKEN_SIZE = 15; //max characters in a given token. For example, "E110292.6186" is 12 characters.
     struct token{ //stores a gcode phrase in the incoming block
@@ -179,7 +180,7 @@ class GCodeInterface : public Plugin{
     enum{
       EXECUTE_NOW, //runs the target function on receipt
       EXECUTE_QUEUE, //runs the target function in the block queue, when the interpolator is idle
-      EXECUTE_INTERPOLATOR //runs the target function on the interpolator
+      EXECUTE_INTERPOLATOR, //runs the target function on the interpolator
     };
 
     struct code{
@@ -218,7 +219,8 @@ class GCodeInterface : public Plugin{
     enum{
       ERROR_NO_KEY, //GRBL 1
       ERROR_BAD_FORMAT, //GRBL 2
-      ERROR_UNSUPPORTED_CODE //GRBL 20
+      ERROR_UNSUPPORTED_CODE, //GRBL 20
+      ERROR_NO_FEED_RATE //GRBL 22
     };
 
     void send_ok();
@@ -227,6 +229,19 @@ class GCodeInterface : public Plugin{
     // GCode Commands
     void g0_rapid();
     void g1_move();
+    void g4_dwell();
+
+    // system commands
+    void _help();
+    void _report_parameters();
+    void _soft_reset();
+    void _status_report();
+    void _cycle_start();
+    void _feed_hold();
+    void _parser_state();
+
+    // 8. "Realtime Commands"
+    void execute_realtime(char command);
 
     // Interpolator
     TimeBasedInterpolator target_interpolator; 

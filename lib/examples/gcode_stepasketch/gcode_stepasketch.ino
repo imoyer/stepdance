@@ -136,6 +136,7 @@ void setup() {
   position_gen.begin();
 
   // -- Start the G-Code interface
+  SerialUSB1.begin(115200);
   gcode_interface.begin(&Serial);
   gcode_interface.output_x.map(&axidraw_kinematics.input_x);
   gcode_interface.output_y.map(&axidraw_kinematics.input_y);
@@ -171,6 +172,6 @@ void motors_disable(){
 }
 
 void report_overhead(){
-  Serial.println(channel_z.target_position, 4);
-  Serial.println(stepdance_get_cpu_usage(), 4);
+  // Serial.println(channel_z.target_position, 4);
+  // Serial.println(stepdance_get_cpu_usage(), 4);
 }
