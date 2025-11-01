@@ -5,7 +5,7 @@
 #include "stepdance.hpp"
 
 // Pantograph XY input plugged in input_a
-InputPort input_a;
+// InputPort input_a;
 
 // Axidraw XYZ plugged into output ports
 OutputPort output_a;
@@ -81,15 +81,15 @@ void setup() {
 
 
     // -- Configure and start the input port --
-    input_a.begin(INPUT_A);
-    input_a.output_x.set_ratio(1, 1); //1 step is 0.01mm
-    input_a.output_x.map(&axidraw_kinematics.input_x);
+    // input_a.begin(INPUT_A);
+    // input_a.output_x.set_ratio(1, 1); //1 step is 0.01mm
+    // input_a.output_x.map(&axidraw_kinematics.input_x);
 
-    input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
-    input_a.output_y.map(&axidraw_kinematics.input_y);
+    // input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
+    // input_a.output_y.map(&axidraw_kinematics.input_y);
 
-    input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
-    input_a.output_z.map(&channel_z.input_target_position);
+    // input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
+    // input_a.output_z.map(&channel_z.input_target_position);
   
 
 
@@ -105,10 +105,10 @@ void setup() {
 
     // -- Configure Serial generator --
     // below mapping causes a crash at runtime I think
-    // connection_generator.output_1.map(&axidraw_kinematics.input_x);
-    // connection_generator.output_2.map(&axidraw_kinematics.input_y);
-    connection_generator.output_1.map(&input_a.output_x);
-    connection_generator.output_2.map(&input_a.output_y);
+    connection_generator.output_1.map(&axidraw_kinematics.input_x);
+    connection_generator.output_2.map(&axidraw_kinematics.input_y);
+    // connection_generator.output_1.map(&input_a.output_x);
+    // connection_generator.output_2.map(&input_a.output_y);
     connection_generator.begin();
 
     encoder_1.begin(ENCODER_1);
@@ -149,52 +149,6 @@ String incoming_str[3];
 
 void loop() {
 
-  // // Receive input from server
-  // if (Serial.available()) {
-  //   // incomingByte = Serial.read(); // read only one byte and then execute the rest of the loop code (prevent delays?)
-  //   char data[SIZE];
-  //   Serial.readBytes(data, SIZE);
-
-  //   // Decode into the offset values
-  //   int char_idx = 0;
-  //   String curr_str = "";
-  //   int offset_idx = 0;
-  //   while (char_idx < SIZE) {
-  //     if (data[char_idx] == ' ') {
-  //       incoming_offsets[offset_idx] = curr_str.toFloat();
-  //       incoming_str[offset_idx] = curr_str;
-  //       offset_idx++;
-  //       curr_str = "";
-  //     }
-  //     else {
-  //       curr_str += data[char_idx];
-  //     }
-  //     char_idx++;
-  //   }
-
-  //   // send receive notification to server
-  //   // Serial.printf("received: %d, %d, %d\n", incoming_offsets[0], incoming_offsets[1], incoming_offsets[2]);
-  //   Serial.print("received:");
-  //   Serial.print(incoming_str[0]);
-  //   Serial.print(" to float: ");
-  //   Serial.print(incoming_offsets[0]);
-  //   Serial.print("\n");
-  // }
-
-  // for (float64_t offset_value : incoming_offsets) {
-
-  // }
-
-  // if (incomingByte > 0) {
-  // set blockport value to some small increment?
-  // float64_t delta = 0.01;
-  // input_a.output_x.set(incoming_offsets[0], INCREMENTAL);
-  // input_a.output_x.push();
-
-  // incoming_offsets[0] = 0.0; // reset value
-
-  // }
-  // Serial.println(channel_a.input_target_position.read(ABSOLUTE));
 
   dance_loop();
   overhead_delay.periodic_call(&report_overhead, 100);
@@ -220,6 +174,6 @@ void report_overhead(){
   // Serial.printf("%d\n", incomingByte);
 
 
-  Serial.print("running\n");
+  // Serial.print("running\n");
 
 }
