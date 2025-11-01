@@ -641,8 +641,32 @@ class PathLengthGenerator3D : public Plugin{
     void run();
 };
 
-const int DIMS = 3;
 
+
+
+class SerialControlTrack {
+  public:
+    SerialControlTrack();
+    void begin();
+    void run();
+    void loop(int input);
+
+    BlockPort output;
+
+    // TODO: adjusting these values is probably pretty important
+    // It will affect how much control we can have over the velocity on the application side
+    static const int buffer_queue_size = 2;
+    static constexpr float64_t velocity_limit = 0.001;
+    static constexpr float64_t MAX_RANGE = 10;
+
+  private:
+    DecimalPosition output_position;
+    DecimalPosition received_target_delta[buffer_queue_size];
+    int current_read_idx_in_queue = -1;
+    int current_write_idx_in_queue = -1;
+
+    DecimalPosition delta_to_current_target = 0.0;
+};
 
 class SerialConnectionGenerator : public Plugin{
   // Generates output signals based on received values from a serial connection
@@ -652,29 +676,13 @@ class SerialConnectionGenerator : public Plugin{
 
     void begin();
 
+    static const uint8_t NUM_CHANNELS = 2;
+    SerialControlTrack controlled_tracks[NUM_CHANNELS];
+
     // BlockPorts (for now fixed to 2D XY)
-    BlockPort output_1;
-    BlockPort output_2;
-    DecimalPosition output_1_position;
-    DecimalPosition output_2_position;
+    BlockPort& output_1 = controlled_tracks[0].output;
+    BlockPort& output_2 = controlled_tracks[1].output;
 
-  private:
-    // const int MESSAGE_SIZE = DIMS * 8 + (DIMS - 1); // assuming a size of 8 per dimension for the target str, separated by separator characters in between
-    const int MESSAGE_SIZE = 26; // assuming a size of 8 per dimension for the target str, separated by separator characters in between
-    const char separator = ' ';
-    // DecimalPosition target_positions[DIMS];
-    // DecimalPosition current_positions[DIMS];
-
-    // DecimalPosition target_per_frame_offsets[DIMS];
-    // DecimalPosition target_per_frame_offsets[3];
-
-    // DecimalPosition target_position_1;
-    // DecimalPosition current_position_1;
-
-    DecimalPosition target_velocity_1;
-    DecimalPosition current_velocity_1;
-
-    DecimalPosition acceleration_1 = 1.0;
 
   protected:
     void loop();

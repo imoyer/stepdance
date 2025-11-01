@@ -490,119 +490,129 @@ void PathLengthGenerator3D::enroll(RPC *rpc, const String& instance_name){
 
 
 SerialConnectionGenerator::SerialConnectionGenerator(){};
+SerialControlTrack::SerialControlTrack(){};
+
+void SerialControlTrack::begin() {
+  output.begin(&output_position);
+}
+
+
+void SerialControlTrack::run() {
+
+  // Check if we should move on to the next queue item?
+  if (delta_to_current_target * delta_to_current_target < 1e-8 ) { // soft equality check
+    // Empty that slot in buffer queue (it was dealt with)
+    received_target_delta[current_read_idx_in_queue] = 0.0;
+    // Move to read next slot
+    current_read_idx_in_queue = (current_read_idx_in_queue + 1) % buffer_queue_size;
+    delta_to_current_target = received_target_delta[current_read_idx_in_queue];
+  }
+
+  // Calculate the target step size:
+  DecimalPosition target_frame_delta_size = received_target_delta[current_read_idx_in_queue] * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US;
+
+  // Clamp to delta_to_current_target
+
+  // Clamp to max velocity
+  if (target_frame_delta_size > 0) {
+    if (target_frame_delta_size > delta_to_current_target) {
+      target_frame_delta_size = delta_to_current_target;
+    }
+    if (target_frame_delta_size > velocity_limit) {
+      target_frame_delta_size = velocity_limit;
+    }
+  }
+  else {
+    if (target_frame_delta_size < delta_to_current_target) {
+      target_frame_delta_size = delta_to_current_target;
+    }
+    if (target_frame_delta_size < -velocity_limit) {
+      target_frame_delta_size = -velocity_limit;
+    }
+  }
+
+  // Send
+
+  output.set(target_frame_delta_size, INCREMENTAL);
+  output.push();
+
+  // Apply to the variable that's keeping track
+  delta_to_current_target -= target_frame_delta_size;
+}
+
+void SerialControlTrack::loop(int input) {
+  // Map to correct range
+  DecimalPosition target_value = input * MAX_RANGE / 128; // input is an int in [-128, 127]
+
+  if (input != 0){
+    // populate buffer
+    current_write_idx_in_queue = (current_write_idx_in_queue + 1) % buffer_queue_size;
+    received_target_delta[current_write_idx_in_queue] = target_value;
+
+    // start reading this value in buffer? Only if we are done reading from current value
+    if (delta_to_current_target * delta_to_current_target < 1e-8 ){
+      current_read_idx_in_queue = current_write_idx_in_queue;
+      delta_to_current_target = received_target_delta[current_read_idx_in_queue];
+    }
+
+  }
+
+  // send receive notification to server
+  Serial.print("received:");
+  Serial.print(input);
+  Serial.print(", new received target:");
+  Serial.print(received_target_delta[current_write_idx_in_queue]);
+  Serial.print(", delta to current working target:");
+  Serial.print(delta_to_current_target);
+  Serial.print(", reading idx:");
+  Serial.print(current_read_idx_in_queue);
+  Serial.print(", writing idx:");
+  Serial.print(current_write_idx_in_queue);
+  Serial.print("\n");
+}
+
+SerialConnectionGenerator::SerialConnectionGenerator(){};
 
 void SerialConnectionGenerator::begin(){
   // Serial.println("serial connection begin");
   // Register the plugin on the main loop and on the frame
-  output_1.begin(&output_1_position);
-  output_2.begin(&output_2_position);
+
+  for (int i = 0; i < NUM_CHANNELS; i++){
+    controlled_tracks[i].begin();
+  }
 
   register_plugin(); // on frame
   register_plugin(PLUGIN_LOOP); // on loop
 
-  // target_per_frame_offsets[0] = 0.0;
-  // target_per_frame_offsets[1] = 0.0;
-  // target_per_frame_offsets[2] = 0.0;
-
-  // TODO do I need to run output.begin()? yes
 
 }
 
 void SerialConnectionGenerator::run() {
   // This runs every frame
   // Interpolate values between the previous loop state and current loop state
-  // Serial.println("serial connection run");
-  // 
 
-  // compute velocity value (increase until it matches the target)
-  DecimalPosition delta_v = target_velocity_1 - current_velocity_1;
-  DecimalPosition new_velocity = current_velocity_1;
-
-  if (delta_v > 0){
-    // accelerate
-    new_velocity += acceleration_1;
-  
-    // clamp to target value (don't go over it)
-    if (new_velocity > target_velocity_1){
-      new_velocity = target_velocity_1;
+    for (int i = 0; i < NUM_CHANNELS; i++){
+      controlled_tracks[i].run();
     }
-  }
-
-  if (delta_v < 0){
-    // decelerate
-    new_velocity -= acceleration_1;
-
-    // clamp to target value (don't go over it)
-    if (new_velocity < target_velocity_1){
-      new_velocity = target_velocity_1;
-    }
-  }
-
-  current_velocity_1 = new_velocity;
-
-  // Serial.print("current velocity:");
-  // Serial.print(current_velocity_1);
-  // Serial.print("\n");
-
-  // here i'm unsure whether to set it as incremental or absolute?
-  output_1.set(current_velocity_1, INCREMENTAL);
-  output_1.push();
-
-  // output_1.set(target_per_frame_offsets[0], INCREMENTAL);
-  // output_1.push();
-
-  // output_2.set(target_per_frame_offsets[1], INCREMENTAL);
-  // output_2.push();
 }
 
 void SerialConnectionGenerator::loop() {
-  // Serial.println("serial connection loop");
+
   // Read from Serial to set the target values for the current loop iteration
   // Receive input from server
   if (Serial.available()) {
     // incomingByte = Serial.read(); // read only one byte and then execute the rest of the loop code (prevent delays?)
-    char data[MESSAGE_SIZE];
-    Serial.readBytes(data, MESSAGE_SIZE);
+    char serial_in_data[NUM_CHANNELS]; // one char per axis
+    Serial.readBytes(serial_in_data, NUM_CHANNELS);
 
-    // Decode into the offset values
-    int char_idx = 0;
-    String curr_str = "";
-    int offset_idx = 0;
-    DecimalPosition target_per_frame_offsets[3]; // moved this to a local var since I'm trying to control just 1 dimension currently
-    while (char_idx < MESSAGE_SIZE) {
-      if (data[char_idx] == separator) {
-        // TODO: make sure the offset doesn't go over a pre-determined limit to respect stepper capacity
-        target_per_frame_offsets[offset_idx] = curr_str.toFloat();// * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US; //I'm not sure about this math.
-        offset_idx++;
-        curr_str = "";
-      }
-      else {
-        curr_str += data[char_idx];
-      }
-      char_idx++;
+    for (int i = 0; i < NUM_CHANNELS; i++) {
+      int raw_value = (signed char) serial_in_data[i];
+      controlled_tracks[i].loop(raw_value);
     }
-
-    target_velocity_1 = target_per_frame_offsets[0];
-
-    // Set the private variable holding the target motion impulse set for that frame
-
-    // send receive notification to server
-    // Serial.printf("received: %d, %d, %d\n", incoming_offsets[0], incoming_offsets[1], incoming_offsets[2]);
-    Serial.print("target:");
-    // Serial.print(data);
-    // Serial.print(incoming_str[0]);
-    // Serial.print(" to small steps: ");
-    Serial.print(target_velocity_1);
-    Serial.print(", current:");
-    Serial.print(current_velocity_1);
-    Serial.print("\n");
 
   }
 
   else {
-    target_velocity_1 = 0.0;
-    // target_per_frame_offsets[0] = 0.0;
-    // target_per_frame_offsets[1] = 0.0;
-    // target_per_frame_offsets[2] = 0.0;
+
   }
 }
