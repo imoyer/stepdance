@@ -4,6 +4,7 @@
 #include "core_pins.h"
 #include "imxrt.h"
 #include "analog_in.hpp"
+#include "rpc.hpp"
 
 // Initialize static variables
 uint8_t AnalogInput::module_num_inputs[NUM_ADC_MODULES] = {0, 0};
@@ -309,6 +310,12 @@ ControlParameter AnalogInput::read(){
   }
 }
 
+ControlParameter AnalogInput::read_raw(){
+  // Returns the last read raw value
+  
+  return static_cast<ControlParameter>(last_value_raw);
+}
+
 // Setup Methods
 void AnalogInput::map(ControlParameter *target_parameter){
   this->target_control_param = target_parameter;
@@ -443,6 +450,16 @@ void AnalogInput::adc2_on_interrupt(){
   if(this_module->callback_function != nullptr){
     this_module->callback_function();
   }
+}
+
+void AnalogInput::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_floor", *this, static_cast<void(AnalogInput::*)(ControlParameter, uint16_t)>(&AnalogInput::set_floor)); //we'll specify a function with the full set of input parameters
+  rpc->enroll(instance_name, "set_ceiling", *this, static_cast<void(AnalogInput::*)(ControlParameter, uint16_t)>(&AnalogInput::set_ceiling));
+  rpc->enroll(instance_name, "set_deadband_here", *this, &AnalogInput::set_deadband_here);
+  rpc->enroll(instance_name, "set_deadband", *this, &AnalogInput::set_deadband);
+  rpc->enroll(instance_name, "invert", *this, &AnalogInput::invert);
+  rpc->enroll(instance_name, "read", *this, &AnalogInput::read);
+  rpc->enroll(instance_name, "read_raw", *this, &AnalogInput::read_raw);
 }
 
 // float32_t AnalogInput::get_volts_per_raw_count(){

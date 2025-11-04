@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "core_pins.h"
 #include "digital_in.hpp"
+#include "rpc.hpp"
 
 Button::Button(){};
 
@@ -111,6 +112,14 @@ void Button::on_frame(){
   }
 }
 
+void Button::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "read", *this, &Button::read);
+  rpc->enroll(instance_name, "read_raw", *this, &Button::read_raw);
+  rpc->enroll(instance_name, "set_mode", *this, &Button::set_mode);
+  rpc->enroll(instance_name, "has_changed", *this, &Button::has_changed);
+  rpc->enroll(instance_name, "set_invert", *this, &Button::set_invert);
+  rpc->enroll(instance_name, "clear_invert", *this, &Button::clear_invert);
+}
 
 ButtonKilohertzPlugin::ButtonKilohertzPlugin(){};
 

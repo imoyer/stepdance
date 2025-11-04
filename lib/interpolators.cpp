@@ -1,6 +1,5 @@
 #include <cmath>
 #include "arm_math.h"
-#include "core.hpp"
 /*
 Interpolator Module of the StepDance Control System
 
@@ -16,6 +15,7 @@ A part of the Mixing Metaphors Project
 #include <sys/_stdint.h>
 #include "interpolators.hpp"
 #include "core.hpp"
+#include "rpc.hpp"
 
 TimeBasedInterpolator::TimeBasedInterpolator(){};
 
@@ -36,6 +36,18 @@ int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
   else{
     return -1;
   }
+}
+
+int16_t TimeBasedInterpolator::add_move(float32_t move_time_s, DecimalPosition delta_x, DecimalPosition delta_y, DecimalPosition delta_z, DecimalPosition delta_e, DecimalPosition delta_r, DecimalPosition delta_t){
+  struct motion_block new_block;
+  new_block.block_position_delta.x_mm = delta_x;
+  new_block.block_position_delta.y_mm = delta_y;
+  new_block.block_position_delta.z_mm = delta_z;
+  new_block.block_position_delta.e_mm = delta_e;
+  new_block.block_position_delta.r_mm = delta_r;
+  new_block.block_position_delta.t_rad = delta_t;
+  new_block.block_time_s = move_time_s;
+  return add_block(&new_block);
 }
 
 void TimeBasedInterpolator::advance_head(volatile uint16_t* target_head){
@@ -140,4 +152,18 @@ void TimeBasedInterpolator::begin(){
   output_t.begin(&output_position_t);
   reset_block_queue();
   register_plugin();
+}
+
+void TimeBasedInterpolator::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "add_move", *this, &TimeBasedInterpolator::add_move);
+  rpc->enroll(instance_name, "is_idle", *this, &TimeBasedInterpolator::is_idle);
+  rpc->enroll(instance_name, "queue_is_full", *this, &TimeBasedInterpolator::queue_is_full);
+  rpc->enroll(instance_name + ".speed_override", speed_overide);
+  rpc->enroll(instance_name + ".slots_remaining", slots_remaining);
+  output_x.enroll(rpc, instance_name + ".output_x");
+  output_y.enroll(rpc, instance_name + ".output_y");
+  output_r.enroll(rpc, instance_name + ".output_r");
+  output_t.enroll(rpc, instance_name + ".output_t");
+  output_z.enroll(rpc, instance_name + ".output_z");
+  output_e.enroll(rpc, instance_name + ".output_e");
 }

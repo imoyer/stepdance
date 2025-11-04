@@ -13,6 +13,7 @@ A part of the Mixing Metaphors Project
 */
 
 #include "kinematics.hpp"
+#include "rpc.hpp"
 
 KinematicsCoreXY::KinematicsCoreXY(){};
 
@@ -35,6 +36,13 @@ void KinematicsCoreXY::run(){
   output_b.set(position_x - position_y);
   output_a.push();
   output_b.push();
+}
+
+void KinematicsCoreXY::enroll(RPC *rpc, const String& instance_name){
+  input_x.enroll(rpc, instance_name + ".input_x");
+  input_y.enroll(rpc, instance_name + ".input_y");
+  output_a.enroll(rpc, instance_name + ".output_a");
+  output_b.enroll(rpc, instance_name + ".output_b");
 }
 
 // DecimalPosition KinematicsCoreXY::get_position_x(){
@@ -82,6 +90,14 @@ void KinematicsPolarToCartesian::run(){
   output_x.push();
   output_y.push();
 }
+
+void KinematicsPolarToCartesian::enroll(RPC *rpc, const String& instance_name){
+  input_angle.enroll(rpc, instance_name + ".input_angle");
+  input_radius.enroll(rpc, instance_name + ".input_radius");
+  output_x.enroll(rpc, instance_name + ".output_x");
+  output_y.enroll(rpc, instance_name + ".output_y");
+}
+
 
 KinematicsFiveBarForward::KinematicsFiveBarForward(){};
 
@@ -142,4 +158,11 @@ void KinematicsFiveBarForward::run(){
 
   output_x.push();
   output_y.push();
+}
+
+void KinematicsFiveBarForward::enroll(RPC *rpc, const String& instance_name){
+  input_r.enroll(rpc, instance_name + ".input_r");
+  input_l.enroll(rpc, instance_name + ".input_l");
+  output_x.enroll(rpc, instance_name + ".output_x");
+  output_y.enroll(rpc, instance_name + ".output_y");
 }

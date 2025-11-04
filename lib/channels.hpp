@@ -20,7 +20,7 @@ A part of the Mixing Metaphors Project
 void run_all_registered_channels(); //drives all registered channels to their target positions
 void activate_channels(); //adds channels to the frame interrupt routine
 
-class Channel{
+class Channel : public Plugin{
   public:
     // Public State
     DecimalPosition target_position; //primary target position, in pulses.
@@ -59,6 +59,8 @@ class Channel{
     // BlockPorts
     BlockPort input_target_position;
     BlockPort input_target_position_2;
+
+    void enroll(RPC *rpc, const String& instance_name);    
   
   private:
     // Constants

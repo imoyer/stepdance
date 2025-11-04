@@ -136,6 +136,9 @@ class BlockPort{
                                   // an absolute read will reflect the upcoming or last state of the target, depending on whether the block has run.
                                   // In some cases this function can be overridden by a custom read function.
 
+    float64_t read_absolute(); // returns the absolute value of the BlockPort's target in world units.
+                               // This is provided for simplified access via RPC.
+
     void write_now(float64_t); //writes directly to the target. REMEMBER TO UPDATE ABSOLUTE_BUFFER AT SAME TIME.
     float64_t read_target(); //reads directly from the target
 
@@ -174,6 +177,8 @@ class BlockPort{
     }
 
     volatile float64_t* target = nullptr;
+
+    void enroll(RPC *rpc, const String& instance_name); //used to enroll the blockport in an RPC
 
   private:
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.

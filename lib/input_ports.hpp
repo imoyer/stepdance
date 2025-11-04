@@ -59,7 +59,8 @@ class InputPort : public Plugin{
     void disable_signal(uint8_t signal_index);
     void set_ratio(float output_units, float input_units = 1.0); //sets ratio for all input signals
     volatile uint32_t input_interrupt_cycles; //measures the number of cycles spent in each input interrupt routine.
-
+    void enroll(RPC *rpc, const String& instance_name);
+    
     // BlockPorts
     BlockPort output_x; // 2us signal
     BlockPort output_y; // 3us signal

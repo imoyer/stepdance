@@ -36,7 +36,7 @@ class ButtonKilohertzPlugin : public Plugin{ //we'll set up to run on every kilo
     void run();
 };
 
-class Button{
+class Button : public Plugin{
   public:
     Button();
     uint8_t read(); //returns button state
@@ -55,7 +55,8 @@ class Button{
     static Button* registered_buttons[MAX_NUM_BUTTONS]; //stores all registered buttons
     static uint8_t num_registered_buttons;
     static ButtonKilohertzPlugin kilohertz_plugin; // runs in the kilohertz frame
-
+    void enroll(RPC *rpc, const String& instance_name);
+    
   private:
     uint8_t input_pin;
     uint8_t invert = BUTTON_NON_INVERTED;

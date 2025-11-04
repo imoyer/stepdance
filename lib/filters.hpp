@@ -27,6 +27,7 @@ class ScalingFilter1D : public Plugin{
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
+    void enroll(RPC *rpc, const String& instance_name);
 
     ControlParameter ratio = 1.0; // output / input
 
@@ -54,7 +55,8 @@ class ScalingFilter2D : public Plugin{
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
-
+    void enroll(RPC *rpc, const String& instance_name);
+    
     ControlParameter ratio = 1.0; // output / input
 
     // BlockPorts

@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include "channels.hpp"
 #include "core.hpp"
+#include "rpc.hpp"
 /*
 Channels Module of the StepDance Control System
 
@@ -226,4 +227,18 @@ void Channel::invert_output(){
 
 void Channel::invert_output(bool invert){
   output_inverted = static_cast<bool>(invert);
+}
+
+void Channel::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_ratio", *this, &Channel::set_ratio);
+  rpc->enroll(instance_name, "set_upper_limit", *this, &Channel::set_upper_limit);
+  rpc->enroll(instance_name, "set_lower_limit", *this, &Channel::set_lower_limit);
+  rpc->enroll(instance_name, "disable_upper_limit", *this, &Channel::disable_upper_limit);
+  rpc->enroll(instance_name, "disable_lower_limit", *this, &Channel::disable_lower_limit);
+  rpc->enroll(instance_name, "disable", *this, &Channel::disable);
+  rpc->enroll(instance_name, "enable", *this, &Channel::enable);
+  rpc->enroll(instance_name, "disable_filtering", *this, &Channel::disable_filtering);
+  rpc->enroll(instance_name, "enable_filtering", *this, &Channel::enable_filtering);
+  input_target_position.enroll(rpc, instance_name + ".input_target_position");
+  input_target_position_2.enroll(rpc, instance_name + ".input_target_position2");
 }

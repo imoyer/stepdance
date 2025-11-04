@@ -90,7 +90,7 @@ struct output_format_struct{
 
 
 // Main Output Port Class
-class OutputPort{
+class OutputPort : public Plugin{
   public:
     OutputPort();
 
@@ -108,9 +108,10 @@ class OutputPort{
     void set_drive_current_gain(float32_t amps_per_volt); // sets the drive current gain, in amps/volt
     void enable_driver(); //enables the motor driver
     void disable_driver(); //disables the motor driver
-    uint8_t read_limit_switch(); //returns the current value of the limit switch
+    bool read_limit_switch(); //returns the current value of the limit switch
 
     char port_name[10]; //stores the name of the port
+    void enroll(RPC *rpc, const String& instance_name);
 
   private:
     // -- CONFIGURATION PARAMETERS --

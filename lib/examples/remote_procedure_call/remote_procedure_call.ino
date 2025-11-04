@@ -53,8 +53,27 @@ Encoder encoder_2;  // right knob, controls vertical
 Button button_d1;
 Button button_d2;
 
+// -- Define Analog Input --
+AnalogInput analog_a1;
+
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
+
+// -- TimeBasedInterpolator
+
+TimeBasedInterpolator interpolator;
+
+// -- Circle Generator
+
+CircleGenerator circles;
+
+// -- Scaling Filter
+ScalingFilter2D scaler;
+
+// -- Recording and Playback
+
+FourTrackRecorder recorder;
+FourTrackPlayer player;
 
 // -- RPC Interface --
 RPC rpc;
@@ -120,6 +139,15 @@ void setup() {
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
+  // -- Scaler --
+  scaler.begin();
+  scaler.output_1.map(&axidraw_kinematics.input_x);
+  scaler.output_2.map(&axidraw_kinematics.input_y);
+
+  // -- Configure Circle Generator --
+  circles.begin();
+  circles.output_x.map(&scaler.input_1);
+  circles.output_y.map(&scaler.input_2);
 
   // -- Configure Button --
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
@@ -132,9 +160,28 @@ void setup() {
   button_d2.set_callback_on_press(&motors_enable);
   button_d2.set_callback_on_release(&motors_disable);
 
+  // -- Configure Analog Input --
+  analog_a1.begin(IO_A1);
+
+  // -- Time Based Interpolator
+  interpolator.begin();
+  interpolator.output_x.map(&axidraw_kinematics.input_x);
+  interpolator.output_y.map(&axidraw_kinematics.input_y);
+
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
+
+  // -- Configure Recorder
+  recorder.begin();
+  recorder.input_1.map(&channel_a.input_target_position);
+  recorder.input_2.map(&channel_b.input_target_position);
+  recorder.input_3.map(&channel_z.input_target_position);
+
+  player.begin();
+  player.output_1.map(&channel_a.input_target_position);
+  player.output_2.map(&channel_b.input_target_position);
+  player.output_3.map(&channel_z.input_target_position);
 
   // -- RPC Configuration
   rpc.begin(); // defaults to Serial
@@ -142,7 +189,21 @@ void setup() {
   rpc.enroll("hello2", say_hello_2);
   rpc.enroll("add", add);
   rpc.enroll("testValue", testValue);
+  rpc.enroll("cpu", stepdance_get_cpu_usage);
   rpc.enroll("encoder_1", encoder_1);
+  rpc.enroll("analog_a1", analog_a1);
+  rpc.enroll("channel_a", channel_a);
+  rpc.enroll("button_d1", button_d1);
+  rpc.enroll("button_d2", button_d2);
+  rpc.enroll("input_a", input_a);
+  rpc.enroll("interpolator", interpolator);
+  rpc.enroll("axidraw_kinematics", axidraw_kinematics);
+  rpc.enroll("output_a", output_a);
+  rpc.enroll("position_gen", position_gen);
+  rpc.enroll("circles", circles);
+  rpc.enroll("scaler", scaler);
+  rpc.enroll("recorder", recorder);
+  rpc.enroll("player", player);
 
   // -- Start the stepdance library --
   // This activates the system.

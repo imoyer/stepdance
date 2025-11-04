@@ -7,6 +7,7 @@
 #include "core.hpp"
 #include "IntervalTimer.h"
 #include "channels.hpp"
+#include "rpc.hpp"
 
 /*
 Core Module of the StepDance Control System
@@ -227,6 +228,10 @@ float64_t BlockPort::read(uint8_t mode){
   }
 }
 
+float64_t BlockPort::read_absolute(){
+  return read(ABSOLUTE);
+}
+
 float64_t BlockPort::read_target(){
   return *this->target;
 }
@@ -317,6 +322,10 @@ void BlockPort::enable(){
 
 void BlockPort::disable(){
   push_pull_enabled = false;
+}
+
+void BlockPort::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "read", *this, &BlockPort::read_absolute); //for simplicity we're enrolling this as "read", but will return the absolute position.
 }
 
 // -- STEPDANCE LOOP FUNCTIONS AND CLASSES --

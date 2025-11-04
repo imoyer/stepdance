@@ -19,6 +19,7 @@ class KinematicsCoreXY : public Plugin{
   public:
     KinematicsCoreXY();
     void begin();
+    void enroll(RPC *rpc, const String& instance_name);
 
     // BlockPorts
     BlockPort input_x;
@@ -46,6 +47,7 @@ class KinematicsPolarToCartesian : public Plugin{
     void reset(); //TODO: resets the internal state
     void solve_kinematics(); //TODO: solves the relationship between r-t and x-y.
                               // we do this outside run() so that it can be called during a state reset.
+    void enroll(RPC *rpc, const String& instance_name);
     
     BlockPort input_radius;
     BlockPort input_angle;
@@ -73,6 +75,7 @@ class KinematicsFiveBarForward : public Plugin{
   public:
     KinematicsFiveBarForward();
     void begin(float32_t s, float32_t l1, float32_t l2, float32_t l3, float32_t l4, float32_t l5, float32_t a);
+    void enroll(RPC *rpc, const String& instance_name);
     
     BlockPort input_r;
     BlockPort input_l;
