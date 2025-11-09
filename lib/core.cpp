@@ -271,6 +271,10 @@ void BlockPort::reverse_update(){
 }
 
 void BlockPort::set(float64_t value, uint8_t mode){
+  // add following 3 lines
+  if (target == nullptr){
+    return;
+  }
   update_has_run = true; //we set this to reflect that the buffers contain the current state of the target
   if(mode == INCREMENTAL){
     incremental_buffer = value;

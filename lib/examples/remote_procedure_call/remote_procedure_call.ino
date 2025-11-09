@@ -170,6 +170,7 @@ void setup() {
 
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
+  // position_gen.output.map(&axidraw_kinematics.input_x); // this would let the position generator control the X axis of the axidraw
   position_gen.begin();
 
   // -- Configure Recorder
@@ -184,13 +185,35 @@ void setup() {
   player.output_3.map(&channel_z.input_target_position);
 
   // -- RPC Configuration
+  // The code below serves to expose some variables and functions to be callable by sending json to stepdance through serial
+  // One quick way to test this is to open the Serial Monitor in Arduino IDE, and write Messages in the text box
+  // We document a few examples in comments below:
   rpc.begin(); // defaults to Serial
+
+  // Call example: {"name": "hello"}
+  // expected result: serial monitor prints "hello!{"result":"ok"}"
   rpc.enroll("hello", say_hello);
+
+  // Call example: {"name": "hello2", "args": [4]}
+  // expected result: serial monitor prints "Hello" 4 times
   rpc.enroll("hello2", say_hello_2);
+
+  // Call example: {"name": "add", "args": [4, 10]}
+  // expected result: serial monitor prints {"result":"ok","return":6}
   rpc.enroll("add", add);
+
+  // Call: {"name": "testValue"}
   rpc.enroll("testValue", testValue);
+
+  // Call: {"name": "cpu"}
   rpc.enroll("cpu", stepdance_get_cpu_usage);
+
+  // Call example:
+  // read the current value: {"name": "encoder_1.read"}
+  // set the ratio: {"name": "encoder_1.set_ratio", "args": [1, 10]}
   rpc.enroll("encoder_1", encoder_1);
+  rpc.enroll("encoder_2", encoder_2);
+
   rpc.enroll("analog_a1", analog_a1);
   rpc.enroll("channel_a", channel_a);
   rpc.enroll("button_d1", button_d1);
@@ -198,12 +221,26 @@ void setup() {
   rpc.enroll("input_a", input_a);
   rpc.enroll("interpolator", interpolator);
   rpc.enroll("axidraw_kinematics", axidraw_kinematics);
+
   rpc.enroll("output_a", output_a);
+
+  // Call example: {"name": "position_gen.go", "args": [4, 1, 100]} // Second argument corresponds to the constant for ABSOLUTE (see core.hpp)
+  // expected result: this should lift the pen (equivalent of calling pen_up function)
   rpc.enroll("position_gen", position_gen);
+
+  // Call example: {"name": "circles.setNoInput"}
+  // expected result: this should start moving XY axes in small circles around the rest position
+  // other example: {"name": "circles.output_x.read"}
+  // expected result: print the value in that blockport eg {"result":"ok","return":0.999491588}
   rpc.enroll("circles", circles);
+
+  // Call example: {"name": "scaler.set_ratio", "args": [2, 1]}
+  // expected result: this should make the motions larger (eg, move in bigger circles)
   rpc.enroll("scaler", scaler);
   rpc.enroll("recorder", recorder);
   rpc.enroll("player", player);
+
+  rpc.enroll("pen_up", pen_up);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -213,7 +250,7 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  // overhead_delay.periodic_call(&report_overhead, 500);
+  overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
@@ -236,7 +273,7 @@ void motors_disable(){
 
 void report_overhead(){
   Serial.println(channel_z.target_position, 4);
-  Serial.println(stepdance_get_cpu_usage(), 4);
+  // Serial.println(stepdance_get_cpu_usage(), 4);
 }
 
 void say_hello(){
