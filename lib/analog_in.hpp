@@ -2,6 +2,7 @@
 #include <sys/_stdint.h>
 #include <Arduino.h>
 #include "core.hpp"
+
 /*
 Analog Input Module of the StepDance Control System
 
@@ -61,7 +62,7 @@ struct analog_pin_info_struct{ //hardware_specific
   uint8_t ADC_INPUT_CHANNEL; //input number on the module
 };
 
-class AnalogInput{
+class AnalogInput: public Plugin{
   public:
     AnalogInput();
     void begin(uint8_t pin_reference);
@@ -91,6 +92,7 @@ class AnalogInput{
     void set_deadband(ControlParameter output_at_deadband, uint16_t adc_deadband_center, uint16_t adc_deadband_width = 4);
     void invert(); //inverts the output
     ControlParameter read(); //returns the last read value, based on the internal conversion factor
+    ControlParameter read_raw(); //returns the last read raw value.
     float32_t full_scale_volts = VREF_3V3; //we'll default to this for now, until we support changing the reference voltage.
 
     float32_t conversion_slope_1 = 1;
@@ -101,6 +103,8 @@ class AnalogInput{
     uint16_t adc_deadband_width = 0;
     uint16_t adc_deadband_lower = 0;
     uint16_t adc_deadband_upper = 0;
+
+    void enroll(RPC *rpc, const String& instance_name);
 
   private:
     // Static Parameters and Methods

@@ -16,6 +16,7 @@ A part of the Mixing Metaphors Project
 */
 
 #include "recording.hpp"
+#include "rpc.hpp"
 
 // ---- RECORDER TRACK ----
 // Basic recording element used by recorder classes
@@ -138,6 +139,22 @@ void FourTrackRecorder::run(){
   }
 }
 
+void FourTrackRecorder::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "start", *this, &FourTrackRecorder::start);
+  rpc->enroll(instance_name, "pause", *this, &FourTrackRecorder::pause);
+  rpc->enroll(instance_name, "resume", *this, &FourTrackRecorder::resume);
+  rpc->enroll(instance_name, "stop", *this, &FourTrackRecorder::stop);
+  rpc->enroll(instance_name, "set_resolution", *this, &FourTrackRecorder::set_resolution);
+  input_1.enroll(rpc, instance_name + ".input_1");
+  input_2.enroll(rpc, instance_name + ".input_2");
+  input_3.enroll(rpc, instance_name + ".input_3");
+  input_4.enroll(rpc, instance_name + ".input_4");
+  rpc->enroll(instance_name + ".current_sample_index", current_sample_index);
+  rpc->enroll(instance_name + ".max_num_samples", max_num_samples);
+  rpc->enroll(instance_name + ".recorder_active", recorder_active);
+}
+
+
 // --- FOUR TRACK PLAYER ---
 FourTrackPlayer::FourTrackPlayer(){};
 
@@ -222,6 +239,21 @@ void FourTrackPlayer::run(){
       stop();
     }
   }
+}
+
+void FourTrackPlayer::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "start", *this, &FourTrackPlayer::start);
+  rpc->enroll(instance_name, "pause", *this, &FourTrackPlayer::pause);
+  rpc->enroll(instance_name, "resume", *this, &FourTrackPlayer::resume);
+  rpc->enroll(instance_name, "stop", *this, &FourTrackPlayer::stop);
+  rpc->enroll(instance_name, "set_resolution", *this, &FourTrackPlayer::set_resolution);
+  output_1.enroll(rpc, instance_name + ".output_1");
+  output_2.enroll(rpc, instance_name + ".output_2");
+  output_3.enroll(rpc, instance_name + ".output_3");
+  output_4.enroll(rpc, instance_name + ".output_4");
+  rpc->enroll(instance_name + ".current_sample_index", current_sample_index);
+  rpc->enroll(instance_name + ".max_num_playback_samples", max_num_playback_samples);
+  rpc->enroll(instance_name + ".playback_active", playback_active);
 }
 
 // --- SD CARD UTILITIES ---

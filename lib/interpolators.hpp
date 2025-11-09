@@ -45,16 +45,20 @@ class TimeBasedInterpolator : public Plugin{
     };
 
     struct motion_block{
-      uint8_t block_type; //specifies which type of block this is (e.g. delay, absolute, relative, set position, etc...)
+      uint8_t block_type; //specifies which type of block this is (e.g. delay, absolute, relative, set position, etc...). We don't currently use this.
       uint32_t block_id; //an ID # for the motion block
       float32_t block_time_s; //total time for the block, in seconds. We'll later convert this to frames, but keep it in seconds here for legibility.
       struct position block_position_delta;
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
+    int16_t add_move(float32_t move_time_s, DecimalPosition delta_x, DecimalPosition delta_y, DecimalPosition delta_z, DecimalPosition delta_e, DecimalPosition delta_r, DecimalPosition delta_t); //generates a move and adds to queue
     volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
     void begin();
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
+    bool is_idle(); //returns true if the interpolator is idle
+    bool queue_is_full();
+    void enroll(RPC *rpc, const String& instance_name);
     
     // BlockPorts
     BlockPort output_x;

@@ -4,6 +4,7 @@
 #include "core_pins.h"
 #include "imxrt.h"
 #include "output_ports.hpp"
+#include "rpc.hpp"
 
 /*
 Output Ports Module of the StepDance Control System
@@ -64,7 +65,7 @@ const struct output_port_info_struct OutputPort::port_info[] = {
     .STEP_FLEXIO_PIN = 11,
     .DIR_FLEXIO_PIN = 10,
     .STEP_PIN_IOMUXC_REGISTER = &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_11,
-    .DIR_PIN_IOMUXC_REGISTER ∂= &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_10, 
+    .DIR_PIN_IOMUXC_REGISTER = &IOMUXC_SW_MUX_CTL_PAD_GPIO_AD_B1_10, 
     .STEP_PIN_IOMUXC_VALUE = 9,
     .DIR_PIN_IOMUXC_VALUE = 9,
     .STEP_SHIFTCTRL_REGISTER = &FLEXIO3_SHIFTCTL1,
@@ -469,6 +470,10 @@ void OutputPort::disable_driver(){
   digitalWrite(port_info[port_number].ENABLE_TEENSY_PIN, HIGH);
 }
 
+bool OutputPort::read_limit_switch(){ //placeholder for now!
+  return false;
+}
+
 void iterate_across_all_output_ports(void (*target_function)(OutputPort*)){
   for(uint8_t output_port_index = 0; output_port_index < num_output_ports; output_port_index++){
     target_function(all_output_ports[output_port_index]);
@@ -487,4 +492,12 @@ void disable_drivers(){
   for(uint8_t output_port_index = 0; output_port_index < num_output_ports; output_port_index++){
     all_output_ports[output_port_index]->disable_driver();
   }    
+}
+
+void OutputPort::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "read_drive_current_amps", *this, static_cast<float32_t(OutputPort::*)(float32_t)>(&OutputPort::read_drive_current_amps));
+  rpc->enroll(instance_name, "enable_driver", *this, &OutputPort::enable_driver);
+  rpc->enroll(instance_name, "disable_driver", *this, &OutputPort::disable_driver);
+  rpc->enroll(instance_name, "read_limit_switch", *this, &OutputPort::read_limit_switch);
+  rpc->enroll(instance_name, "step_now", *this, static_cast<void(OutputPort::*)(uint8_t, uint8_t)>(&OutputPort::step_now));
 }

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "arm_math.h"
 #include "generators.hpp"
+#include "rpc.hpp"
 /*
 Generators Module of the StepDance Control System
 
@@ -46,10 +47,17 @@ void ThresholdGenerator::run(){
 
   current_value += input_a.read(INCREMENTAL);
   if(current_value >= threshold){
-    current_value = 0;
-    
+    current_value = 0; 
   }
+}
 
+void ThresholdGenerator::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "enable", *this, &ThresholdGenerator::enable);
+  rpc->enroll(instance_name, "disable", *this, &ThresholdGenerator::disable);
+  input_a.enroll(rpc, instance_name + ".input_a");
+  input_b.enroll(rpc, instance_name + ".input_b");
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".threshold", threshold);
 }
 
 
@@ -112,6 +120,18 @@ void WaveGenerator1D::enable(){
 void WaveGenerator1D::disable(){
   output.disable();
 }
+
+void WaveGenerator1D::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "enable", *this, &WaveGenerator1D::enable);
+  rpc->enroll(instance_name, "disable", *this, &WaveGenerator1D::disable);
+  rpc->enroll(instance_name, "setNoInput", *this, &WaveGenerator1D::setNoInput);
+  input.enroll(rpc, instance_name + ".input");
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".amplitude", amplitude);
+  rpc->enroll(instance_name + ".phase", phase);
+  rpc->enroll(instance_name + ".rotational_speed_rev_per_sec", rotational_speed_rev_per_sec);
+}
+
 
 /*WaveGenerator2D::WaveGenerator2D(){};
 
@@ -188,6 +208,17 @@ void CircleGenerator::run(){
   output_y.push();
 }
 
+void CircleGenerator::enroll(RPC *rpc, const String& instance_name){
+  // rpc->enroll(instance_name, "enable", *this, &CircleGenerator::enable);
+  // rpc->enroll(instance_name, "disable", *this, &CircleGenerator::disable);
+  rpc->enroll(instance_name, "setNoInput", *this, &CircleGenerator::setNoInput);
+  input.enroll(rpc, instance_name + ".input");
+  output_x.enroll(rpc, instance_name + ".output_x");
+  output_y.enroll(rpc, instance_name + ".output_y");
+  rpc->enroll(instance_name + ".radius", radius);
+  rpc->enroll(instance_name + ".rotational_speed_rev_per_sec", rotational_speed_rev_per_sec);
+}
+
 // -- VELOCITY GENERATOR --
 VelocityGenerator::VelocityGenerator(){};
 
@@ -199,6 +230,11 @@ void VelocityGenerator::begin(){
 void VelocityGenerator::run(){
   output.set(speed_units_per_sec * CORE_FRAME_PERIOD_S, INCREMENTAL);
   output.push();
+}
+
+void VelocityGenerator::enroll(RPC *rpc, const String& instance_name){
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".speed_units_per_sec", speed_units_per_sec);
 }
 
 // -- POSITION GENERATOR --
@@ -249,6 +285,15 @@ void PositionGenerator::run(){
   output.push();
 }
 
+void PositionGenerator::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_speed", *this, &PositionGenerator::set_speed);
+  rpc->enroll(instance_name, "go", *this, static_cast<void(PositionGenerator::*)(float64_t, uint8_t, ControlParameter)>(&PositionGenerator::go));
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".speed_units_per_sec", speed_units_per_sec);
+}
+
+
+
 // -- 2D Path Length Generator --
 PathLengthGenerator2D::PathLengthGenerator2D(){};
 
@@ -277,6 +322,15 @@ void PathLengthGenerator2D::run(){
 
   output.push();
 }
+
+void PathLengthGenerator2D::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_ratio", *this, static_cast<void(PathLengthGenerator2D::*)(ControlParameter, ControlParameter)>(&PathLengthGenerator2D::set_ratio));
+  input_1.enroll(rpc, instance_name + ".input_1");
+  input_2.enroll(rpc, instance_name + ".input_2");
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".ratio", ratio);
+}
+
 
 // -- 3D Path Length Generator --
 PathLengthGenerator3D::PathLengthGenerator3D(){};
@@ -308,4 +362,13 @@ void PathLengthGenerator3D::run(){
   output.set(distance * ratio, INCREMENTAL);
 
   output.push();
+}
+
+void PathLengthGenerator3D::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_ratio", *this, static_cast<void(PathLengthGenerator3D::*)(ControlParameter, ControlParameter)>(&PathLengthGenerator3D::set_ratio));
+  input_1.enroll(rpc, instance_name + ".input_1");
+  input_2.enroll(rpc, instance_name + ".input_2");
+  input_3.enroll(rpc, instance_name + ".input_3");
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".ratio", ratio);
 }

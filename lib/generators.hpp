@@ -29,6 +29,7 @@ class ThresholdGenerator : public Plugin{
     void debugPrint();
     void enable();
     void disable();
+    void enroll(RPC *rpc, const String& instance_name);
 
     private:
     DecimalPosition input_a_position; 
@@ -54,6 +55,7 @@ class WaveGenerator1D : public Plugin{
     void debugPrint();
     void enable();
     void disable();
+    void enroll(RPC *rpc, const String& instance_name);
 
     BlockPort input;
     BlockPort output;
@@ -105,11 +107,12 @@ class CircleGenerator : public Plugin{
   public:
     CircleGenerator();
     volatile ControlParameter radius = 1.0;
-    volatile ControlParameter rotational_speed_rev_per_sec = 6;
+    volatile ControlParameter rotational_speed_rev_per_sec = 6; //starts off
 
     void begin();
     void setNoInput();
     void debugPrint();
+    void enroll(RPC *rpc, const String& instance_name);
 
     BlockPort input; 
     BlockPort output_x;
@@ -134,6 +137,8 @@ class VelocityGenerator : public Plugin{
     VelocityGenerator();
     volatile ControlParameter speed_units_per_sec = 0; // generation velocity
     void begin();
+    void enroll(RPC *rpc, const String& instance_name);
+
     BlockPort output;
     DecimalPosition target_position = 0;
   
@@ -152,6 +157,7 @@ class PositionGenerator : public Plugin{
     void set_speed(ControlParameter speed);
     void go(float64_t distance_or_position, uint8_t mode);
     void go(float64_t distance_or_position, uint8_t mode, ControlParameter speed);
+    void enroll(RPC *rpc, const String& instance_name);
 
     volatile ControlParameter speed_units_per_sec = 0; // generation velocity. This will be used if not explicitly provided by the call to go()
 
@@ -177,6 +183,7 @@ class PathLengthGenerator2D : public Plugin{
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
+    void enroll(RPC *rpc, const String& instance_name);
 
     ControlParameter ratio = 1.0; // output / input
 
@@ -207,6 +214,7 @@ class PathLengthGenerator3D : public Plugin{
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
+    void enroll(RPC *rpc, const String& instance_name);
 
     ControlParameter ratio = 1.0; // output / input
 

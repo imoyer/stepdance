@@ -31,7 +31,7 @@ class Encoder : public Plugin{
     Encoder();
     void begin(uint8_t encoder_index);
     void invert();
-    int32_t read(); //directly reads the instantaneous encoder value
+    DecimalPosition read(); //returns the last read encoder value, in realworld units. This is a shortcut for output.read(ABSOLUTE).
     void reset(); //resets the encoder value to zero
     void set(DecimalPosition value); //resets the encoder value to a provided value, in world units
     void set_latch(DecimalPosition value_world_units, uint8_t min_or_max);
@@ -44,6 +44,8 @@ class Encoder : public Plugin{
     bool max_latch_enabled = false; //enables latching in the positive direction
     int32_t min_latch_value = 0; //encoder units
     int32_t max_latch_value = 0;
+
+    void enroll(RPC *rpc, const String& instance_name);
 
   private:
     static const struct encoder_info_struct encoder_info[]; //stores configuration for all available encoder ports

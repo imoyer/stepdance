@@ -1,3 +1,4 @@
+#include "WString.h"
 #include <sys/_stdint.h>
 #include <cstddef>
 #include <stdint.h>
@@ -14,6 +15,8 @@ A part of the Mixing Metaphors Project
 */
 #ifndef core_h //prevent importing twice
 #define core_h
+
+class RPC; //forward declaration of RPC from rpc.hpp
 
 typedef volatile float64_t DecimalPosition; //used to store positions across the system. We are using double-precision to allow incremental moves with acceptable error (~0.05 steps/day at 25khz)
 typedef volatile int32_t IntegerPosition; //previously used to store positions
@@ -87,6 +90,7 @@ class Plugin{
 
     virtual void enable();
     virtual void disable();
+    virtual void enroll(RPC *rpc, const String& instance_name); //enrolls the plugin in an RPC. This should be overridden by the derived class, and is responsible for enrolling any members.
 
   private:
     static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins
@@ -106,7 +110,6 @@ class Plugin{
     virtual void run(); //this should be overridden in the derived class. Runs each frame.
     virtual void loop(); //this can be overridden in the derived class. Runs in the main loop context.
 };
-
 
 // -- BlockPort --
 // BlockPorts provide a unified interface into and out of component blocks (i.e. "blocks")
@@ -133,8 +136,11 @@ class BlockPort{
                                   // an absolute read will reflect the upcoming or last state of the target, depending on whether the block has run.
                                   // In some cases this function can be overridden by a custom read function.
 
+    float64_t read_absolute(); // returns the absolute value of the BlockPort's target in world units.
+                               // This is provided for simplified access via RPC.
+
     void write_now(float64_t); //writes directly to the target. REMEMBER TO UPDATE ABSOLUTE_BUFFER AT SAME TIME.
-    float64_t read_now(); //reads directly from the target
+    float64_t read_target(); //reads directly from the target
 
     // -- Internal Functions -- called by the block containing this BlockPort
     void begin(volatile float64_t *target); //initializes the BlockPort
@@ -171,6 +177,8 @@ class BlockPort{
     }
 
     volatile float64_t* target = nullptr;
+
+    void enroll(RPC *rpc, const String& instance_name); //used to enroll the blockport in an RPC
 
   private:
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.

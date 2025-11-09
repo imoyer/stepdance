@@ -2,6 +2,8 @@
 #include "pins_arduino.h"
 #include "core_pins.h"
 #include "imxrt.h"
+#include "rpc.hpp"
+
 /*
 Input Ports Module of the StepDance Control System
 
@@ -299,4 +301,18 @@ void InputPort::disable_all_signals(){
   for(uint8_t signal_index = 0; signal_index < NUM_SIGNALS; signal_index++){
     signal_enable_flags[signal_index] = false;
   }
+}
+
+void InputPort::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "enable_all_signals", *this, &InputPort::enable_all_signals);
+  rpc->enroll(instance_name, "disable_all_signals", *this, &InputPort::disable_all_signals);
+  rpc->enroll(instance_name, "enable_signal", *this, &InputPort::enable_signal);
+  rpc->enroll(instance_name, "disable_signal", *this, &InputPort::disable_signal);
+  rpc->enroll(instance_name, "set_ratio", *this, &InputPort::set_ratio);
+  output_x.enroll(rpc, instance_name + ".output_x");
+  output_y.enroll(rpc, instance_name + ".output_y");
+  output_r.enroll(rpc, instance_name + ".output_r");
+  output_t.enroll(rpc, instance_name + ".output_t");
+  output_z.enroll(rpc, instance_name + ".output_z");
+  output_e.enroll(rpc, instance_name + ".output_e");
 }

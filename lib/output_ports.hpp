@@ -102,10 +102,9 @@ struct output_format_struct
  */
 
 // Main Output Port Class
-class OutputPort
-{
-public:
-  /**
+
+class OutputPort : public Plugin{
+   /**
    * @brief Default constructor for OutputPort.
    *
    * Initializes an OutputPort instance with default, unconfigured state. This does not
@@ -114,38 +113,39 @@ public:
    *
 
    */
-  OutputPort();
-
-  // -- STANDARD PORT FUNCTIONS --
-
-  /**
+  public:
+    OutputPort();
+    // -- STANDARD PORT FUNCTIONS --
+/**
    * @brief Initialize the OutputPort with a port number corresponding to the target physical port on the Stepdance Board.
    *
    * @param port_number Index of the physical output port (OUTPUT_A, OUTPUT_B, OUTPUT_C, OUTPUT_D).
    * @return void
    *
    */
-  void begin(uint8_t port_number); // initialize using only port number
+    void begin(uint8_t port_number); // initialize using only port number
 
-  /** \cond */
+/** \cond */
   /**
    * This function will be hidden from Doxygen documentation.
    */
-  void begin(uint8_t port_number, uint8_t output_format, uint8_t transmit_mode); // complete initializer
-  void add_signal(uint8_t signal_index, uint8_t signal_direction);               // adds a signal to the current active frame
-  void transmit_frame();                                                         // encodes and transmits the active frame
-  void step_now(uint8_t direction);                                              // shortcut to immediately output a step at the minimum signal size
-  void step_now(uint8_t direction, uint8_t signal_index);
+    void begin(uint8_t port_number, uint8_t output_format, uint8_t transmit_mode); //complete initializer
+    
+    void add_signal(uint8_t signal_index, uint8_t signal_direction); //adds a signal to the current active frame
+    void transmit_frame(); //encodes and transmits the active frame
+    void step_now(uint8_t direction); //shortcut to immediately output a step at the minimum signal size
+    void step_now(uint8_t direction, uint8_t signal_index);
+    
+    // -- DRIVER FUNCTIONS --
+    float32_t read_drive_current_amps(); // returns the last drive current reading
+    float32_t read_drive_current_amps(float32_t drive_current_gain_amps_per_volt); // sets the gain and then returns the last drive current reading
+    void set_drive_current_gain(float32_t amps_per_volt); // sets the drive current gain, in amps/volt
+    void enable_driver(); //enables the motor driver
+    void disable_driver(); //disables the motor driver
+    bool read_limit_switch(); //returns the current value of the limit switch
 
-  // -- DRIVER FUNCTIONS --
-  float32_t read_drive_current_amps();                                           // returns the last drive current reading
-  float32_t read_drive_current_amps(float32_t drive_current_gain_amps_per_volt); // sets the gain and then returns the last drive current reading
-  void set_drive_current_gain(float32_t amps_per_volt);                          // sets the drive current gain, in amps/volt
-  void enable_driver();                                                          // enables the motor driver
-  void disable_driver();                                                         // disables the motor driver
-  uint8_t read_limit_switch();                                                   // returns the current value of the limit switch
-
-  char port_name[10]; // stores the name of the port
+    char port_name[10]; //stores the name of the port
+    void enroll(RPC *rpc, const String& instance_name);
   /** \endcond */
 
 private:

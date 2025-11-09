@@ -11,6 +11,7 @@ A part of the Mixing Metaphors Project
 
 */
 #include "filters.hpp"
+#include "rpc.hpp"
 
 // -- 1D Scaling Filter --
 ScalingFilter1D::ScalingFilter1D(){};
@@ -37,6 +38,13 @@ void ScalingFilter1D::run(){
   }
 
   output.push();
+}
+
+void ScalingFilter1D::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_ratio", *this, static_cast<void(ScalingFilter1D::*)(ControlParameter, ControlParameter)>(&ScalingFilter1D::set_ratio));
+  input.enroll(rpc, instance_name + ".input");
+  output.enroll(rpc, instance_name + ".output");
+  rpc->enroll(instance_name + ".ratio", ratio);
 }
 
 // -- 2D Scaling Filter --
@@ -71,4 +79,13 @@ void ScalingFilter2D::run(){
 
   output_1.push();
   output_2.push();
+}
+
+void ScalingFilter2D::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "set_ratio", *this, static_cast<void(ScalingFilter2D::*)(ControlParameter, ControlParameter)>(&ScalingFilter2D::set_ratio));
+  input_1.enroll(rpc, instance_name + ".input_1");
+  input_2.enroll(rpc, instance_name + ".input_2");
+  output_1.enroll(rpc, instance_name + ".output_1");
+  output_2.enroll(rpc, instance_name + ".output_2");
+  rpc->enroll(instance_name + ".ratio", ratio);
 }

@@ -3,6 +3,7 @@
 #include "QuadEncoder.h"
 #include <stdint.h>
 #include "encoders.hpp"
+#include "rpc.hpp"
 
 // QuadEncoder quad_encoder_1(1, ENCODER_1A_PIN, ENCODER_1B_PIN, 1); //no pullups required
 // QuadEncoder quad_encoder_2(2, ENCODER_2A_PIN, ENCODER_2B_PIN, 1);
@@ -57,8 +58,8 @@ void Encoder::invert(){
   invert_flag ^= 1;
 }
 
-int32_t Encoder::read(){
-  return quad_encoder->read();
+DecimalPosition Encoder::read(){
+  return output.read(ABSOLUTE);
 }
 
 void Encoder::reset(){
@@ -125,4 +126,11 @@ void Encoder::run(){
 
   output.set(encoder_reading_inverted);
   output.push();
+}
+
+void Encoder::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name, "read", *this, &Encoder::read);
+  rpc->enroll(instance_name, "reset", *this, &Encoder::reset);
+  rpc->enroll(instance_name, "set", *this, &Encoder::set);
+  rpc->enroll(instance_name, "set_ratio", *this, &Encoder::set_ratio);
 }

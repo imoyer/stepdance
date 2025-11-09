@@ -17,6 +17,8 @@ A part of the Mixing Metaphors Project
 
 #define VREF_GAIN_BIGTREETECH_TMC2209_AMPS_PEAK_PER_VOLT   1    // TMC2209
 
+void set_current_gain(OutputPort* this_output_port); //forward declaration
+
 const float32_t VREF_GAIN_AMPS_PEAK_PER_VOLT = VREF_GAIN_BIGTREETECH_TMC2209_AMPS_PEAK_PER_VOLT;
 
 OutputPort output_a;
@@ -30,6 +32,7 @@ void setup() {
   output_c.begin(OUTPUT_C);
   output_d.begin(OUTPUT_D);
   Serial.begin(115200);
+  iterate_across_all_output_ports(&set_current_gain);
 }
 
 
@@ -42,6 +45,10 @@ void loop() {
 void report_drive_current(OutputPort* this_output_port){
   Serial.print(this_output_port->port_name);
   Serial.print(": ");
-  Serial.print(this_output_port->read_drive_current_amps(VREF_GAIN_AMPS_PEAK_PER_VOLT));
+  Serial.print(this_output_port->read_drive_current_amps());
   Serial.println("A (PEAK)");
+}
+
+void set_current_gain(OutputPort* this_output_port){
+  this_output_port->set_drive_current_gain(VREF_GAIN_AMPS_PEAK_PER_VOLT);
 }

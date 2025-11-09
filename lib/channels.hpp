@@ -30,7 +30,7 @@ void activate_channels(); //adds channels to the frame interrupt routine
  * @snippet snippets.cpp Channel
  */
 
-class Channel{
+class Channel : public Plugin{
   public:
     // Public State
     DecimalPosition target_position; //primary target position, in pulses.
@@ -69,6 +69,8 @@ class Channel{
     // BlockPorts
     BlockPort input_target_position;
     BlockPort input_target_position_2;
+
+    void enroll(RPC *rpc, const String& instance_name);    
   
   private:
     // Constants

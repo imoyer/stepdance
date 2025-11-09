@@ -42,6 +42,7 @@ class FourTrackRecorder : public Plugin{
     void resume(); //continues recording
     void stop(); // stop recording
     void set_resolution(float input_units, float per_steps = 1.0);
+    void enroll(RPC *rpc, const String& instance_name);
 
     static const uint8_t NUM_CHANNELS = 4;
     RecorderTrack recorder_tracks[NUM_CHANNELS];
@@ -75,7 +76,8 @@ class FourTrackPlayer : public Plugin{
     void resume();
     void stop();
     void set_resolution(float output_units, float per_steps = 1.0);
-
+    void enroll(RPC *rpc, const String& instance_name);
+    
     //BlockPorts
     static const uint8_t NUM_CHANNELS = 4;
     BlockPort output_BlockPorts[NUM_CHANNELS];
