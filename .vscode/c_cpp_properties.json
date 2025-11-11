@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/Users/${env:USER}/Library/Arduino15/libraries/**",
+                "/Users/${env:USER}/Library/Arduino15/packages/**",
+                "/Users/${env:USER}/Documents/Arduino/libraries/**",
+                "/Applications/ArduinoIDE.app/**"
+
+            ],
+            "defines": ["__IMXRT1062__",
+                "USB_MIDI",
+                "SERIAL_DEBUG_ENABLED=1"],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "macos-clang-arm64"
+        }
+    ],
+    "version": 4
+}
