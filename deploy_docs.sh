@@ -6,7 +6,7 @@ set -o pipefail
 DOCS_DIR="../stepdance_documentation/html"   # Doxygen HTML output directory
 TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
-SOURCE_BRANCH="main"
+SOURCE_BRANCH="gh-pages"
 DOXYGEN_CONFIG="stepdance_config"
 
 # === ENSURE CLEAN WORKING TREE ===
