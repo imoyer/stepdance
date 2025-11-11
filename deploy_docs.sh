@@ -4,7 +4,7 @@ set -o pipefail
 
 # === CONFIGURATION ===
 DOCS_DIR="../stepdance_documentation/html"   # Doxygen HTML output directory
-TARGET_REPO="github.com/pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
+TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
 SOURCE_BRANCH="main"
 DOXYGEN_CONFIG="stepdance_config"
