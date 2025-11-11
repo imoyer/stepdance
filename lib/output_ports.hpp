@@ -105,23 +105,14 @@ struct output_format_struct
 
 class OutputPort : public Plugin{
    /**
-   * @brief Default constructor for OutputPort.
-   *
-   * Initializes an OutputPort instance with default, unconfigured state. This does not
-   * configure hardware or register the port; call begin() to
-   * initialize hardware-specific settings and register the port with the system.
-   *
-
+   * @brief Default constructor for OutputPort. Initializes an OutputPort instance with default, unconfigured state. This does not configure hardware or register the port; call begin() to initialize hardware-specific settings and register the port with the system.
    */
   public:
     OutputPort();
     // -- STANDARD PORT FUNCTIONS --
 /**
    * @brief Initialize the OutputPort with a port number corresponding to the target physical port on the Stepdance Board.
-   *
    * @param port_number Index of the physical output port (OUTPUT_A, OUTPUT_B, OUTPUT_C, OUTPUT_D).
-   * @return void
-   *
    */
     void begin(uint8_t port_number); // initialize using only port number
 

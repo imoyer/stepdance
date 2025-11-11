@@ -32,6 +32,10 @@ A part of the Mixing Metaphors Project
 
 #define SIGNAL_MIN_WIDTH_US 2 //standard input format
 
+/** \cond */
+  /**
+   * This struct will be hidden from Doxygen documentation.
+   */
 struct input_port_info_struct{ //we use this structure to store hardware-specific information for each available port
     // Physical IO
   uint8_t STEP_TEENSY_PIN; //TEENSY Pin #s
@@ -48,34 +52,97 @@ struct input_port_info_struct{ //we use this structure to store hardware-specifi
   uint8_t IRQ; // the IRQ number for the interrupt source
   void (*STATIC_ISR)(); // interrupt service routine. This needs to be a static function. We do some acrobatics to be able to call class methods as ISRs.
 };
+/** \endcond */
 
+//!  InputPort
+/*!
+* InputPort components receive motion streams on physical Stepdance input ports, and map
+these signals to downstream components. Receiving and decoding of input streams occurs asynchronously.
+ * Here's an example of how to instantiate and configure an InputPort and map it to an OutputPort:
+ * @snippet snippets.cpp InputPort
+ */
 class InputPort : public Plugin{
   public:
+     /**
+   * @brief Default constructor for InputPort.
+   *
+   * Initializes an InputPort instance with default, unconfigured state. This does not
+   * configure hardware or register the port; call begin() to
+   * initialize hardware-specific settings and register the port with the system.
+   *
+   */
     InputPort();
+    /** 
+     * @brief Initialize the InputPort with a port number corresponding to the target physical port on the Stepdance Board.
+     * @param port_number Index of the physical input port (INPUT_A for all Basic Modules and INPUT_A through INPUT_D for Machine Controllers).
+     */
     void begin(uint8_t port_number);
+    /** 
+     * @brief Enables all input signals (SIGNAL_X, SIGNAL_Y, SIGNAL_Z,  SIGNAL_E, SIGNAL_R, SIGNAL_T). Signals are enabled by default.
+     */
     void enable_all_signals();
+    /** 
+     * @brief Disables all input signals (SIGNAL_X, SIGNAL_Y, SIGNAL_Z,  SIGNAL_E, SIGNAL_R, SIGNAL_T).
+     */
     void disable_all_signals();
+       /** 
+     * @brief Enables a specific input signal.
+     * @param signal_index Index of the signal to enable (SIGNAL_X, SIGNAL_Y, SIGNAL_Z,  SIGNAL_E, SIGNAL_R, SIGNAL_T).
+     */
     void enable_signal(uint8_t signal_index);
+       /** 
+     * @brief Disables a specific input signal.
+     * @param signal_index Index of the signal to disable (SIGNAL_X, SIGNAL_Y, SIGNAL_Z,  SIGNAL_E, SIGNAL_R, SIGNAL_T).
+     */
     void disable_signal(uint8_t signal_index);
-    void set_ratio(float output_units, float input_units = 1.0); //sets ratio for all input signals
-    volatile uint32_t input_interrupt_cycles; //measures the number of cycles spent in each input interrupt routine.
+        /** 
+      * @brief Sets the ratio between input units and output units for all input signals. Default is 1:1.
+      * @param output_units Number of world units per input unit.
+      * @param input_units Number of input units. Default is 1.
+      */    
+    void set_ratio(float output_units, float input_units = 1.0); 
+   /** \cond */
+  /**
+   * This method and property will be hidden from Doxygen documentation.
+   */
     void enroll(RPC *rpc, const String& instance_name);
+
+    volatile uint32_t input_interrupt_cycles; //measures the number of cycles spent in each input interrupt routine.
+/** \endcond */
     
     // BlockPorts
+    /**
+     * @brief BlockPort that acts as output for the SIGNAL_X input.
+     * @code
+InputPort inputA;
+inputA.begin(INPUT_A); // Initialize InputPort A
+inputA.output_x.map(channelX.input_target_position); // Map SIGNAL_X to Channel X's input target position
+     * @endcode
+     */
     BlockPort output_x; // 2us signal
+    /**
+     * @brief BlockPort that acts as output for the SIGNAL_Y input.
+     */
     BlockPort output_y; // 3us signal
+    /**
+     * @brief BlockPort that acts as output for the SIGNAL_R input.
+     */
     BlockPort output_r; // 4us signal
+    /**
+     * @brief BlockPort that acts as output for the SIGNAL_T input.
+     */
     BlockPort output_t; // 5us signal
+    /**
+     * @brief BlockPort that acts as output for the SIGNAL_Z input.
+     */
     BlockPort output_z; // 6us signal
+    /**
+     * @brief BlockPort that acts as output for the SIGNAL_E input.
+     */
     BlockPort output_e; // 7us signal
 
-    // Input Position Registers
-    DecimalPosition position_x;
-    DecimalPosition position_y;
-    DecimalPosition position_r;
-    DecimalPosition position_t;
-    DecimalPosition position_z;
-    DecimalPosition position_e;
+  
+
 
   private:
     // Configuration Parameters
@@ -103,8 +170,22 @@ class InputPort : public Plugin{
     static void input_B_legacy_isr();
     static void input_C_legacy_isr();
 
+     
+    // Input Position Registers
+    DecimalPosition position_x;
+    DecimalPosition position_y;
+    DecimalPosition position_r;
+    DecimalPosition position_t;
+    DecimalPosition position_z;
+    DecimalPosition position_e;
+
   protected:
+  /** \cond */
+  /**
+   * This function will be hidden from Doxygen documentation.
+   */
     void run();
+    /** \endcond */
 };
 
 
