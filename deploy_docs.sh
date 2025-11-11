@@ -5,7 +5,8 @@ set -o pipefail
 # === CONFIGURATION ===
 # Resolve paths relative to this script's directory so later `cd` doesn't break them
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCS_DIR="$SCRIPT_DIR/../stepdance_docs/html"   # Doxygen HTML output directory
+DOCS_DIR="$SCRIPT_DIR/../stepdance_docs/html"   # Doxygen HTML output directory (generated)
+SOURCE_DOCS_DIR="$SCRIPT_DIR/doc"               # Raw source markdown + images to publish alongside HTML
 TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
 SOURCE_BRANCH="main"
@@ -54,15 +55,24 @@ echo "🧹 Cleaning old files..."
 rm -rf ./*
 
 echo "📋 Copying new documentation..."
-# Use a trailing "/." to copy contents (including dotfiles) without relying on globs
+# 1. Generated HTML site contents into repo root
 cp -R "$DOCS_DIR"/. .
+
+# 2. Raw source documentation (markdown + images) into a separate folder to allow downstream editing/reference.
+#    Using 'source_doc' to avoid collisions with any Doxygen output directories.
+if [ -d "$SOURCE_DOCS_DIR" ]; then
+  mkdir -p source_doc
+  cp -R "$SOURCE_DOCS_DIR"/. source_doc/
+else
+  echo "⚠️ Source documentation directory not found: $SOURCE_DOCS_DIR (skipping copy)"
+fi
 
 # === COMMIT AND PUSH DOCS ===
 git add --all
 if git diff --staged --quiet; then
   echo "No changes to commit."
 else
-  git commit -m "Update Doxygen docs for commit $commit_hash"
+  git commit -m "Update Doxygen docs (HTML + source markdown) for commit $commit_hash"
   git push origin $TARGET_BRANCH
   echo "✅ Documentation successfully deployed to '$TARGET_REPO' ($TARGET_BRANCH branch)!"
 fi
