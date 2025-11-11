@@ -114,11 +114,28 @@ class Plugin{
 // -- BlockPort --
 // BlockPorts provide a unified interface into and out of component blocks (i.e. "blocks")
 // These are designed to be flexibly used depending on the component to which they belong.
+
+//!  BlockPort
+/*!
+  BlockPorts provide a unified interface for mapping inputs and outputs of different StepDance components (E.g. Channels, Kinematics, Generators, etc).  
+  They manage push and pull of data between components automatically. You will never instantiate a BlockPort directly; instead, you can access the BlockPorts that are members of different components. The example below shows how to access and map an InputPort's BlockPort to a Channel's input target position BlockPort.
+ * @snippet snippets.cpp BlockPort
+ */
+
+// Main BlockPort Class
 class BlockPort{
   public:
+    /**
+     * @brief Default constructor for BlockPort. Initializes a BlockPort instance. You do not need to call this directly; BlockPorts are typically members of other components and are automatically initialized when the component is initialized.
+     */
     BlockPort();
 
     // -- User Functions -- these are called within user code, not (just) the library
+   /** 
+    * @brief Sets the ratio between world units and block units for this BlockPort for automatic conversion. Default is 1:1. For example if ou want the BlockPort to transmit data in millimeters corresponding to a single step, you would set the ratio to 0.01 world units to 1 block_units (i.e. 1 step = 0.01mm).
+    * @param world_units Number of world units.
+    * @param block_units Number of block units. Default is 1.
+    */
     void set_ratio(float world_units, float block_units = 1.0);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
                                                                 // conversion always happens within the write/read functions when data enters and exits the BlockPort
     
