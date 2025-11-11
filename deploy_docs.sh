@@ -16,7 +16,7 @@ fi
 
 # === BUILD DOXYGEN ===
 echo  "Building Doxygen documentation..."
-doxygen DOXYGEN_CONFIG
+doxygen "$DOXYGEN_CONFIG"
 
 if [ ! -d "$DOCS_DIR" ]; then
   echo "Doxygen output directory not found: $DOCS_DIR"
