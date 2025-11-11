@@ -4,8 +4,9 @@ set -o pipefail
 
 # === CONFIGURATION ===
 DOCS_DIR="../stepdance_documentation/html"   # Doxygen HTML output directory
-BRANCH="gh-pages"
-MAIN_BRANCH="main"
+TARGET_REPO="git@github.com:USERNAME/REPO.git"  # CHANGE THIS to your target repository
+TARGET_BRANCH="main"
+SOURCE_BRANCH="main"
 DOXYGEN_CONFIG="stepdance_config"
 
 # === ENSURE CLEAN WORKING TREE ===
@@ -27,19 +28,22 @@ fi
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 commit_hash=$(git rev-parse --short HEAD)
 
-if [ "$current_branch" != "$MAIN_BRANCH" ]; then
-  echo "⚠️ You are on '$current_branch', not '$MAIN_BRANCH'. Proceeding anyway..."
+if [ "$current_branch" != "$SOURCE_BRANCH" ]; then
+  echo "⚠️ You are on '$current_branch', not '$SOURCE_BRANCH'. Proceeding anyway..."
 fi
 
-# === FETCH AND CHECKOUT GH-PAGES BRANCH ===
-echo "📂 Switching to $BRANCH branch..."
-git fetch origin $BRANCH || true
+# === CREATE TEMP DIRECTORY FOR TARGET REPO ===
+echo "📂 Cloning target repository..."
+TEMP_DIR=$(mktemp -d)
+git clone "$TARGET_REPO" "$TEMP_DIR"
+cd "$TEMP_DIR"
 
-if git show-ref --verify --quiet refs/heads/$BRANCH; then
-  git checkout $BRANCH
+# === CHECKOUT OR CREATE TARGET BRANCH ===
+if git show-ref --verify --quiet refs/remotes/origin/$TARGET_BRANCH; then
+  git checkout $TARGET_BRANCH
 else
-  echo "📦 Creating local $BRANCH branch..."
-  git checkout --orphan $BRANCH
+  echo "📦 Creating new $TARGET_BRANCH branch..."
+  git checkout --orphan $TARGET_BRANCH
   git reset --hard
 fi
 
@@ -52,11 +56,15 @@ cp -r "$DOCS_DIR"/* .
 
 # === COMMIT AND PUSH DOCS ===
 git add --all
-git commit -m "Update Doxygen docs for commit $commit_hash" || echo "No changes to commit."
-git push origin $BRANCH
+if git diff --staged --quiet; then
+  echo "No changes to commit."
+else
+  git commit -m "Update Doxygen docs for commit $commit_hash"
+  git push origin $TARGET_BRANCH
+  echo "✅ Documentation successfully deployed to '$TARGET_REPO' ($TARGET_BRANCH branch)!"
+fi
 
-# === SWITCH BACK TO MAIN BRANCH ===
-echo "🔄 Switching back to $MAIN_BRANCH branch..."
-git checkout $MAIN_BRANCH
-
-echo "✅ Documentation successfully deployed to '$BRANCH' branch!"
+# === CLEANUP ===
+cd -
+rm -rf "$TEMP_DIR"
+echo "🧹 Cleaned up temporary directory."
