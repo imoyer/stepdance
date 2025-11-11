@@ -1,0 +1,90 @@
+/**
+ * @file groups.dox
+ * @brief Doxygen group definitions for the Stepdance library
+ *
+ * This file defines logical groups for organizing the Stepdance documentation.
+ * Use @@ingroup in your code files to add classes/functions to these groups.
+ */
+
+/**
+ * @defgroup core Core Components
+ * @brief Core classes and utilities for the Stepdance framework
+ *
+ * This group contains fundamental components like BlockPort that provide
+ * the basic building blocks for the Stepdance system.
+ */
+
+/**
+ * @defgroup io Input/Output Modules
+ * @brief Components for handling physical I/O ports
+ *
+ * This group includes InputPort and OutputPort classes that interface
+ * with the physical hardware ports on Stepdance boards.
+ */
+
+/**
+ * @defgroup channels Channels
+ * @brief Position control and state management
+ *
+ * Channel classes that manage machine positional state and drive
+ * motors to target positions.
+ */
+
+/**
+ * @defgroup generators Motion Generators
+ * @brief Motion pattern generation components
+ *
+ * Classes that generate motion patterns and trajectories.
+ */
+
+/**
+ * @defgroup kinematics Kinematics
+ * @brief Coordinate transformation modules
+ *
+ * Kinematics modules for converting between different coordinate systems
+ * (e.g., Cartesian, polar, CoreXY).
+ */
+
+/**
+ * @defgroup filters Filters
+ * @brief Signal filtering and smoothing
+ *
+ * Components for filtering and smoothing motion signals.
+ */
+
+/**
+ * @defgroup interpolators Interpolators
+ * @brief Motion interpolation utilities
+ *
+ * Tools for interpolating between motion waypoints.
+ */
+
+/**
+ * @defgroup interfaces External Interfaces
+ * @brief Communication with external systems
+ *
+ * Interfaces for communicating with external devices and software
+ * (e.g., G-code, EiBotBoard protocol).
+ */
+
+/**
+ * @defgroup recording Recording and Playback
+ * @brief Motion recording and playback functionality
+ *
+ * Components for recording motion sequences and playing them back.
+ */
+
+/**
+ * @defgroup inputs Input Devices
+ * @brief Physical input device handling
+ *
+ * Components for handling physical inputs like encoders, analog inputs,
+ * digital inputs, and buttons.
+ */
+
+/**
+ * @defgroup utilities Utilities
+ * @brief Helper functions and utilities
+ *
+ * Miscellaneous utility functions and helper classes.
+ */

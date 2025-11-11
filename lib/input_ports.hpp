@@ -54,10 +54,11 @@ struct input_port_info_struct{ //we use this structure to store hardware-specifi
 };
 /** \endcond */
 
-//!  InputPort
-/*!
-* InputPort components receive motion streams on physical Stepdance input ports, and map
-these signals to downstream components. Receiving and decoding of input streams occurs asynchronously.
+/**
+ * @brief InputPort components receive motion streams on physical Stepdance input ports, and map these signals to downstream components. 
+ * @ingroup io
+ *
+ * Receiving and decoding of input streams occurs asynchronously.
  * Here's an example of how to instantiate and configure an InputPort and map it to an OutputPort:
  * @snippet snippets.cpp InputPort
  */

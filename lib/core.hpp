@@ -77,7 +77,10 @@ static volatile uint32_t stepdance_interrupt_entry_cycle_count = 0; //stores the
 #define MAX_NUM_POST_CHANNEL_FRAME_PLUGINS  10 //plugins that execute in the frame, after the channels are evaluated
 #define MAX_NUM_KILOHERTZ_PLUGINS 10 //plugins that execute at a 1khz rate, independent of the frame, and with a lower priority
 #define MAX_NUM_LOOP_PLUGINS 10 //plugins that execute in the main loop.
-
+/** \cond */
+/**
+ * Plugin Base Class will be hidden from Doxygen documentation.
+ */
 class Plugin{
   // Base class for all plugins that need to run in the core frame.
   public:
@@ -110,15 +113,21 @@ class Plugin{
     virtual void run(); //this should be overridden in the derived class. Runs each frame.
     virtual void loop(); //this can be overridden in the derived class. Runs in the main loop context.
 };
+/** \endcond */
 
 // -- BlockPort --
 // BlockPorts provide a unified interface into and out of component blocks (i.e. "blocks")
 // These are designed to be flexibly used depending on the component to which they belong.
 
-//!  BlockPort
-/*!
-  BlockPorts provide a unified interface for mapping inputs and outputs of different StepDance components (E.g. Channels, Kinematics, Generators, etc).  
-  They manage push and pull of data between components automatically. You will never instantiate a BlockPort directly; instead, you can access the BlockPorts that are members of different components. The example below shows how to access and map an InputPort's BlockPort to a Channel's input target position BlockPort.
+/**
+ * @brief BlockPorts provide a unified interface for mapping inputs and outputs of different StepDance components (E.g. Channels, Kinematics, Generators, etc)
+ * @ingroup core
+ *
+ * @details BlockPorts manage push and pull of data between components automatically through the map() method, which when called assigns a target to the BlockPort. Each BlockPort has an internal position value. On each interrupt frame a component reads its input BlockPorts' position, performs internal calculations specific to the component, and then stores the result in its output BlockPorts' position. The component then calls BlockPort.push() for each output BlockPort which transmits the position value to the mapped target BlockPort. However BlockPorts can only have one target of their map function. To get around this you can also have BlockPort Inputs pull from multiple other BlockPorts by mapping an input BlockPort to either an input or an output. The Component will first call BlockPort.pull() on its input BlockPorts to retrieve the latest values from all mapped BlockPorts, then perform its internal calculations, and finally call BlockPort.push() on its output BlockPorts to transmit the results.
+ *
+ * @image html blockport_diagram.png "Typical mapping patterns of BlockPorts. Components (A-E) each have one BlockPort Input and one BlockPort Output. Multiple BlockPort Outputs can map to a single Input (e.g. A.output and C.output are both mapped to B.input). Inputs can map to multiple inputs or outputs (e.g. D.input is mapped to C.output)" width=400px
+ *
+ * You will never instantiate a BlockPort directly; instead, you can access the BlockPorts that are members of different components. The example below shows how to access and map an InputPort's BlockPort to a Channel's input target position BlockPort.
  * @snippet snippets.cpp BlockPort
  */
 
@@ -138,28 +147,46 @@ class BlockPort{
     */
     void set_ratio(float world_units, float block_units = 1.0);  // sets the ratio between world and block units, for automatic conversion. Default is 1.
                                                                 // conversion always happens within the write/read functions when data enters and exits the BlockPort
-    
+    /** 
+     * @brief Maps this BlockPort to a target BlockPort with a specified mode (INCREMENTAL or ABSOLUTE).
+     * @param map_target Pointer to the target BlockPort to map to.
+     * @param mode Mode of operation: INCREMENTAL or ABSOLUTE.
+     */
     void map(BlockPort *map_target, uint8_t mode); //maps this BlockPort's pipe to a target BlockPort
     inline void map(BlockPort *map_target){
       map(map_target, INCREMENTAL); //default internal mode is INCREMENTAL
     }
     
-
     // -- External Functions -- these are called outside the block that contains this BlockPort
-    void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers
-
+/**
+ * @brief Returns the position value of the BlockPort in world units. Reading in INCREMENTAL mode returns the change to the position since the last read or update; reading in ABSOLUTE mode returns the absolute position value.
+ * @param mode Mode of operation: INCREMENTAL or ABSOLUTE.
+ */
     float64_t read(uint8_t mode); // externally reads the BlockPort's target via the BlockPort buffers.
                                   // an incremental read will reflect the change to the target, either pending or after the block has run.
                                   // an absolute read will reflect the upcoming or last state of the target, depending on whether the block has run.
                                   // In some cases this function can be overridden by a custom read function.
-
+/**
+ * @brief Returns the absolute position value of the BlockPort in world units.
+ */
     float64_t read_absolute(); // returns the absolute value of the BlockPort's target in world units.
                                // This is provided for simplified access via RPC.
 
+/** \cond */
+  /**
+   * These functions will be hidden from Doxygen documentation.
+   */
+    void write(float64_t value, uint8_t mode); // writes to the BlockPort's absolute or incremental buffers
+
     void write_now(float64_t); //writes directly to the target. REMEMBER TO UPDATE ABSOLUTE_BUFFER AT SAME TIME.
     float64_t read_target(); //reads directly from the target
+/** \endcond */
 
     // -- Internal Functions -- called by the block containing this BlockPort
+/** \cond */
+  /**
+   * These functions will be hidden from Doxygen documentation.
+   */
     void begin(volatile float64_t *target); //initializes the BlockPort
     void set_target(volatile float64_t *target); //sets a target variable for the BlockPort
     void update(); //called by the block, to update the target and the buffers. Note that this does not handle pulling or pushing, which must be done first or after update.
@@ -196,7 +223,7 @@ class BlockPort{
     volatile float64_t* target = nullptr;
 
     void enroll(RPC *rpc, const String& instance_name); //used to enroll the blockport in an RPC
-
+/** \endcond */
   private:
     volatile bool update_has_run = false; //set to true when an update has run, and false when write() is called.
     uint8_t mode = INCREMENTAL; //default mode used by push and pull, unless specified in that function call. This is set by the map function.
@@ -212,6 +239,11 @@ class BlockPort{
 
 // -- LOOP FUNCTION AND CLASSES --
 // These allow non-blocking functions to be called within the loop, at an approximately given frequency.
+
+/** \cond */
+  /**
+   * These functions and properties will be hidden from Doxygen documentation.
+   */   
 void dance_loop();
 
 static volatile float stepdance_loop_time_ms; //tracks the time spent in the last loop
@@ -226,4 +258,5 @@ class LoopDelay{
     float time_since_last_call_ms; //stores time since the function was last called
 };
 
+/** \endcond */
 #endif

@@ -94,9 +94,11 @@ struct output_format_struct
 #define NUM_AVAILABLE_OUTPUT_PORTS 4 // max available output ports. NOTE: Should make this dynamic based on TEENSY version
 /** \endcond */
 
-//!  OutputPort
-/*!
-  OutputPorts are modules that convert internal step commands into a frame of pulse signals on the physical output port on the **machine controller module** or **basic module**. Output ports contain step and direction signal flags for each of the six output signal types (X, Y, Z, E, R, and T).
+/**
+ * @brief OutputPorts are modules that convert internal step commands into a frame of pulse signals on the physical output port on the **machine controller module** or **basic module**. 
+ * @ingroup io
+ *
+ * Output ports contain step and direction signal flags for each of the six output signal types (X, Y, Z, E, R, and T).
  * Here's an example of how to instantiate and configure an OutputPort:
  * @snippet snippets.cpp OutputPort
  */

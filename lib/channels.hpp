@@ -21,11 +21,12 @@ void run_all_registered_channels(); //drives all registered channels to their ta
 void activate_channels(); //adds channels to the frame interrupt routine
 
 
-//!  Channel
-/*!
-*Channels are modules that store the machine's positional state. A Channel directly interfaces with an OutputPort by mapping to a particular signal flag (e.g. "X").
- *Channels contain a target position variable that can be modified by upstream components such as motion generators. 
- *They also contain a variable representing their current position. Each interrupt frame, the channel increments or decrements the current position when needed to drive |target-current| < 0.5, and correspondingly sets step and direction flags on its mapped OutputPort. Any number of channels can be instantiated, often corresponding to axes of the machine machine. Basic Modules may contain multiple channels that map to distinct flags on the same OutputPort. Driver Modules typically have multiple channels that each map to a unique OutputPort, that then generate step/direction signals for a motor drive module.
+/**
+ * @brief Channels are modules that store the machine's positional state. 
+ * @ingroup channels
+ *
+ * A Channel directly interfaces with an OutputPort by mapping to a particular signal flag (e.g. "X").Channels contain a target position variable that can be modified by upstream components such as motion generators. 
+ * They also contain a variable representing their current position. Each interrupt frame, the channel increments or decrements the current position when needed to drive |target-current| < 0.5, and correspondingly sets step and direction flags on its mapped OutputPort. Any number of channels can be instantiated, often corresponding to axes of the machine machine. Basic Modules may contain multiple channels that map to distinct flags on the same OutputPort. Driver Modules typically have multiple channels that each map to a unique OutputPort, that then generate step/direction signals for a motor drive module.
  * Here's an example of how to instantiate and configure a Channel and map it to an OutputPort:
  * @snippet snippets.cpp Channel
  */

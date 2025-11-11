@@ -42,3 +42,9 @@ void setup() {
   input_a.output_z.map(&channel_z.input_target_position);
 }
   // [InputPort]
+
+    // [BlockPort]
+InputPort inputA;
+inputA.begin(INPUT_A); // Initialize InputPort A
+inputA.output_x.map(channelX.input_target_position); // Map SIGNAL_X to Channel X's input target position
+     // [BlockPort] 

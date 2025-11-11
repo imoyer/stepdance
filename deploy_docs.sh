@@ -9,7 +9,7 @@ DOCS_DIR="$SCRIPT_DIR/../stepdance_docs/html"   # Doxygen HTML output directory
 TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
 SOURCE_BRANCH="main"
-DOXYGEN_CONFIG="stepdance_config"
+DOXYGEN_CONFIG="doxygen/stepdance_config"
 
 # === ENSURE CLEAN WORKING TREE ===
 if [ -n "$(git status --porcelain)" ]; then
