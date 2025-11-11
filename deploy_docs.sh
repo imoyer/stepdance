@@ -3,10 +3,12 @@ set -e
 set -o pipefail
 
 # === CONFIGURATION ===
-DOCS_DIR="../stepdance_docs/html"   # Doxygen HTML output directory
+# Resolve paths relative to this script's directory so later `cd` doesn't break them
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOCS_DIR="$SCRIPT_DIR/../stepdance_docs/html"   # Doxygen HTML output directory
 TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
-SOURCE_BRANCH="gh-pages"
+SOURCE_BRANCH="main"
 DOXYGEN_CONFIG="stepdance_config"
 
 # === ENSURE CLEAN WORKING TREE ===
@@ -52,7 +54,8 @@ echo "🧹 Cleaning old files..."
 rm -rf ./*
 
 echo "📋 Copying new documentation..."
-cp -r "$DOCS_DIR"/* .
+# Use a trailing "/." to copy contents (including dotfiles) without relying on globs
+cp -R "$DOCS_DIR"/. .
 
 # === COMMIT AND PUSH DOCS ===
 git add --all
