@@ -27,7 +27,7 @@ Motor interface header pinouts are as shown:
 #### Encoders and Analog / Digital Inputs
 Two quadrature encoder inputs and six general-purpose IO (GPIO) ports are provided:
 
-- ENC1 and ENC2 are **5V** quadrature inputs, and are compatible with standard optical encoders like those from US Digital or [TAISS](/doc/taiss.md).
+- ENC1 and ENC2 are **5V** quadrature inputs, and are compatible with standard optical encoders like those from US Digital or \ref taiss.
 - A1 thru A4 are **3.3V** _analog_ and _digital_ inputs, as well as digital outputs.
 - D1 and D2 are **3.3V** _digital_ inputs and outputs.
 
@@ -181,7 +181,7 @@ IMPORTANT NOTES:
 
 - Although we use the convention of XYRθZE to name signals based on their duration, it is up to the system designer to assign these signals to particular axes of their machine.
 - **Stepdance modules read the DIR line at the falling edge of the STEP pulse.** In this way we differ from stepper drivers, which read at the rising edge of STEP. We do this to improve performance by only needing to fire an interrupt once per pulse when reading an incoming signal, but has implications for compatibility with non-stepdance signalling sources. Future work will introduce alternative input modes to restore this compatibility.
-- Stepdance can be configured to output frames at higher frequencies, with corresponding limits to the number of signals that fit in a frame. This functionality is documented [here.](/doc/highspeed.md)
+- Stepdance can be configured to output frames at higher frequencies, with corresponding limits to the number of signals that fit in a frame. See \ref highspeed for configuration concepts.
 
 ***
 ## Examples
@@ -197,7 +197,7 @@ This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in rea
 - use kinematic modules to convert between cartesian XY space and machine motor space. 
 - read position values from encoders, and use them to drive output channels.
 
-[Read the full Step-A-Setch example here.](/doc/examples/stepasketch.md)
+Read the full \ref stepasketch example page.
 
 ### Axidraw "EBB" Controller Emulator
 ![](/doc/images/axidraw_ebb_teaser.png)
@@ -207,7 +207,7 @@ In this example, we drive the Axidraw from Inkscape to plot an SVG file. This is
 - Use Interpolators to execute pre-planned motion commands as motion streams.
 - Read analog inputs (e.g. from potentiometers) via the analog-to-digital converter, and use it to adjust parameters of software modules (e.g. the speed of the interpolator).
 
-[Read the full EBB Controller Emulator example here.](/doc/examples/ebb.md)
+Read the full \ref ebb example page.
 ***
 
 

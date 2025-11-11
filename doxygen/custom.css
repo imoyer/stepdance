@@ -1,0 +1,8 @@
+/* Force Markdown images to scale responsively */
+img {
+  max-width: 65%;
+  height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}

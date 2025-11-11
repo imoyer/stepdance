@@ -1,3 +1,4 @@
+\page stepasketch Step-A-Sketch Example
 ## Overview
 ![](/doc/images/step-a-sketch_teaser.png)
 
@@ -12,7 +13,7 @@ This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in rea
 
 The axidraw has two stepper motors for XY positioning and a single servo motor for the pen height. The AxiDraw Inkscape plugin _and_ the Stepdance AxiDraw software module both expect that the motors are 200 steps/rev and driven at 1/16th microstepping. You'll want to configure the Stepdance Driver Board as follows:
 
-- To set 1/16 microstepping, install jumpers on both microstepping headers for the A and B output ports as shown below. The jumpers should be oriented vertically ([more details here](../readme.md#stepper-drivers-and-motor-interfaces)).
+- To set 1/16 microstepping, install jumpers on both microstepping headers for the A and B output ports as shown below. The jumpers should be oriented vertically (see the Stepper Drivers and Motor Interfaces section on the main page).
 - Install two TMC2209 stepper drivers and one [Hobby Servo Driver](../readme.md#hobby-servo-driver) as shown below.
 
 ![](/doc/images/step-a-sketch_board.png)
@@ -24,7 +25,7 @@ There are eight wiring connections to be made:
 
 - Both AxiDraw stepper motors to Output Ports A and B. We've wired the left motor to A, and the right motor to B.
 - The servo motor to Output Port C.
-- Two encoders, one to each of the encoder input ports ENC1 and ENC2. [Details on wiring Taiss encoders are here](../taiss.md). Refer to the [board reference](../readme.md#encoders-and-analog--digital-inputs) for general info on wiring encoders.
+- Two encoders, one to each of the encoder input ports ENC1 and ENC2. \ref taiss "Details on wiring Taiss encoders are here". Refer to the board reference on the main page for general info on wiring encoders.
 - One pushbutton to digital input port D1.
 - 5VDC to the Teensy 4.1, delivered over a micro-usb cable. This powers the logic for all of the electronics, except for the hobby servo driver, which generates its own 5V supply. Initially, power this via your computer while programming the Teensy with firmware. Then, you can provide power from a USB charger etc.
 - 12VDC to the 5.5mm OD / 2.1mm ID barrel plug.

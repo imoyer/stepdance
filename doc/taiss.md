@@ -1,3 +1,4 @@
+\page taiss TAISS Optical Encoders
 ### TAISS Optical Encoders
 ![](/doc/images/taiss.jpg)
 

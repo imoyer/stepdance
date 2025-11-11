@@ -991,7 +991,7 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = doxygen/mainpage.dox doxygen/groups.dox lib/output_ports.hpp lib/channels.hpp lib/input_ports.hpp lib/core.hpp lib/analog_in.hpp lib/digital_in.hpp lib/encoders.hpp lib/filters.hpp lib/generators.hpp lib/interfaces.hpp lib/interpolators.hpp lib/kinematics.hpp lib/recording.hpp lib/rpc.hpp
+INPUT                  = doc doxygen/groups.dox lib/output_ports.hpp lib/channels.hpp lib/input_ports.hpp lib/core.hpp lib/analog_in.hpp lib/digital_in.hpp lib/encoders.hpp lib/filters.hpp lib/generators.hpp lib/interfaces.hpp lib/interpolators.hpp lib/kinematics.hpp lib/recording.hpp lib/rpc.hpp
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1086,7 +1086,7 @@ FILE_PATTERNS          = *.c \
 # be searched for input files as well.
 # The default value is: NO.
 
-RECURSIVE              = NO
+RECURSIVE              = YES
 
 # The EXCLUDE tag can be used to specify files and/or directories that should be
 # excluded from the INPUT source files. This way you can easily exclude a
@@ -1125,7 +1125,7 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = doxygen/snippets.cpp
+EXAMPLE_PATH           = doxygen
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
@@ -1206,7 +1206,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the Doxygen output.
 
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = doc/readme.md
 
 # If the IMPLICIT_DIR_DOCS tag is set to YES, any README.md file found in sub-
 # directories of the project's root, is used as the documentation for that sub-
@@ -1415,7 +1415,7 @@ HTML_STYLESHEET        =
 # documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  =
+HTML_EXTRA_STYLESHEET  = doxygen/custom.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
