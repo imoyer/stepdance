@@ -7,6 +7,8 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCS_DIR="$SCRIPT_DIR/../stepdance_docs/html"   # Doxygen HTML output directory (generated)
 SOURCE_DOCS_DIR="$SCRIPT_DIR/doc"               # Raw source markdown + images to publish alongside HTML
+LIB_DIR="$SCRIPT_DIR/lib"                       # Library source code to zip
+ZIP_FILE="$SCRIPT_DIR/Stepdance.zip"            # Zipped library file
 TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
 SOURCE_BRANCH="main"
@@ -24,6 +26,20 @@ doxygen "$DOXYGEN_CONFIG"
 
 if [ ! -d "$DOCS_DIR" ]; then
   echo "Doxygen output directory not found: $DOCS_DIR"
+  exit 1
+fi
+
+# === CREATE STEPDANCE.ZIP FROM LIB FOLDER ===
+echo "📦 Creating Stepdance.zip from lib folder..."
+if [ -d "$LIB_DIR" ]; then
+  # Remove existing zip if it exists
+  rm -f "$ZIP_FILE"
+  # Create zip of lib folder, including the lib directory itself
+  cd "$SCRIPT_DIR"
+  zip -r Stepdance.zip lib -x "*.git*" -x "*__pycache__*" -x "*.DS_Store"
+  echo "✅ Stepdance.zip created successfully"
+else
+  echo "❌ Library directory not found: $LIB_DIR"
   exit 1
 fi
 
@@ -67,12 +83,20 @@ else
   echo "⚠️ Source documentation directory not found: $SOURCE_DOCS_DIR (skipping copy)"
 fi
 
+# 3. Copy Stepdance.zip library file to repo root
+if [ -f "$ZIP_FILE" ]; then
+  cp "$ZIP_FILE" .
+  echo "📦 Copied Stepdance.zip to documentation repository"
+else
+  echo "⚠️ Stepdance.zip not found: $ZIP_FILE (skipping copy)"
+fi
+
 # === COMMIT AND PUSH DOCS ===
 git add --all
 if git diff --staged --quiet; then
   echo "No changes to commit."
 else
-  git commit -m "Update Doxygen docs (HTML + source markdown) for commit $commit_hash"
+  git commit -m "Update Doxygen docs (HTML + source markdown + Stepdance.zip) for commit $commit_hash"
   git push origin $TARGET_BRANCH
   echo "✅ Documentation successfully deployed to '$TARGET_REPO' ($TARGET_BRANCH branch)!"
 fi
