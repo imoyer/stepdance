@@ -9,7 +9,7 @@ Channels Module of the StepDance Control System
 [More Details to be Added]
 
 A part of the Mixing Metaphors Project
-(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost, Emilie Yu
 */
 
 #ifndef channels_h //prevent importing twice

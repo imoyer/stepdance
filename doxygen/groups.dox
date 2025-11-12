@@ -31,10 +31,10 @@
  */
 
 /**
- * @defgroup generators Motion Generators
- * @brief Motion pattern generation components
+ * @defgroup generators Generators
+ * @brief Generators are components that synthesize motion signals based on control parameters. 
  *
- * Classes that generate motion patterns and trajectories.
+ * Generators are useful as lower-level compoments for specifying predefined motion patterns and signals that can be mixed in with manual input or used to drive autonomous movement in synchronization with manual input.
  */
 
 /**

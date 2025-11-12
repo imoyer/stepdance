@@ -136,7 +136,7 @@ void setup() {
   //xy phase
   analog_a4.set_floor(0, 25);
   analog_a4.set_ceiling(10, 1020);
-  analog_a4.map(&xy_wave_generator.rotational_speed_rev_per_sec);
+  analog_a4.map(&xy_wave_generator.frequency);
   analog_a4.begin(IO_A4);
 
   //toggle button
@@ -160,7 +160,7 @@ void loop() {
   x_stretch.ratio = (input_a.output_z.absolute_buffer*0.015) + 0.5; //0->1 --> 0.5->2
 
   z_wave_generator.amplitude = z_amp;
-  z_wave_generator.rotational_speed_rev_per_sec = z_freq;
+  z_wave_generator.frequency = z_freq;
   // z_wave_generator.phase = z_phase;
 
   extrusionRate = input_a.output_e.absolute_buffer;
@@ -214,13 +214,13 @@ void report_overhead(){
   Serial.print(", xy_amp:");
   Serial.print(xy_wave_generator.amplitude);
   Serial.print(", xy_freq:");
-  Serial.print(xy_wave_generator.rotational_speed_rev_per_sec);
+  Serial.print(xy_wave_generator.frequency);
   Serial.print(", xy_phase:");
   Serial.print(xy_wave_generator.phase);
   Serial.print(",z_amp:");
   Serial.print(z_wave_generator.amplitude);
   Serial.print(", z_freq:");
-  Serial.print(z_wave_generator.rotational_speed_rev_per_sec);
+  Serial.print(z_wave_generator.frequency);
   Serial.print(", x_stretch:");
   Serial.println(x_stretch.ratio);
   //wave_generator1D.debugPrint();

@@ -111,7 +111,7 @@ void setup() {
   //xy frequency
   analog_a4.set_floor(0, 25);
   analog_a4.set_ceiling(10, 1020);
-  analog_a4.map(&xy_wave_generator.rotational_speed_rev_per_sec);
+  analog_a4.map(&xy_wave_generator.frequency);
   analog_a4.begin(IO_A4);
 
 

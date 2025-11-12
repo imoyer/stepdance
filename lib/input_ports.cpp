@@ -13,7 +13,7 @@ specific channels.
 [More Details to be Added]
 
 A part of the Mixing Metaphors Project
-(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost, Emilie Yu
 */
 
 #include "input_ports.hpp"

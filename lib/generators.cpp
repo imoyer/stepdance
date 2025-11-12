@@ -11,15 +11,14 @@ This module contains an assortment of motion stream generators
 [More Details to be Added]
 
 A part of the Mixing Metaphors Project
-(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost, Emilie Yu
 
 */
 
 ThresholdGenerator::ThresholdGenerator(){};
 
 void ThresholdGenerator::begin(){
-  input_a.begin(&input_a_position);
-  input_b.begin(&input_b_position);
+  input.begin(&input_position);
   output.begin(&output_position);
   register_plugin();
 }
@@ -33,31 +32,78 @@ void ThresholdGenerator::disable(){
 }
 
 void ThresholdGenerator::debugPrint(){
-  Serial.print("threshold: ");
-  Serial.print(threshold);
-  Serial.print(", current_value:");
-  Serial.print(current_value);
+  Serial.print("lower_threshold: ");
+  Serial.print(_lower_threshold);
+  Serial.print(", upper_threshold: ");
+  Serial.print(_upper_threshold);
+  Serial.print(", input_position: ");
+  Serial.print(input.read(ABSOLUTE));
+}
+
+void ThresholdGenerator::setLowerCallback(void (*callback_function)()){
+  callback_on_lower_threshold = callback_function;
+}
+
+void ThresholdGenerator::setUpperCallback(void (*callback_function)()){
+  callback_on_upper_threshold = callback_function;
+}
+
+void ThresholdGenerator::setUpperThreshold(float64_t upper_threshold, bool clamp_to_upper){
+  upper_set = true;
+  _upper_threshold = upper_threshold;
+  clamp_upper = clamp_to_upper;
+}
+
+void ThresholdGenerator::setLowerThreshold(float64_t lower_threshold, bool clamp_to_lower){
+  lower_set = true;
+  _lower_threshold = lower_threshold;
+  clamp_lower = clamp_to_lower;
+} 
+
+void ThresholdGenerator::clearUpperThreshold(){
+  upper_set = false;
+  clamp_upper = false;
+}
+
+void ThresholdGenerator::clearLowerThreshold(){
+  lower_set = false;
+  clamp_lower = false;
 }
 
 void ThresholdGenerator::run(){
-  input_a.pull();
-  input_a.update();
-  input_b.pull();
-  input_b.update();
+  input.pull();
+  input.update();
 
-  current_value += input_a.read(INCREMENTAL);
-  if(current_value >= threshold){
-    current_value = 0; 
+  float64_t current_value = input.read(ABSOLUTE);
+  if(upper_set){
+    if(current_value >= _upper_threshold){
+      if(callback_on_upper_threshold != nullptr){
+        callback_on_upper_threshold();
+      }
+      if(clamp_upper){
+        current_value = _upper_threshold;
+      }
+    }
   }
+  if(lower_set){
+    if(current_value <= _lower_threshold){
+      if(callback_on_lower_threshold != nullptr){
+        callback_on_lower_threshold();
+      }
+      if(clamp_lower){
+        current_value = _lower_threshold;
+      }
+    }
+  }
+  output.set(current_value,ABSOLUTE);
+  output.push();
 }
 
 void ThresholdGenerator::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "enable", *this, &ThresholdGenerator::enable);
   rpc->enroll(instance_name, "disable", *this, &ThresholdGenerator::disable);
-  input_a.enroll(rpc, instance_name + ".input_a");
-  input_b.enroll(rpc, instance_name + ".input_b");
+  input.enroll(rpc, instance_name + ".input");
   output.enroll(rpc, instance_name + ".output");
-  rpc->enroll(instance_name + ".threshold", threshold);
 }
 
 
@@ -94,10 +140,10 @@ void WaveGenerator1D::run(){
   input.update();
   float64_t delta_angle_rad;
   if(no_input){
-    delta_angle_rad = rotational_speed_rev_per_sec * CORE_FRAME_PERIOD_S;
+    delta_angle_rad = frequency * CORE_FRAME_PERIOD_S;
   }
   else{
-   delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+   delta_angle_rad = frequency * input.incremental_buffer;
   }
   
   current_angle_rad += delta_angle_rad;
@@ -129,7 +175,7 @@ void WaveGenerator1D::enroll(RPC *rpc, const String& instance_name){
   output.enroll(rpc, instance_name + ".output");
   rpc->enroll(instance_name + ".amplitude", amplitude);
   rpc->enroll(instance_name + ".phase", phase);
-  rpc->enroll(instance_name + ".rotational_speed_rev_per_sec", rotational_speed_rev_per_sec);
+  rpc->enroll(instance_name + ".frequency", frequency);
 }
 
 
@@ -151,7 +197,7 @@ void WaveGenerator2D::run(){
   input.pull();
   input.update();
   
-  float64_t delta_angle_rad = rotational_speed_rev_per_sec * input.incremental_buffer;
+  float64_t delta_angle_rad = frequency * input.incremental_buffer;
   current_angle_rad += delta_angle_rad;
 
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
@@ -308,6 +354,14 @@ void PathLengthGenerator2D::set_ratio(ControlParameter ratio){
   this->ratio = ratio;
 }
 
+void PathLengthGenerator2D::set_ratio_for_circle(ControlParameter circle_radius, ControlParameter output_per_revolution){
+  // For a circle with radius r, one complete revolution traces a circumference of 2πr
+  // To move output_per_revolution distance for each full circle, the ratio should be:
+  // ratio = output_per_revolution / (2 * π * circle_radius)
+  float64_t circumference = 2.0 * PI * circle_radius;
+  this->ratio = output_per_revolution / circumference;
+}
+
 void PathLengthGenerator2D::run(){
   input_1.pull();
   input_2.pull();
@@ -325,6 +379,7 @@ void PathLengthGenerator2D::run(){
 
 void PathLengthGenerator2D::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "set_ratio", *this, static_cast<void(PathLengthGenerator2D::*)(ControlParameter, ControlParameter)>(&PathLengthGenerator2D::set_ratio));
+  rpc->enroll(instance_name, "set_ratio_for_circle", *this, &PathLengthGenerator2D::set_ratio_for_circle);
   input_1.enroll(rpc, instance_name + ".input_1");
   input_2.enroll(rpc, instance_name + ".input_2");
   output.enroll(rpc, instance_name + ".output");

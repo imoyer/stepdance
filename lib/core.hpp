@@ -11,7 +11,7 @@ Core Module of the StepDance Control System
 This contains core system functions such as the frame interrupt timer.
 
 A part of the Mixing Metaphors Project
-(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost
+(c) 2025 Ilan Moyer, Jennifer Jacobs, Devon Frost, Emilie Yu
 */
 #ifndef core_h //prevent importing twice
 #define core_h
