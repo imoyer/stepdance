@@ -46,9 +46,6 @@ else
   echo "❌ Library directory not found: $LIB_DIR"
   exit 1
 fi
-  echo "❌ Library directory not found: $LIB_DIR"
-  exit 1
-fi
 
 # === STORE CURRENT BRANCH AND COMMIT HASH ===
 current_branch=$(git rev-parse --abbrev-ref HEAD)
