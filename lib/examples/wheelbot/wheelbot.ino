@@ -96,7 +96,7 @@ void setup() {
   //extrusion multiplier knob
   analog_a2.set_floor(0, 25);
   analog_a2.set_ceiling(10, 1020);
-  analog_a1.begin(IO_A2);
+  analog_a2.begin(IO_A2);
 
   //x-stretch knob
   analog_a3.set_floor(0, 25);
@@ -110,8 +110,8 @@ void setup() {
 
 void loop() {
 
-  extrusionMultiplier = analog_a2.read();
-  extrusionRate = (4*layerHeight * extrusionMultiplier * nozzleDiameter) / (PI*nozzleDiameter*nozzleDiameter);
+  float extrusionMultiplier = analog_a2.read();
+  float extrusionRate = (4*layerHeight * extrusionMultiplier * nozzleDiameter) / (PI*nozzleDiameter*nozzleDiameter);
   e_gen.set_ratio(extrusionRate);
 
   x_stretch.set_ratio(analog_a3.read());
