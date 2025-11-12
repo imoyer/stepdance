@@ -8,7 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCS_DIR="$SCRIPT_DIR/../stepdance_docs/html"   # Doxygen HTML output directory (generated)
 SOURCE_DOCS_DIR="$SCRIPT_DIR/doc"               # Raw source markdown + images to publish alongside HTML
 LIB_DIR="$SCRIPT_DIR/lib"                       # Library source code to zip
-ZIP_FILE="$SCRIPT_DIR/Stepdance.zip"            # Zipped library file
 TARGET_REPO="git@github.com:pixelmaid/stepdance_docs.git"  # CHANGE THIS to your target repository
 TARGET_BRANCH="main"
 SOURCE_BRANCH="main"
@@ -32,22 +31,21 @@ fi
 # === CREATE STEPDANCE.ZIP FROM LIB FOLDER ===
 echo "📦 Creating Stepdance.zip from lib folder..."
 if [ -d "$LIB_DIR" ]; then
-  # Remove existing zip if it exists
-  rm -f "$ZIP_FILE"
-  
   # Create a temporary directory and copy lib folder as "Stepdance"
   TEMP_LIB_DIR=$(mktemp -d)
   cp -R "$LIB_DIR" "$TEMP_LIB_DIR/Stepdance"
   
-  # Create zip from the renamed folder
+  # Create zip from the renamed folder in temp directory
   cd "$TEMP_LIB_DIR"
+  ZIP_FILE="$TEMP_LIB_DIR/Stepdance.zip"
   zip -r "$ZIP_FILE" Stepdance -x "*.git*" -x "*__pycache__*" -x "*.DS_Store"
-  
-  # Clean up temp directory
-  rm -rf "$TEMP_LIB_DIR"
+  cd "$SCRIPT_DIR"
   
   echo "✅ Stepdance.zip created successfully"
 else
+  echo "❌ Library directory not found: $LIB_DIR"
+  exit 1
+fi
   echo "❌ Library directory not found: $LIB_DIR"
   exit 1
 fi
@@ -113,4 +111,8 @@ fi
 # === CLEANUP ===
 cd -
 rm -rf "$TEMP_DIR"
-echo "🧹 Cleaned up temporary directory."
+# Clean up temporary library zip directory
+if [ -n "$TEMP_LIB_DIR" ] && [ -d "$TEMP_LIB_DIR" ]; then
+  rm -rf "$TEMP_LIB_DIR"
+fi
+echo "🧹 Cleaned up temporary directories."
