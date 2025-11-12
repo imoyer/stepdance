@@ -991,7 +991,25 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = doc doxygen/groups.dox lib/output_ports.hpp lib/channels.hpp lib/input_ports.hpp lib/core.hpp lib/analog_in.hpp lib/digital_in.hpp lib/encoders.hpp lib/filters.hpp lib/generators.hpp lib/interfaces.hpp lib/interpolators.hpp lib/kinematics.hpp lib/recording.hpp lib/rpc.hpp
+INPUT                  = doc \
+                         doc/hardware/readme.md \
+                         doc/SSL/readme.md \
+                         doc/examples \
+                         doxygen/groups.dox \
+                         lib/output_ports.hpp \
+                         lib/channels.hpp \
+                         lib/input_ports.hpp \
+                         lib/core.hpp \
+                         lib/analog_in.hpp \
+                         lib/digital_in.hpp \
+                         lib/encoders.hpp \
+                         lib/filters.hpp \
+                         lib/generators.hpp \
+                         lib/interfaces.hpp \
+                         lib/interpolators.hpp \
+                         lib/kinematics.hpp \
+                         lib/recording.hpp \
+                         lib/rpc.hpp
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses

@@ -1,4 +1,4 @@
-# Stepdance Hardware Documentation
+\page hardware Stepdance Hardware Documentation
 
 ## Stepdance Hardware
 ### Driver Module Board v1.0

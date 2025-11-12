@@ -8,8 +8,13 @@ Stepdance is a framework for creative motion control. Stepdance is:
 - **Hybrid**: Blend real-time inputs and manipulation with traditional pre-planned approaches such as G-code.
 ***
 ## Hardware Documentation
-For detailed information about Stepdance hardware modules, ports, and specifications, see the [Hardware Documentation](hardware/readme.md).
+For detailed information about Stepdance hardware modules, ports, and specifications, see the @ref hardware "Hardware Documentation".
 ***
+
+## Stepdance Software Library (SSL) Documentation
+For detailed information about programming Stepdance hardware modules, see the @ref ssl "SSL Documentation".
+***
+
 
 
 
