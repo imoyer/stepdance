@@ -34,9 +34,18 @@ echo "📦 Creating Stepdance.zip from lib folder..."
 if [ -d "$LIB_DIR" ]; then
   # Remove existing zip if it exists
   rm -f "$ZIP_FILE"
-  # Create zip of lib folder, including the lib directory itself
-  cd "$SCRIPT_DIR"
-  zip -r Stepdance.zip lib -x "*.git*" -x "*__pycache__*" -x "*.DS_Store"
+  
+  # Create a temporary directory and copy lib folder as "Stepdance"
+  TEMP_LIB_DIR=$(mktemp -d)
+  cp -R "$LIB_DIR" "$TEMP_LIB_DIR/Stepdance"
+  
+  # Create zip from the renamed folder
+  cd "$TEMP_LIB_DIR"
+  zip -r "$ZIP_FILE" Stepdance -x "*.git*" -x "*__pycache__*" -x "*.DS_Store"
+  
+  # Clean up temp directory
+  rm -rf "$TEMP_LIB_DIR"
+  
   echo "✅ Stepdance.zip created successfully"
 else
   echo "❌ Library directory not found: $LIB_DIR"

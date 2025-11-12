@@ -16,13 +16,13 @@ To get started with Stepdance:
 2. **Set Up Arduino Programming Environment**: 
 Add the Stepdance library to your Arduino IDE or PlatformIO environment. The library is compatible with Teensy 4.0 and 4.1 microcontrollers. You currently need to install the library as a .zip.
 
-Download the Stepdance zip file here
+Download the Stepdance zip file [here](https://github.com/pixelmaid/stepdance_docs/blob/main/Stepdance.zip)
 
 ![](/doc/images/ImportLibraryFromZIPFile.png)
 
 In the Arduino IDE, navigate to Sketch > Include Library > Add .ZIP Library. At the top of the drop down list, select the option to Add .ZIP Library.
 
-You will be prompted to select the library you would like to add. Navigate to the .zip file's location and open it. Further details can be found on the [Arduino Docs](https://docs.arduino.cc/software/ide-v1/tutorials/installing-libraries/)
+You will be prompted to select the library you would like to add. Navigate to the .zip file's location and open it. Further details can be found on the [Arduino Docs](https://docs.arduino.cc/software/ide-v1/tutorials/installing-libraries/).
 
 3. **Understand the core concepts**:
    - **BlockPorts**: The fundamental communication mechanism between components. They route data between different parts of your system.
