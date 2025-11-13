@@ -656,16 +656,18 @@ class SerialControlTrack {
     // TODO: adjusting these values is probably pretty important
     // It will affect how much control we can have over the velocity on the application side
     static const int buffer_queue_size = 2;
-    static constexpr float64_t velocity_limit = 0.001;
-    static constexpr float64_t MAX_RANGE = 10;
+    static constexpr float64_t velocity_limit = 0.005;
+    static constexpr float64_t MAX_RANGE = 50;
 
   private:
     DecimalPosition output_position;
-    DecimalPosition received_target_delta[buffer_queue_size];
-    int current_read_idx_in_queue = -1;
-    int current_write_idx_in_queue = -1;
+    // DecimalPosition received_target_delta[buffer_queue_size];
+    // int current_read_idx_in_queue = -1;
+    // int current_write_idx_in_queue = -1;
 
-    DecimalPosition delta_to_current_target = 0.0;
+    // DecimalPosition delta_to_current_target = 0.0;
+
+    DecimalPosition current_target_velocity;
 };
 
 class SerialConnectionGenerator : public Plugin{

@@ -497,79 +497,108 @@ void SerialControlTrack::begin() {
 }
 
 
+// void SerialControlTrack::run() {
+
+//   // Check if we should move on to the next queue item?
+//   if (delta_to_current_target * delta_to_current_target < 1e-8 ) { // soft equality check
+//     // Empty that slot in buffer queue (it was dealt with)
+//     received_target_delta[current_read_idx_in_queue] = 0.0;
+//     // Move to read next slot
+//     current_read_idx_in_queue = (current_read_idx_in_queue + 1) % buffer_queue_size;
+//     delta_to_current_target = received_target_delta[current_read_idx_in_queue];
+//   }
+
+//   // Calculate the target step size:
+//   DecimalPosition target_frame_delta_size = received_target_delta[current_read_idx_in_queue] * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US;
+//   target_frame_delta_size /= 500; // let's say we wait 100 loop it
+
+//   // Clamp to delta_to_current_target
+
+//   // Clamp to max velocity
+//   if (target_frame_delta_size > 0) {
+//     if (target_frame_delta_size > delta_to_current_target) {
+//       target_frame_delta_size = delta_to_current_target;
+//     }
+//     if (target_frame_delta_size > velocity_limit) {
+//       target_frame_delta_size = velocity_limit;
+//     }
+//   }
+//   else {
+//     if (target_frame_delta_size < delta_to_current_target) {
+//       target_frame_delta_size = delta_to_current_target;
+//     }
+//     if (target_frame_delta_size < -velocity_limit) {
+//       target_frame_delta_size = -velocity_limit;
+//     }
+//   }
+
+//   // Send
+
+//   output.set(target_frame_delta_size, INCREMENTAL);
+//   output.push();
+
+//   // Apply to the variable that's keeping track
+//   delta_to_current_target -= target_frame_delta_size;
+// }
+
 void SerialControlTrack::run() {
 
-  // Check if we should move on to the next queue item?
-  if (delta_to_current_target * delta_to_current_target < 1e-8 ) { // soft equality check
-    // Empty that slot in buffer queue (it was dealt with)
-    received_target_delta[current_read_idx_in_queue] = 0.0;
-    // Move to read next slot
-    current_read_idx_in_queue = (current_read_idx_in_queue + 1) % buffer_queue_size;
-    delta_to_current_target = received_target_delta[current_read_idx_in_queue];
-  }
 
-  // Calculate the target step size:
-  DecimalPosition target_frame_delta_size = received_target_delta[current_read_idx_in_queue] * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US;
 
-  // Clamp to delta_to_current_target
-
-  // Clamp to max velocity
-  if (target_frame_delta_size > 0) {
-    if (target_frame_delta_size > delta_to_current_target) {
-      target_frame_delta_size = delta_to_current_target;
-    }
-    if (target_frame_delta_size > velocity_limit) {
-      target_frame_delta_size = velocity_limit;
-    }
-  }
-  else {
-    if (target_frame_delta_size < delta_to_current_target) {
-      target_frame_delta_size = delta_to_current_target;
-    }
-    if (target_frame_delta_size < -velocity_limit) {
-      target_frame_delta_size = -velocity_limit;
-    }
-  }
-
-  // Send
-
-  output.set(target_frame_delta_size, INCREMENTAL);
+  output.set(current_target_velocity, INCREMENTAL);
   output.push();
-
-  // Apply to the variable that's keeping track
-  delta_to_current_target -= target_frame_delta_size;
 }
 
 void SerialControlTrack::loop(int input) {
   // Map to correct range
-  DecimalPosition target_value = input * MAX_RANGE / 128; // input is an int in [-128, 127]
+  DecimalPosition target_value = input * velocity_limit / 128;
 
-  if (input != 0){
-    // populate buffer
-    current_write_idx_in_queue = (current_write_idx_in_queue + 1) % buffer_queue_size;
-    received_target_delta[current_write_idx_in_queue] = target_value;
-
-    // start reading this value in buffer? Only if we are done reading from current value
-    if (delta_to_current_target * delta_to_current_target < 1e-8 ){
-      current_read_idx_in_queue = current_write_idx_in_queue;
-      delta_to_current_target = received_target_delta[current_read_idx_in_queue];
-    }
-
-  }
+  current_target_velocity = target_value;
 
   // send receive notification to server
   Serial.print("received:");
-  Serial.print(input);
-  Serial.print(", new received target:");
-  Serial.print(received_target_delta[current_write_idx_in_queue]);
-  Serial.print(", delta to current working target:");
-  Serial.print(delta_to_current_target);
-  Serial.print(", reading idx:");
-  Serial.print(current_read_idx_in_queue);
-  Serial.print(", writing idx:");
-  Serial.print(current_write_idx_in_queue);
+  Serial.print(current_target_velocity);
+  // Serial.print(", new received target:");
+  // Serial.print(received_target_delta[current_write_idx_in_queue]);
+  // Serial.print(", delta to current working target:");
+  // Serial.print(delta_to_current_target);
+  // Serial.print(", reading idx:");
+  // Serial.print(current_read_idx_in_queue);
+  // Serial.print(", writing idx:");
+  // Serial.print(current_write_idx_in_queue);
   Serial.print("\n");
 }
+
+// void SerialControlTrack::loop(int input) {
+//   // Map to correct range
+//   DecimalPosition target_value = input * MAX_RANGE / 128; // input is an int in [-128, 127]
+
+//   if (input != 0){
+//     // populate buffer
+//     current_write_idx_in_queue = (current_write_idx_in_queue + 1) % buffer_queue_size;
+//     received_target_delta[current_write_idx_in_queue] = target_value;
+
+//     // start reading this value in buffer? Only if we are done reading from current value
+//     if (delta_to_current_target * delta_to_current_target < 1e-8 ){
+//       current_read_idx_in_queue = current_write_idx_in_queue;
+//       delta_to_current_target = received_target_delta[current_read_idx_in_queue];
+//     }
+
+//   }
+
+//   // send receive notification to server
+//   Serial.print("received:");
+//   Serial.print(input);
+//   Serial.print(", new received target:");
+//   Serial.print(received_target_delta[current_write_idx_in_queue]);
+//   Serial.print(", delta to current working target:");
+//   Serial.print(delta_to_current_target);
+//   Serial.print(", reading idx:");
+//   Serial.print(current_read_idx_in_queue);
+//   Serial.print(", writing idx:");
+//   Serial.print(current_write_idx_in_queue);
+//   Serial.print("\n");
+// }
 
 SerialConnectionGenerator::SerialConnectionGenerator(){};
 
@@ -612,7 +641,11 @@ void SerialConnectionGenerator::loop() {
 
   }
 
-  else {
-
-  }
+  // else {
+  //   for (int i = 0; i < NUM_CHANNELS; i++) {
+  //     // int raw_value = (signed char) serial_in_data[i];
+      
+  //     controlled_tracks[i].loop(0);
+  //   }
+  // }
 }
