@@ -992,10 +992,15 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = doc \
-                         doc/hardware/readme.md \
-                         doc/SSL/readme.md \
-                         doc/examples \
                          doxygen/groups.dox \
+                         doxygen/page_organization.dox \
+                         doxygen/examples.dox \
+                         doxygen/examples_core.dox \
+                         doxygen/examples_motion.dox \
+                         doxygen/examples_plotting.dox \
+                         doxygen/examples_clayprinter.dox \
+                         doxygen/examples_kinematics.dox \
+                         doxygen/examples_legacy.dox \
                          lib/output_ports.hpp \
                          lib/channels.hpp \
                          lib/input_ports.hpp \
@@ -1143,21 +1148,21 @@ EXCLUDE_SYMBOLS        =
 # that contain example code fragments that are included (see the \include
 # command).
 
-EXAMPLE_PATH           = doxygen
+EXAMPLE_PATH           = doxygen lib/examples
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp and
 # *.h) to filter out the source-files in the directories. If left blank all
 # files are included.
 
-EXAMPLE_PATTERNS       = *
+EXAMPLE_PATTERNS       = *.ino *.cpp *.hpp *.h
 
 # If the EXAMPLE_RECURSIVE tag is set to YES then subdirectories will be
 # searched for input files to be used with the \include or \dontinclude commands
 # irrespective of the value of the RECURSIVE tag.
 # The default value is: NO.
 
-EXAMPLE_RECURSIVE      = NO
+EXAMPLE_RECURSIVE      = YES
 
 # The IMAGE_PATH tag can be used to specify one or more files or directories
 # that contain images that are to be included in the documentation (see the
@@ -2039,7 +2044,7 @@ EXTRA_SEARCH_MAPPINGS  =
 # If the GENERATE_LATEX tag is set to YES, Doxygen will generate LaTeX output.
 # The default value is: YES.
 
-GENERATE_LATEX         = YES
+GENERATE_LATEX         = NO
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
