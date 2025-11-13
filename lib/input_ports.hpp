@@ -145,7 +145,6 @@ inputA.output_x.map(channelX.input_target_position); // Map SIGNAL_X to Channel 
   
 
 
-  private:
     // Configuration Parameters
     uint8_t port_number; //the output port ID number
     static const struct input_port_info_struct port_info[]; //stores setup information for all four input ports
