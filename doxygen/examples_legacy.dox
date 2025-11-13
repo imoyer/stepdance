@@ -1,0 +1,21 @@
+/** \page examples_legacy Legacy / Experimental
+Older or experimental sketches kept for reference and historical context.
+
+## Example Files
+
+### @ref stepasketch_old/stepasketch_old.ino "Stepasketch Old"
+**File:** `lib/examples/stepasketch_old/stepasketch_old.ino`
+
+Earlier version of the stepasketch drawing system.
+
+### @ref ender_sketch_extrude/ender_sketch_extrude.ino "Ender Sketch Extrude"
+**File:** `lib/examples/ender_sketch_extrude/ender_sketch_extrude.ino`
+
+Experimental extrusion control for Ender-based systems.
+
+---
+
+\example stepasketch_old/stepasketch_old.ino
+\example ender_sketch_extrude/ender_sketch_extrude.ino
+
+*/

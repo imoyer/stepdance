@@ -1,0 +1,33 @@
+/** \page examples_motion Motion & Drawing
+Physical motion generation, multi-axis movement, and dynamic drawing systems.
+
+## Example Files
+
+### @ref pantograph/pantograph.ino "Pantograph"
+**File:** `lib/examples/pantograph/pantograph.ino`
+
+Full-featured pantograph drawing machine implementation.
+
+### @ref pantograph_basic_module/pantograph_basic_module.ino "Pantograph Basic Module"
+**File:** `lib/examples/pantograph_basic_module/pantograph_basic_module.ino`
+
+Simplified pantograph module for basic applications.
+
+### @ref harmonograph_basic_module/harmonograph_basic_module.ino "Harmonograph Basic Module"
+**File:** `lib/examples/harmonograph_basic_module/harmonograph_basic_module.ino`
+
+Harmonograph pattern generator using multiple oscillating axes.
+
+### @ref wheelbot/wheelbot.ino "Wheelbot"
+**File:** `lib/examples/wheelbot/wheelbot.ino`
+
+Wheeled robot motion control example.
+
+---
+
+\example pantograph/pantograph.ino
+\example pantograph_basic_module/pantograph_basic_module.ino
+\example harmonograph_basic_module/harmonograph_basic_module.ino
+\example wheelbot/wheelbot.ino
+
+*/

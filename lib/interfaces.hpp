@@ -35,6 +35,16 @@ A part of the Mixing Metaphors Project
 #define EBB_SERVO_MIN_POSITION_STEPS -500 // -500us from neutral position (1500us pulse width)
 #define EBB_SERVO_MIDPOINT_PULSE_DURATION_US  1500 //pulse duration for the servo midpoint.
 
+/**
+ * @brief EiBotBoard interface class for receiving commands and generating motion blocks.
+ * @ingroup interfaces
+ * 
+ * The Eibotboard class emulates the EiBotBoard interface, allowing standard AxiDraw workflows to provide direct input. 
+ * It processes serial commands, generates motion blocks, and interfaces with a TimeBasedInterpolator to drive motion. 
+ * The class supports various commands for querying status, configuring motors, and controlling pen position.
+ * 
+ * For an example of how to use this class, see @ref axidraw_interface/axidraw_interface.ino
+ */
 class Eibotboard : public Plugin{
   public:
     Eibotboard();
@@ -116,6 +126,14 @@ class Eibotboard : public Plugin{
 
 };
 
+/**
+ * @brief G-code interface class for parsing and executing G-code commands.
+ * @ingroup interfaces
+ * 
+ * The GCodeInterface class provides a G-code parser and interpreter for motion control.
+ * It processes standard G-code commands and generates motion blocks for the TimeBasedInterpolator.
+ * Supports common G-code commands for linear motion, coordinate systems, and machine control.
+ */
 class GCodeInterface : public Plugin{
   public:
     GCodeInterface();

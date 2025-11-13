@@ -20,12 +20,15 @@ A part of the Mixing Metaphors Project
 #define ENCODER_1 0
 #define ENCODER_2 1
 #define ENCODER_A 2 //the A stepdance input can double as a third encoder input
-
+/** \cond */
+ /**
+   * This struct will be hidden from Doxygen documentation.
+   */ 
 struct encoder_info_struct{
   uint8_t CHANNEL_A_TEENSY_PIN;
   uint8_t CHANNEL_B_TEENSY_PIN;
-};
-
+};  
+/** \endcond */
 class Encoder : public Plugin{
   public:
     Encoder();

@@ -29,7 +29,7 @@ if [ ! -d "$DOCS_DIR" ]; then
 fi
 
 # === CREATE STEPDANCE.ZIP FROM LIB FOLDER ===
-echo "📦 Creating Stepdance.zip from lib folder..."
+echo "Creating Stepdance.zip from lib folder..."
 if [ -d "$LIB_DIR" ]; then
   # Create a temporary directory and copy lib folder as "Stepdance"
   TEMP_LIB_DIR=$(mktemp -d)
@@ -41,9 +41,9 @@ if [ -d "$LIB_DIR" ]; then
   zip -r "$ZIP_FILE" Stepdance -x "*.git*" -x "*__pycache__*" -x "*.DS_Store"
   cd "$SCRIPT_DIR"
   
-  echo "✅ Stepdance.zip created successfully"
+  echo "Stepdance.zip created successfully"
 else
-  echo "❌ Library directory not found: $LIB_DIR"
+  echo "Library directory not found: $LIB_DIR"
   exit 1
 fi
 
@@ -52,11 +52,11 @@ current_branch=$(git rev-parse --abbrev-ref HEAD)
 commit_hash=$(git rev-parse --short HEAD)
 
 if [ "$current_branch" != "$SOURCE_BRANCH" ]; then
-  echo "⚠️ You are on '$current_branch', not '$SOURCE_BRANCH'. Proceeding anyway..."
+  echo "You are on '$current_branch', not '$SOURCE_BRANCH'. Proceeding anyway..."
 fi
 
 # === CREATE TEMP DIRECTORY FOR TARGET REPO ===
-echo "📂 Cloning target repository..."
+echo "Cloning target repository..."
 TEMP_DIR=$(mktemp -d)
 git clone "$TARGET_REPO" "$TEMP_DIR"
 cd "$TEMP_DIR"
@@ -65,7 +65,7 @@ cd "$TEMP_DIR"
 if git show-ref --verify --quiet refs/remotes/origin/$TARGET_BRANCH; then
   git checkout $TARGET_BRANCH
 else
-  echo "📦 Creating new $TARGET_BRANCH branch..."
+  echo "Creating new $TARGET_BRANCH branch..."
   git checkout --orphan $TARGET_BRANCH
   git reset --hard
 fi
@@ -74,7 +74,7 @@ fi
 echo "🧹 Cleaning old files..."
 rm -rf ./*
 
-echo "📋 Copying new documentation..."
+echo  "Copying new documentation..."
 # 1. Generated HTML site contents into repo root
 cp -R "$DOCS_DIR"/. .
 
@@ -84,15 +84,15 @@ if [ -d "$SOURCE_DOCS_DIR" ]; then
   mkdir -p source_doc
   cp -R "$SOURCE_DOCS_DIR"/. source_doc/
 else
-  echo "⚠️ Source documentation directory not found: $SOURCE_DOCS_DIR (skipping copy)"
+  echo "Source documentation directory not found: $SOURCE_DOCS_DIR (skipping copy)"
 fi
 
 # 3. Copy Stepdance.zip library file to repo root
 if [ -f "$ZIP_FILE" ]; then
   cp "$ZIP_FILE" .
-  echo "📦 Copied Stepdance.zip to documentation repository"
+  echo "Copied Stepdance.zip to documentation repository"
 else
-  echo "⚠️ Stepdance.zip not found: $ZIP_FILE (skipping copy)"
+  echo "Stepdance.zip not found: $ZIP_FILE (skipping copy)"
 fi
 
 # === COMMIT AND PUSH DOCS ===
@@ -102,7 +102,7 @@ if git diff --staged --quiet; then
 else
   git commit -m "Update Doxygen docs (HTML + source markdown + Stepdance.zip) for commit $commit_hash"
   git push origin $TARGET_BRANCH
-  echo "✅ Documentation successfully deployed to '$TARGET_REPO' ($TARGET_BRANCH branch)!"
+  echo "Documentation successfully deployed to '$TARGET_REPO' ($TARGET_BRANCH branch)!"
 fi
 
 # === CLEANUP ===

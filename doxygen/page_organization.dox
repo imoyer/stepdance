@@ -1,0 +1,65 @@
+/** \page documentation Documentation
+
+This page provides an organized index of all Stepdance documentation.
+
+## Categories
+
+- \subpage software_docs
+- \subpage hardware_docs  
+- \subpage tutorials_docs
+- \subpage code_examples
+
+*/
+
+/** \page software_docs Software Documentation
+
+Documentation for the Stepdance Software Library and its components.
+
+### Pages
+
+- \subpage ssl
+
+*/
+
+/** \page hardware_docs Hardware Documentation
+
+Information about Stepdance hardware platforms and configurations.
+
+### Pages
+
+- \subpage hardware
+- \subpage taiss
+
+*/
+
+/** \page tutorials_docs Tutorials & Guides
+
+Step-by-step guides and tutorials for using Stepdance.
+
+### Pages
+
+- \subpage getting_started
+- \subpage ebb
+- \subpage stepasketch
+- \subpage highspeed
+
+*/
+
+/** \page code_examples Code Examples
+
+Working code examples organized by category.
+
+### Overview
+
+- \subpage examples
+
+### Example Categories
+
+- \subpage examples_core
+- \subpage examples_motion
+- \subpage examples_plotting
+- \subpage examples_clayprinter
+- \subpage examples_kinematics
+- \subpage examples_legacy
+
+*/

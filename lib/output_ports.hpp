@@ -188,7 +188,3 @@ void enable_drivers();  // enables drivers on all registered output ports
 void disable_drivers(); // enables drivers on all registered output ports
 
 #endif // output_ports_h
-
-/**
- * @example analog_in_test/analog_in_test.ino An example demonstrating the OutputPort functionality.
- */

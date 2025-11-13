@@ -1,0 +1,33 @@
+/** \page examples_core Core Example Sketches
+Core foundational Stepdance sketches illustrating hardware input, encoder usage, IO port interaction, and basic motor current configuration.
+
+## Example Files
+
+### @ref analog_in_test/analog_in_test.ino "Analog Input Test"
+**File:** `lib/examples/analog_in_test/analog_in_test.ino`
+
+Basic example demonstrating analog input reading and processing.
+
+### @ref encoder_test/encoder_test.ino "Encoder Test"
+**File:** `lib/examples/encoder_test/encoder_test.ino`
+
+Example showing how to read and configure rotary encoders.
+
+### @ref io_port_test/io_port_test.ino "I/O Port Test"
+**File:** `lib/examples/io_port_test/io_port_test.ino`
+
+Tests input and output port functionality.
+
+### @ref set_motor_currents/set_motor_currents.ino "Set Motor Currents"
+**File:** `lib/examples/set_motor_currents/set_motor_currents.ino`
+
+Example for configuring motor current settings.
+
+---
+
+\example analog_in_test/analog_in_test.ino
+\example encoder_test/encoder_test.ino
+\example io_port_test/io_port_test.ino
+\example set_motor_currents/set_motor_currents.ino
+
+*/

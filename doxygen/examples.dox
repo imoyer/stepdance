@@ -1,0 +1,31 @@
+/** \page examples Stepdance Example Index
+
+Browse examples by category. Each category page provides descriptions and file locations for related examples.
+
+## Categories
+
+### @ref examples_core "Core Concepts"
+Foundational examples covering analog input, encoders, I/O ports, and motor configuration.
+
+### @ref examples_motion "Motion & Drawing"
+Physical motion generation, multi-axis movement, and dynamic drawing systems.
+
+### @ref examples_plotting "Plotting & AxiDraw"
+Plotter-style movement, motion recording, and G-code driven drawing.
+
+### @ref examples_clayprinter "Clay 3D Printer Variants"
+Experimental and production sketches for clay 3D printing and extrusion control.
+
+### @ref examples_kinematics "Kinematics / Coordinate Transforms"
+Coordinate system transformations (polar/Cartesian, CoreXY, etc.).
+
+### @ref examples_legacy "Legacy / Experimental"
+Older or experimental sketches kept for reference.
+
+---
+
+**Location:** All examples are in `lib/examples/` in the Stepdance repository.
+
+**Adding New Examples:** To add a new example to a category, edit the corresponding `doxygen/examples_<category>.dox` file and add a new section with the example name, file path, and description.
+
+*/

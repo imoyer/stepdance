@@ -1,0 +1,33 @@
+/** \page examples_clayprinter Clay 3D Printer Variants
+Experimental and production sketches for clay 3D printing workflows and extrusion control.
+
+## Example Files
+
+### @ref clay_3dprinter_texturizer/clay_3dprinter_texturizer.ino "Clay 3D Printer Texturizer"
+**File:** `lib/examples/clay_3dprinter_texturizer/clay_3dprinter_texturizer.ino`
+
+Clay 3D printer with texture generation capabilities.
+
+### @ref clay_3dprinter_texturizer_modularized_v2/clay_3dprinter_texturizer_modularized_v2.ino "Clay 3D Printer Texturizer Modularized V2"
+**File:** `lib/examples/clay_3dprinter_texturizer_modularized_v2/clay_3dprinter_texturizer_modularized_v2.ino`
+
+Refactored modular version of the clay printer texturizer.
+
+### @ref polar_cartesian_3dprinter/polar_cartesian_3dprinter.ino "Polar Cartesian 3D Printer"
+**File:** `lib/examples/polar_cartesian_3dprinter/polar_cartesian_3dprinter.ino`
+
+3D printer using polar to Cartesian coordinate transformation.
+
+### @ref polar_cartesian_3dprinter_extrusion/polar_cartesian_3dprinter_extrusion.ino "Polar Cartesian 3D Printer with Extrusion"
+**File:** `lib/examples/polar_cartesian_3dprinter_extrusion/polar_cartesian_3dprinter_extrusion.ino`
+
+Polar coordinate 3D printer with extrusion control.
+
+---
+
+\example clay_3dprinter_texturizer/clay_3dprinter_texturizer.ino
+\example clay_3dprinter_texturizer_modularized_v2/clay_3dprinter_texturizer_modularized_v2.ino
+\example polar_cartesian_3dprinter/polar_cartesian_3dprinter.ino
+\example polar_cartesian_3dprinter_extrusion/polar_cartesian_3dprinter_extrusion.ino
+
+*/

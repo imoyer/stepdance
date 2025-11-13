@@ -1,0 +1,15 @@
+/** \page examples_kinematics Kinematics / Coordinate Transforms
+Examples that illustrate coordinate transforms and conversion between polar/cartesian references.
+
+## Example Files
+
+### @ref polar_to_cartesian/polar_to_cartesian.ino "Polar to Cartesian"
+**File:** `lib/examples/polar_to_cartesian/polar_to_cartesian.ino`
+
+Demonstrates conversion from polar to Cartesian coordinate systems.
+
+---
+
+\example polar_to_cartesian/polar_to_cartesian.ino
+
+*/

@@ -1,0 +1,33 @@
+/** \page examples_plotting Plotting & Axidraw
+Examples focusing on plotter-style movement, recording, and G-code driven drawing.
+
+## Example Files
+
+### @ref axidraw_interface/axidraw_interface.ino "AxiDraw Interface"
+**File:** `lib/examples/axidraw_interface/axidraw_interface.ino`
+
+Interface for controlling AxiDraw-compatible plotters.
+
+### @ref axidraw_recorder/axidraw_recorder.ino "AxiDraw Recorder"
+**File:** `lib/examples/axidraw_recorder/axidraw_recorder.ino`
+
+Records AxiDraw motion for playback and analysis.
+
+### @ref gcode_stepasketch/gcode_stepasketch.ino "G-Code Stepasketch"
+**File:** `lib/examples/gcode_stepasketch/gcode_stepasketch.ino`
+
+G-code interpreter for step-based drawing.
+
+### @ref stepasketch_with_inputs/stepasketch_with_inputs.ino "Stepasketch with Inputs"
+**File:** `lib/examples/stepasketch_with_inputs/stepasketch_with_inputs.ino`
+
+Interactive stepasketch with physical input controls.
+
+---
+
+\example axidraw_interface/axidraw_interface.ino
+\example axidraw_recorder/axidraw_recorder.ino
+\example gcode_stepasketch/gcode_stepasketch.ino
+\example stepasketch_with_inputs/stepasketch_with_inputs.ino
+
+*/
