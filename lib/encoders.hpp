@@ -29,14 +29,45 @@ struct encoder_info_struct{
   uint8_t CHANNEL_B_TEENSY_PIN;
 };  
 /** \endcond */
+/**
+ * @brief Encoder components read quadrature encoder inputs.
+ * @ingroup inputs
+ *
+ * @details The Encoder class interfaces with quadrature encoders connected to the StepDance controller and allows mapping the encoder signals to Stepdance components.
+ * Here's an example of how to instantiate and configure an Encoder:
+ * @snippet snippets.cpp Encoder
+ */
 class Encoder : public Plugin{
   public:
     Encoder();
+    /**
+     * @brief Initializes the Encoder with the specified encoder index.
+     * @param encoder_index Index of the encoder to initialize (e.g., ENCODER_1, ENCODER_2, ENCODER_A).
+     */
     void begin(uint8_t encoder_index);
+    /**
+     * @brief Inverts the encoder direction. Useful for changing the direction without rewiring.
+     */
     void invert();
+    /**
+     * @brief Returns the current position of the encoder in world units.
+     * @return DecimalPosition Current position in world units.
+     */
     DecimalPosition read(); //returns the last read encoder value, in realworld units. This is a shortcut for output.read(ABSOLUTE).
+    /**
+     * @brief Resets the encoder position to zero.
+     */
     void reset(); //resets the encoder value to zero
+    /**
+     * @brief Sets the encoder position to a specified value in world units.
+     * @param value Position value to set in world units.
+     */
     void set(DecimalPosition value); //resets the encoder value to a provided value, in world units
+    /**
+     * @brief Sets latching behavior for the encoder at specified world unit values.
+     * @param value_world_units The world unit value at which to set the latch.
+     * @param min_or_max Specify whether this is a minimum (0) or maximum (1) latch.
+     */
     void set_latch(DecimalPosition value_world_units, uint8_t min_or_max);
     void set_ratio(float output_units, float encoder_units = 1.0);
 
