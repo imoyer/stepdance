@@ -15,24 +15,55 @@ A part of the Mixing Metaphors Project
 
 #ifndef filters_h //prevent importing twice
 #define filters_h
-
+/**
+ * @brief Generates an output signal in proportion to one input signal.
+ * @ingroup filters 
+ * @details The ScalingFilter1D class scales an input signal by a specified ratio to produce an output signal. This is useful for scaling a motion trajectory.
+ * Here's an example of how to instantiate and configure a ScalingFilter1D:
+ * @snippet snippets.cpp ScalingFilter1D
+ */
 class ScalingFilter1D : public Plugin{
   // Generates an output signal in proportion to one input signal.
 
   public:
     ScalingFilter1D();
-
+    /**
+     * @brief Initializes the ScalingFilter1D with the specified mode.
+     * @param mode Mode of operation: INCREMENTAL or ABSOLUTE. Default is INCREMENTAL.
+       */
     void begin(uint8_t mode = INCREMENTAL);
+    /**
+     * @brief Sets the scaling ratio between output and input.
+     * @param ratio Scaling ratio (output / input).
+     */
     void set_ratio(ControlParameter ratio);
+    /**
+     * @brief Sets the scaling ratio using output and input distances.
+     * @param output_distance Distance in world units for the output.
+     * @param input_distance Distance in world units for the input.
+     */
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
+    /**
+     * \cond
+     * These definitions will be hidden from Doxygen documentation.
+     */
     void enroll(RPC *rpc, const String& instance_name);
 
     ControlParameter ratio = 1.0; // output / input
+    /**
+     * \endcond
+     */
 
     // BlockPorts
+    /**
+     * @brief Input BlockPort. Map upstream components to the input.
+     */
     BlockPort input;
+    /**
+     * @brief Output BlockPort. Map downstream components to the output.
+     */
     BlockPort output;
 
   private:
@@ -44,6 +75,11 @@ class ScalingFilter1D : public Plugin{
     void run();
 };
 
+/**
+ * @brief Generates two output signals, each in proportion to an input signal.
+ * @ingroup filters
+ * @details The ScalingFilter2D class scales two input signals by a specified ratio to produce two output signals. This is useful for scaling a motion trajectory in two dimensions.
+ */
 class ScalingFilter2D : public Plugin{
   // Generates two output signals, each in proportion to an input signal.
 

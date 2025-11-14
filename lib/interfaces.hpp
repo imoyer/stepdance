@@ -36,28 +36,53 @@ A part of the Mixing Metaphors Project
 #define EBB_SERVO_MIDPOINT_PULSE_DURATION_US  1500 //pulse duration for the servo midpoint.
 
 /**
- * @brief EiBotBoard interface class for receiving commands and generating motion blocks.
+ * @brief Enables using Axidraw commands from over serial as motion stream input.
  * @ingroup interfaces
  * 
- * The Eibotboard class emulates the EiBotBoard interface, allowing standard AxiDraw workflows to provide direct input. 
- * It processes serial commands, generates motion blocks, and interfaces with a TimeBasedInterpolator to drive motion. 
- * The class supports various commands for querying status, configuring motors, and controlling pen position.
+ * The Eibotboard class emulates the Axidraw EiBotBoard interface, allowing standard AxiDraw workflows to provide direct input. 
+ * It processes serial commands sent over the axidraw inteface (e.g. from Inkscape or from the AxiDraw Python library), to generate motion streams corresponding to the geometry of input SVG drawings. To use with Inkscape, select the "AxiDraw Control" extension and set the output port to the serial port connected to the StepDance controller running this interface.
  * 
  * For an example of how to use this class, see @ref axidraw_interface/axidraw_interface.ino
  */
 class Eibotboard : public Plugin{
   public:
     Eibotboard();
+    /**
+     * @brief Initialize the EiBotBoard interface. This must be called to set up the interface.
+     */
     void begin();
+    /**
+     *  @brief Set the conversion ratio between XY steps and millimeters.    
+     *  @param output_units_mm The output units in millimeters.
+     * @param input_units_steps The input units in steps.
+     */
     void set_ratio_xy(float output_units_mm, float input_units_steps); //sets the xy conversion between steps and mm
+    /**
+     * @brief Set the conversion ratio between Z steps and millimeters.
+     * @param output_units_mm The output units in millimeters.
+     * @param input_units_steps The input units in steps.
+     */
     void set_ratio_z(float output_units_mm, float input_units_steps); //sets the z conversion between steps and mm
 
+    /** 
+     * @brief BlockPort for X axis output. Use this to map to downstream components to drive position based on the EiBotBoard x-axis position data.
+     */
     BlockPort& output_x = target_interpolator.output_x;
+    /** 
+     * @brief BlockPort for Y axis output. Use this to map to downstream components to drive position based on the EiBotBoard y-axis position data.
+     */
     BlockPort& output_y = target_interpolator.output_y;
+    /** 
+     * @brief BlockPort for Z axis output. Use this to map to downstream components to drive position based on the EiBotBoard z-axis position data. 
+     */
     BlockPort& output_z = target_interpolator.output_z;
+    /** \cond
+     * hidden from Doxygen. Currently unsure why we need these....
+     */
     BlockPort& output_e = target_interpolator.output_e;
     BlockPort& output_r = target_interpolator.output_r;
     BlockPort& output_t = target_interpolator.output_t;
+    /** \endcond */
 
   protected:
     void loop(); // should be run inside loop
@@ -127,29 +152,63 @@ class Eibotboard : public Plugin{
 };
 
 /**
- * @brief G-code interface class for parsing and executing G-code commands.
+ * @brief G-code interface class for parsing and executing G-code commands as motion streams.
  * @ingroup interfaces
  * 
  * The GCodeInterface class provides a G-code parser and interpreter for motion control.
- * It processes standard G-code commands and generates motion blocks for the TimeBasedInterpolator.
- * Supports common G-code commands for linear motion, coordinate systems, and machine control.
+ * It processes standard G-code commands sent via serial using [gSender](https://sienci.com/gsender/). To use, install gSender and set the output port to the serial port connected to the StepDance controller running this interface. You can send common G-code commands for linear motion, coordinate systems, and machine control. Note- currently not all G-code commands are supported; unsupported commands will return an error message. We are working on this.
+ * For an example of how to use this class, see @ref gcode_interface/gcode_interface.ino
  */
 class GCodeInterface : public Plugin{
   public:
     GCodeInterface();
+    /**
+     * \cond
+     * hidden from Doxygen.
+     */
     void begin(); //defaults to Serial as the input stream
     void begin(Stream *target_stream);
+    /** \endcond */
+    /** 
+     * @brief Initialize the G-code interface with a USB serial port.
+     * @param target_usb_serial The USB serial port to use.   
+     * @code
+     * // -- Start the G-Code interface
+     * SerialUSB1.begin(115200);
+     * gcode_interface.begin(&SerialUSB1);
+     * @endcode
+    */
+   /**
+    * \cond
+    * hidden from Doxygen.
+    */
     void begin(usb_serial_class *target_usb_serial);
     void begin(HardwareSerialIMXRT *target_serial, uint32_t baud, uint16_t format = 0); //hardware serial
-
+    /** \endcond */
     //BlockPorts
+    /** 
+     * @brief BlockPort for X axis output. Use this to map to downstream components to drive position based on G-code X-axis commands.
+     */     
     BlockPort& output_x = target_interpolator.output_x;
+    /** 
+     * @brief BlockPort for Y axis output. Use this to map to downstream components to drive position based on G-code Y-axis commands.
+     */ 
     BlockPort& output_y = target_interpolator.output_y;
+    /** 
+     * @brief BlockPort for Z axis output. Use this to map to downstream components to drive position based on G-code Z-axis commands.
+     */
     BlockPort& output_z = target_interpolator.output_z;
+    /** 
+     * @brief BlockPort for extruder output. Use this to map to downstream components to drive position based on G-code E-axis commands.
+     */
     BlockPort& output_e = target_interpolator.output_e;
+ /**
+    * \cond
+    * hidden from Doxygen.
+    */
     BlockPort& output_r = target_interpolator.output_r;
     BlockPort& output_t = target_interpolator.output_t;
-  
+    /** \endcond */
   protected:
     void loop();
   
@@ -183,6 +242,7 @@ class GCodeInterface : public Plugin{
       char token_string[MAX_TOKEN_SIZE + 1]; //up to 15 characters. 
     };
 
+  
     struct block{
       struct token tokens[MAX_NUM_TOKENS]; //all tokens in the block
       int num_tokens = 0;

@@ -53,13 +53,6 @@
  */
 
 /**
- * @defgroup interpolators Interpolators
- * @brief Motion interpolation utilities
- *
- * Tools for interpolating between motion waypoints.
- */
-
-/**
  * @defgroup interfaces External Interfaces
  * @brief Communication with external systems
  *
