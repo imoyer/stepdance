@@ -27,6 +27,10 @@ class KinematicsCoreXY : public Plugin{
     BlockPort output_a;
     BlockPort output_b;
 
+    // Synchronization
+    void push_deep() override; //is not user-facing.
+    void pull_deep() override; //is not user-facing.
+
   private:
     volatile DecimalPosition position_x = 0; //internal registers to store state positions
     volatile DecimalPosition position_y = 0;

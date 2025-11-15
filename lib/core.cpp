@@ -1,3 +1,4 @@
+#include "wiring.h"
 #include <cstddef>
 #include "arm_math.h"
 #include "imxrt.h"
@@ -177,6 +178,9 @@ void Plugin::run_loop_plugins(){
   }  
 }
 
+void Plugin::push_deep(){};
+void Plugin::pull_deep(){};
+
 
 
 // -- BLOCKPORT --
@@ -238,8 +242,10 @@ float64_t BlockPort::read_target(){
 
 // - Block Functions -
 // Called by the block that has instantiated this BlockPort.
-void BlockPort::begin(volatile float64_t *target){
+void BlockPort::begin(volatile float64_t *target, uint8_t direction, Plugin *parent){
   set_target(target);
+  parent_Plugin = parent;
+  blockport_direction = direction;
 }
 
 void BlockPort::set_target(volatile float64_t *target){
@@ -289,6 +295,7 @@ void BlockPort::set(float64_t value, uint8_t mode){
 
 void BlockPort::reset(float64_t value, bool raw){
   //resets the target and absolute_buffer to a particular value, BUT clears increment_buffer
+  noInterrupts();
   if(raw == false){ //input is in world units
     value = convert_world_to_block_units(value);
   }
@@ -296,6 +303,7 @@ void BlockPort::reset(float64_t value, bool raw){
   incremental_buffer = 0;
   absolute_buffer = value;
   *target = value;
+  interrupts();
 }
 
 void BlockPort::push(uint8_t mode){
@@ -320,6 +328,49 @@ void BlockPort::pull(uint8_t mode){
   }
 }
 
+void BlockPort::push_deep(DecimalPosition abs_value){
+  switch(blockport_direction){
+    case BLOCKPORT_UNDEFINED:
+      reset(abs_value); //we assume this is an input, but at the terminus of the mapping chain (or terminus of components that support synchronization)
+      break;
+    
+    case BLOCKPORT_INPUT:
+      if(parent_Plugin != nullptr){
+        reset(abs_value); //set our position. input value is provided in world units.
+        parent_Plugin->push_deep(); //this method in parent plugin will run e.g. kinematic transform, then call push_deep on its blockports
+      }
+      break;
+    
+    case BLOCKPORT_OUTPUT:
+      if(target_BlockPort != nullptr){
+        reset(abs_value, true); //input value provided by parent_Plugin.push_deep(), and comes in raw
+        target_BlockPort->push_deep(read(ABSOLUTE)); //has target
+      }
+      break;    
+  }
+}
+
+DecimalPosition BlockPort::pull_deep(){
+  switch(blockport_direction){
+    case BLOCKPORT_INPUT:
+      if(parent_Plugin != nullptr){
+        parent_Plugin->pull_deep(); //this method in parent plugin will call pull_deep on its blockports, and then run e.g. kinematic transform
+        return read(ABSOLUTE); //return our position
+      }
+      break;
+    
+    case BLOCKPORT_OUTPUT:
+      if(target_BlockPort != nullptr){
+        DecimalPosition read_value = target_BlockPort->pull_deep();
+        reset(read_value); //resets internal position to match downstream position
+        return read_value;
+      }
+      break;    
+  }
+  return read(ABSOLUTE);
+}
+
+
 void BlockPort::enable(){
   push_pull_enabled = true;
 }
@@ -330,6 +381,8 @@ void BlockPort::disable(){
 
 void BlockPort::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "read", *this, &BlockPort::read_absolute); //for simplicity we're enrolling this as "read", but will return the absolute position.
+  rpc->enroll(instance_name, "write_deep", *this, &BlockPort::write_deep);
+  rpc->enroll(instance_name, "read_deep", *this, &BlockPort::read_deep);
 }
 
 // -- STEPDANCE LOOP FUNCTIONS AND CLASSES --

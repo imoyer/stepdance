@@ -18,10 +18,10 @@ A part of the Mixing Metaphors Project
 KinematicsCoreXY::KinematicsCoreXY(){};
 
 void KinematicsCoreXY::begin(){
-  input_x.begin(&position_x);
-  input_y.begin(&position_y);
-  output_a.begin(&position_a);
-  output_b.begin(&position_b);
+  input_x.begin(&position_x, BLOCKPORT_INPUT, this); //only add pointer to this plugin to input blockports
+  input_y.begin(&position_y, BLOCKPORT_INPUT, this);
+  output_a.begin(&position_a, BLOCKPORT_OUTPUT);
+  output_b.begin(&position_b, BLOCKPORT_OUTPUT);
   register_plugin();
   // input_transmission_y.get_function = std::bind(&KinematicsCoreXY::get_position_y, this);
 }
@@ -45,17 +45,18 @@ void KinematicsCoreXY::enroll(RPC *rpc, const String& instance_name){
   output_b.enroll(rpc, instance_name + ".output_b");
 }
 
-// DecimalPosition KinematicsCoreXY::get_position_x(){
-//   float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
-//   float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
-//   return (position_a + position_b)/2;
-// }
+void KinematicsCoreXY::push_deep(){
+  output_a.push_deep(position_x + position_y);
+  output_b.push_deep(position_x - position_y);
+}
 
-// DecimalPosition KinematicsCoreXY::get_position_y(){
-//   float64_t position_a = output_transmissions[COREXY_OUTPUT_A]->get();
-//   float64_t position_b = output_transmissions[COREXY_OUTPUT_B]->get();
-//   return (position_a - position_b)/2;
-// }
+void KinematicsCoreXY::pull_deep(){
+  output_a.pull_deep();
+  output_b.pull_deep();
+  input_x.reset(0.5*(position_a + position_b), true);
+  input_y.reset(0.5*(position_a - position_b), true);
+}
+
 
 KinematicsPolarToCartesian::KinematicsPolarToCartesian(){};
 

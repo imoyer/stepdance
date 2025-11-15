@@ -125,8 +125,8 @@ void Channel::begin(OutputPort* target_output_port, uint8_t output_signal){
   initialize_state();
 
   // Initialize BlockPorts
-  input_target_position.begin(&target_position);
-  input_target_position_2.begin(&target_position_2);
+  input_target_position.begin(&target_position, BLOCKPORT_INPUT, this);
+  input_target_position_2.begin(&target_position_2, BLOCKPORT_INPUT, this);
 
   if(target_output_port != nullptr){ // an output port is provided
     this->target_output_port = target_output_port;
@@ -229,6 +229,11 @@ void Channel::invert_output(bool invert){
   output_inverted = static_cast<bool>(invert);
 }
 
+void Channel::push_deep(){ //gets called on a state synchronization
+  filtered_target_position = target_position + target_position_2;
+  current_position = filtered_target_position;
+}
+
 void Channel::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "set_ratio", *this, &Channel::set_ratio);
   rpc->enroll(instance_name, "set_upper_limit", *this, &Channel::set_upper_limit);
@@ -239,6 +244,7 @@ void Channel::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "enable", *this, &Channel::enable);
   rpc->enroll(instance_name, "disable_filtering", *this, &Channel::disable_filtering);
   rpc->enroll(instance_name, "enable_filtering", *this, &Channel::enable_filtering);
+  rpc->enroll(instance_name + ".current_position", current_position);
   input_target_position.enroll(rpc, instance_name + ".input_target_position");
   input_target_position_2.enroll(rpc, instance_name + ".input_target_position2");
 }
