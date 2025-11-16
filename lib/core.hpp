@@ -61,6 +61,12 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define MIN   0
 #define MAX   1
 
+enum{
+  BLOCKPORT_INPUT, //blockport is an input
+  BLOCKPORT_OUTPUT, //blockport is an output
+  BLOCKPORT_UNDEFINED //blockport is undefined
+};
+
 void add_function_to_frame(frame_function_pointer target_function);
 void dance_start();
 
@@ -94,6 +100,8 @@ class Plugin{
     virtual void enable();
     virtual void disable();
     virtual void enroll(RPC *rpc, const String& instance_name); //enrolls the plugin in an RPC. This should be overridden by the derived class, and is responsible for enrolling any members.
+    virtual void push_deep(); //deep push across the plugin (e.g. from input to output blockports) for state sync.
+    virtual void pull_deep(); //performs a deep pull across the plugin (e.g. from output to input blockports) for state sync
 
   private:
     static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins
@@ -187,7 +195,7 @@ class BlockPort{
   /**
    * These functions will be hidden from Doxygen documentation.
    */
-    void begin(volatile float64_t *target); //initializes the BlockPort
+    void begin(volatile float64_t *target, uint8_t direction = BLOCKPORT_UNDEFINED, Plugin *parent = nullptr); //initializes the BlockPort
     void set_target(volatile float64_t *target); //sets a target variable for the BlockPort
     void update(); //called by the block, to update the target and the buffers. Note that this does not handle pulling or pushing, which must be done first or after update.
     void reverse_update(); //updates the buffers based on changes made by direct writes to the target. Used by input_ports, which run before all other blocks.
@@ -205,6 +213,19 @@ class BlockPort{
     void pull(uint8_t mode); // pulls a target BlockPort's buffer state into this BlockPort's buffers.
     inline void pull(){
       pull(this->mode); //uses internal mode
+    }
+
+    // State Synchronization Functions
+    // Internal
+    void push_deep(DecimalPosition abs_value); //Pushes an ABSOLUTE value across a mapping chain.
+    DecimalPosition pull_deep(); //pulls an ABSOLUTE value thru from the terminal of the mapping chain.
+
+    // User Facing
+    inline void write_deep(DecimalPosition abs_value){
+      push_deep(abs_value);
+    }
+    inline DecimalPosition read_deep(){
+      return pull_deep();
     }
 
     void enable(); // enables push/pull on blockport
@@ -233,7 +254,8 @@ class BlockPort{
     float64_t world_to_block_ratio = 1;
 
     BlockPort* target_BlockPort = nullptr;
-
+    Plugin* parent_Plugin = nullptr; //This should only be set on INPUTS.
+    uint8_t blockport_direction = BLOCKPORT_UNDEFINED; //direction is not explicitly set by the parent Plugin
 };
 
 

@@ -60,6 +60,9 @@ class Channel : public Plugin{
     // BlockPorts
     BlockPort input_target_position;
     BlockPort input_target_position_2;
+
+    void push_deep();
+    
 /** \endcond */
 
     // Public Methods
