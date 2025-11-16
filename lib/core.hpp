@@ -51,10 +51,15 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 #define PLUGIN_LOOP               3 //runs in the main loop
 #define PLUGIN_INPUT_PORT         4 //runs on the frame, at the start before all other plugins
 
-// Block Mode
+// Position Mode
 // Throughout stepdance, there is a question of whether to operate incrementally or in absolute coordinates.
 // By default, we operate incrementally. But some modules require data to be in absolute values (e.g. non-linear functions)
 
+// enum{
+//   INCREMENTAL, //indicates a position 
+//   ABSOLUTE,
+//   GLOBAL
+// };
 #define INCREMENTAL   0 //data is handled incrementally
 #define ABSOLUTE      1 //data is handled in absolute values
 
@@ -221,10 +226,10 @@ class BlockPort{
     DecimalPosition pull_deep(); //pulls an ABSOLUTE value thru from the terminal of the mapping chain.
 
     // User Facing
-    inline void write_deep(DecimalPosition abs_value){
+    inline void reset_deep(DecimalPosition abs_value){
       push_deep(abs_value);
     }
-    inline DecimalPosition reset_deep(){
+    inline DecimalPosition read_deep(){
       return pull_deep();
     }
 
