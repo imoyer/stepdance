@@ -37,9 +37,6 @@ class KinematicsCoreXY : public Plugin{
     volatile DecimalPosition position_a = 0;
     volatile DecimalPosition position_b = 0;
 
-    // DecimalPosition get_position_x(); // return current positions in input space, and override the input_transmission get() functions
-    // DecimalPosition get_position_y();
-
   protected:
     void run();
 };

@@ -224,7 +224,7 @@ class BlockPort{
     inline void write_deep(DecimalPosition abs_value){
       push_deep(abs_value);
     }
-    inline DecimalPosition read_deep(){
+    inline DecimalPosition reset_deep(){
       return pull_deep();
     }
 

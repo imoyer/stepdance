@@ -382,7 +382,7 @@ void BlockPort::disable(){
 void BlockPort::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "read", *this, &BlockPort::read_absolute); //for simplicity we're enrolling this as "read", but will return the absolute position.
   rpc->enroll(instance_name, "write_deep", *this, &BlockPort::write_deep);
-  rpc->enroll(instance_name, "read_deep", *this, &BlockPort::read_deep);
+  rpc->enroll(instance_name, "reset_deep", *this, &BlockPort::reset_deep);
 }
 
 // -- STEPDANCE LOOP FUNCTIONS AND CLASSES --
