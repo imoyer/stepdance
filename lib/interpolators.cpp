@@ -206,6 +206,7 @@ void TimeBasedInterpolator::begin(){
 
 void TimeBasedInterpolator::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "add_move", *this, &TimeBasedInterpolator::add_move);
+  rpc->enroll(instance_name, "add_timed_move", *this, &TimeBasedInterpolator::add_timed_move);
   rpc->enroll(instance_name, "is_idle", *this, &TimeBasedInterpolator::is_idle);
   rpc->enroll(instance_name, "queue_is_full", *this, &TimeBasedInterpolator::queue_is_full);
   rpc->enroll(instance_name + ".speed_override", speed_overide);
