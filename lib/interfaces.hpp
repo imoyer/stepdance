@@ -12,6 +12,24 @@
 #ifndef interfaces_h //prevent importing twice
 #define interfaces_h
 
+// Null Serial Port
+class NullSerial : public Stream {
+public:
+    void begin(unsigned long) {}
+    void end() {}
+
+    int available() override { return 0; }
+    int read() override { return -1; }
+    int peek() override { return -1; }
+
+    // Print/Stream writes go through Print::write(uint8_t)
+    size_t write(uint8_t) override { return 1; }
+    using Print::write;  // enables write(buffer, size)
+
+    void flush() override {}
+
+    operator bool() const { return true; }
+};
 
 /*
 EiBotBoard Interface Module of the StepDance Control System
@@ -48,9 +66,14 @@ class Eibotboard : public Plugin{
   public:
     Eibotboard();
     /**
-     * @brief Initialize the EiBotBoard interface. This must be called to set up the interface.
+     * @brief Initialize the EiBotBoard interface. This must be called to set up the interface. Default communication interface is Serial.
      */
     void begin();
+    /**
+     *  @brief Initialize the EiBotBoard interface with a specified communication interface.    
+     *  @param target_usb_serial A pointer to a communication interface, e.g. &Serial or &SerialUSB1.
+     */
+    void begin(usb_serial_class *target_usb_serial);
     /**
      *  @brief Set the conversion ratio between XY steps and millimeters.    
      *  @param output_units_mm The output units in millimeters.
@@ -95,6 +118,7 @@ class Eibotboard : public Plugin{
     uint8_t debug_port_identified; //1 if debug port has been ID'd, otherwise 0
     Stream *ebb_serial_port; //stores a pointer to the ebb serial port
     Stream *debug_serial_port; //pointer to the debug port
+    NullSerial SerialNone; //can be used by interfaces to silence a debug port.
 
     float32_t xy_conversion_mm_per_step = 25.4 / 2874.0; //AxiDraw standard conversion
     float32_t z_conversion_mm_per_step = 1.0 / 50.0; //50 steps per mm of travel

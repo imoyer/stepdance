@@ -48,11 +48,15 @@ struct Eibotboard::command Eibotboard::all_commands[] = {
 Eibotboard::Eibotboard(){};
 
 void Eibotboard::begin(){
-  Serial.begin(115200);
+  begin(&Serial);
+}
+
+void Eibotboard::begin(usb_serial_class *target_usb_serial){
+  target_usb_serial -> begin(115200);
   reset_input_buffer();
   initialize_all_commands_struct();
-  ebb_serial_port = &Serial; //hard-code the primary and debug serial ports
-  debug_serial_port = &SerialUSB1;
+  ebb_serial_port = target_usb_serial;
+  debug_serial_port = &SerialNone; //dummy function for now
   register_plugin(PLUGIN_LOOP);
   target_interpolator.begin();
 }
