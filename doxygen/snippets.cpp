@@ -368,42 +368,29 @@ void loop(){
 #define module_driver
 #include "stepdance.hpp"
 
-CircleGenerator circle_gen;
-PathLengthGenerator2D path_gen;
+PathLengthGenerator2D path2_gen;
 Channel channel_x;
 Channel channel_y;
 Channel channel_z;
-OutputPort output_a;
+OutputPort output_a
 
 void setup(){
   // Initialize OutputPort and enable drivers
-  output_a.begin(OUTPUT_A);
+  output_p2.begin(OUTPUT_A);
   enable_drivers();
 
-  // Configure CircleGenerator with radius 10mm, 1 revolution per second
-  circle_gen.radius = 10.0;
-  circle_gen.rotational_speed_rev_per_sec = 1.0;
-  circle_gen.setNoInput(); // Use internal frame count
-  circle_gen.begin();
+  // Initialize InputPort and map X/Y to path length inputs
+  input_a.begin(INPUT_A);
+  input_a.output_x.map(path2_gen.input_1);
+  input_a.output_y.map(path2_gen.input_2);
 
-  // Map circle outputs to X and Y channels
-  circle_gen.output_x.map(channel_x.input_target_position);
-  circle_gen.output_y.map(channel_y.input_target_position);
-  channel_x.begin(&output_a, SIGNAL_X);
-  channel_y.begin(&output_a, SIGNAL_Y);
+  // Configure and begin generator
+  path2_gen.set_ratio(1.0);
+  path2_gen.begin();
 
-  // Configure PathLengthGenerator2D to move Z 1mm per complete circle
-  // The circle has radius 10mm, so we want 1mm output per 2π*10mm = 62.83mm of XY path
-  path_gen.set_ratio_for_circle(10.0, 1.0); // 1mm per revolution of a 10mm radius circle
-  path_gen.begin();
-
-  // Map circle outputs to path length inputs
-  circle_gen.output_x.map(path_gen.input_1);
-  circle_gen.output_y.map(path_gen.input_2);
-
-  // Map path length output to Z channel
-  path_gen.output.map(channel_z.input_target_position);
-  channel_z.begin(&output_a, SIGNAL_Z);
+  // Map generator output to a channel
+  path2_gen.output.map(channel_p2.input_target_position);
+  channel_p2.begin(&output_p2, SIGNAL_E);
 
   dance_start();
 }
@@ -485,3 +472,196 @@ void loop(){
   dance_loop();
 }
   // [CircleGenerator]
+
+  // [Encoder]
+#define module_driver
+#include "stepdance.hpp"
+
+Encoder encoder;
+Channel channel_a;  
+OutputPort output_a;
+
+void setup(){
+  // Initialize OutputPort and enable drivers
+  output_a.begin(OUTPUT_A);
+  enable_drivers();
+
+  channel_a.begin(&output_a, SIGNAL_E); // Initialize Channel A on Output A
+
+  // Initialize Encoder and map to output
+  encoder.begin(ENCODER_1);
+  encoder.set_ratio(24, 2400);  // 24mm per revolution, where 1 rev == 2400 encoder pulses
+  encoder.output.map(output_a.input_position);
+
+  dance_start();
+}
+
+void loop(){
+  dance_loop();
+}
+  // [Encoder]
+
+    // [ScalingFilter1D]
+#define module_driver
+#include "stepdance.hpp"
+InputPort input_a;
+ScalingFilter1D scale_filter;
+Channel channel_x;
+OutputPort output_a;
+
+void setup(){
+  // Initialize OutputPort and enable drivers
+  output_a.begin(OUTPUT_A);
+  enable_drivers();
+
+  // Initialize Channel
+  channel_x.begin(&output_a, SIGNAL_E);
+
+  input_a.begin(INPUT_A);
+  input_a.output_x.map(scale_filter.input); // Map InputPort to ScalingFilter1D input
+
+  // Initialize ScalingFilter1D and map to channel
+  scale_filter.set_ratio(2.0); // Example ratio- will scale inpyut by factor of 2
+  scale_filter.begin();
+  scale_filter.output.map(channel_x.input_target_position);
+
+  dance_start();
+}
+
+void loop(){
+  dance_loop();
+}
+    // [ScalingFilter1D]
+
+    // [ScalingFilter2D]
+#define module_driver
+#include "stepdance.hpp"
+InputPort input_a;
+ScalingFilter2D scale_filter;
+Channel channel_x;
+Channel channel_y;
+OutputPort output_a;
+OutputPort output_b;
+
+void setup(){
+  // Initialize OutputPort and enable drivers
+  output_a.begin(OUTPUT_A);
+  output_b.begin(OUTPUT_B);
+  enable_drivers();
+
+  // Initialize Channel
+  channel_x.begin(&output_a, SIGNAL_E);
+  channel_y.begin(&output_b, SIGNAL_E);
+
+  input_a.begin(INPUT_A);
+  input_a.output_x.map(scale_filter.input_1); // Map InputPort to ScalingFilter2D input_1
+  input_a.output_y.map(scale_filter.input_2); // Map InputPort to ScalingFilter2D input_2
+
+  // Initialize ScalingFilter2D and map to channels
+  scale_filter.set_ratio(2.0); // Example ratio- will scale inputs by factor of 2
+  scale_filter.begin();
+  scale_filter.output_1.map(channel_x.input_target_position);
+  scale_filter.output_2.map(channel_y.input_target_position);
+
+  dance_start();
+}
+
+void loop(){
+  dance_loop();
+}
+    // [ScalingFilter2D]
+
+    // [KinematicsCoreXY]
+#define module_driver
+#include "stepdance.hpp"
+Encoder enc_1;
+Encoder enc_2;
+KinematicsCoreXY corexy_kinematics;
+Channel channel_a;
+Channel channel_b;
+OutputPort output_a;
+OutputPort output_b;
+
+void setup(){
+  // Initialize OutputPorts and enable drivers
+  output_a.begin(OUTPUT_A);
+  output_b.begin(OUTPUT_B);
+  enable_drivers();
+
+  // Initialize Channels
+  channel_a.begin(&output_a, SIGNAL_E);
+  channel_b.begin(&output_b, SIGNAL_E);
+
+  // Initialize Encoders
+  enc_1.begin(ENCODER_1);
+  enc_1.set_ratio(24, 2400);  // 24mm per revolution, where 1 rev == 2400 encoder pulses
+  enc_2.begin(ENCODER_2);
+  enc_2.set_ratio(24, 2400);  // 24mm per revolution, where 1 rev == 2400 encoder pulses
+
+  // Map Encoder outputs to KinematicsCoreXY inputs
+  enc_1.output.map(corexy_kinematics.input_x);
+  enc_2.output.map(corexy_kinematics.input_y);
+
+  // Initialize KinematicsCoreXY and map to channels
+  corexy_kinematics.begin();
+  corexy_kinematics.output_x.map(channel_a.input_target_position);
+  corexy_kinematics.output_y.map(channel_b.input_target_position);
+
+  dance_start();
+} 
+
+void loop(){
+  dance_loop();
+}
+    // [KinematicsCoreXY]
+
+    // [KinematicsPolarToCartesian]
+#define module_driver
+#include "stepdance.hpp"
+AnalogInput angle_input;
+Encoder radius_enc;
+KinematicsPolarToCartesian polar_to_cartesian_kinematics;
+VelocityGenerator angle_velocity_gen;
+Channel channel_x;
+Channel channel_y;
+OutputPort output_x;
+OutputPort output_y;  
+
+void setup(){
+  // Initialize OutputPorts and enable drivers
+  output_x.begin(OUTPUT_A);
+  output_y.begin(OUTPUT_B);
+  enable_drivers();
+
+  // Initialize Channels
+  channel_x.begin(&output_x, SIGNAL_E);
+  channel_y.begin(&output_y, SIGNAL_E);
+
+  vel_genocity_gen.begin();
+  angle_velocity_gen.output.map(polar_to_cartesian_kinematics.input_angle); 
+
+
+  
+  // Initialize AnalogInput for angle
+  angle_input.set_floor(0, 25); // Set floor to 0 output at ADC values of 25 and below.
+  angle_input.set_ceiling(3.28, 1020); //radians per second
+
+  angle_input.map(&angle_velocity_gen.speed_units_per_sec); // Map analog output to VelocityGenerator speed ControlParameter
+  angle_input.begin(IO_A1);
+
+  // Initialize Encoder for radius
+  radius_enc.begin(ENCODER_1);
+  radius_enc.set_ratio(1, 2400);  
+  radius_enc.output.map(polar_to_cartesian_kinematics.input_radius);
+
+  // Initialize KinematicsPolarToCartesian and map to channels
+  polar_to_cartesian_kinematics.begin();
+  polar_to_cartesian_kinematics.output_x.map(channel_x.input_target_position);
+  polar_to_cartesian_kinematics.output_y.map(channel_y.input_target_position);
+
+  dance_start();
+} 
+void loop(){
+  dance_loop();
+}
+    // [KinematicsPolarToCartesian]

@@ -23,11 +23,17 @@ Tests input and output port functionality.
 
 Example for configuring motor current settings.
 
+### @ref remote_procedure_call/remote_procedure_call.ino "Remote Procedure Call"
+**File:** `lib/examples/remote_procedure_call/remote_procedure_call.ino`
+
+Example demonstrating the RPC (Remote Procedure Call) system for remote control and communication.
+
 ---
 
 \example analog_in_test/analog_in_test.ino
 \example encoder_test/encoder_test.ino
 \example io_port_test/io_port_test.ino
 \example set_motor_currents/set_motor_currents.ino
+\example remote_procedure_call/remote_procedure_call.ino
 
 */

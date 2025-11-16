@@ -25,13 +25,36 @@ A part of the Mixing Metaphors Project
 
 #ifndef rpc_h //prevent importing twice
 #define rpc_h
-
+/**
+ * @brief RPC class for handling remote procedure calls over serial streams.
+ * @ingroup rpc 
+ * @details The RPC class provides an interface for registering functions and parameters that can be called and accessed remotely via over serial streams. It supports enrolling functions with various signatures, as well as plugin instances and parameters. The class handles dispatching incoming RPC calls and sending responses back to the caller.
+ * Here's an example of how to instantiate and configure an RPC:  
+ * @ref remote_procedure_call/remote_procedure_call.ino "RPC Example".
+ */
 class RPC : public Plugin{
   public:
     RPC();
+    /**
+     * @brief Initializes the RPC with the specified stream. Defaults to Serial if no stream is provided.
+     */
     void begin(); //defaults to Serial as the input stream
+    /**
+     * @brief Initializes the RPC with the specified stream.
+     * @param target_stream Pointer to the Stream to use for RPC communication.
+     */
     void begin(Stream *target_stream);
+/**
+     * @brief Initializes the RPC with the specified USB serial class.
+     * @param target_usb_serial Pointer to the usb_serial_class to use for RPC communication.
+       */
     void begin(usb_serial_class *target_usb_serial);
+    /**
+     * @brief Initializes the RPC with the specified hardware serial.
+     * @param target_serial Pointer to the HardwareSerialIMXRT to use for RPC communication.
+     * @param baud Baud rate for the serial communication.
+     * @param format Data format for the serial communication.
+     */
     void begin(HardwareSerialIMXRT *target_serial, uint32_t baud, uint16_t format = 0); //hardware serial
 
     // --- RPC Registration ---

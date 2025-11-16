@@ -85,21 +85,53 @@ class ScalingFilter2D : public Plugin{
 
   public:
     ScalingFilter2D();
-
+/**
+ * @brief Initializes the ScalingFilter2D with the specified mode. Must be called to set up the filter.
+ * @param mode Mode of operation: INCREMENTAL or ABSOLUTE. Default is INCREMENTAL.
+ */
     void begin(uint8_t mode = INCREMENTAL);
+    /**
+     * @brief Sets the scaling ratio between output and input.
+     * @param ratio Scaling ratio (output / input).
+     */
     void set_ratio(ControlParameter ratio);
+    /**
+     * @brief Sets the scaling ratio using output and input distances.
+     * @param output_distance Distance in world units for the output.
+     * @param input_distance Distance in world units for the input.
+     */
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
+    /**
+     * \cond
+     * These definitions will be hidden from Doxygen documentation.
+     */
     void enroll(RPC *rpc, const String& instance_name);
-    
+    /** \endcond */
+    /**
+     * @brief ControlParameter scaling output relative to input (output/input). Can be set by calling set_ratio().
+     */
     ControlParameter ratio = 1.0; // output / input
 
     // BlockPorts
+    /**
+     * @brief First input BlockPort. Map upstream components to this input.
+     */
     BlockPort input_1;
+    /**
+     * @brief Second input BlockPort. Map upstream components to this input.
+     */
     BlockPort input_2;
+    /**
+     * @brief First output BlockPort corresponding to the scaled input_1. Map downstream components to this output.
+     */
     BlockPort output_1;
+    /**
+     * @brief Second output BlockPort corresponding to the scaled input_2. Map downstream components to this output.
+     */
     BlockPort output_2;
+    
 
   private:
     DecimalPosition input_1_position;

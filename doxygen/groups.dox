@@ -76,6 +76,14 @@
  */
 
 /**
+ * @defgroup rpc Remote Procedure Call
+ * @brief RPC system for remote control and communication
+ *
+ * Components for enabling remote procedure calls to control Stepdance
+ * systems via serial communication or other interfaces.
+ */
+
+/**
  * @defgroup utilities Utilities
  * @brief Helper functions and utilities
  *
