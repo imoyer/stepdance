@@ -56,6 +56,8 @@ Button button_d2;
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
+TimeBasedInterpolator tbi;
+
 Homing homing;
 
 // -- RPC Interface --
@@ -157,6 +159,12 @@ void setup() {
 
   init_homing();
 
+  // TBI
+
+  tbi.begin();
+  tbi.output_x.map(&axidraw_kinematics.input_x);
+  tbi.output_y.map(&axidraw_kinematics.input_y);
+
   rpc.begin();
 
   rpc.enroll("testValue", testValue);
@@ -194,19 +202,19 @@ void pen_up(){
 void init_homing() {
   Serial.println("Init homing");
   homing.add_axis(
-  // LIMIT_A,
-  IO_D1,
-  0, // coordinate value we want to set at the limit switch
+  LIMIT_A,
+  // IO_D1,
+  10, // coordinate value we want to set at the limit switch
   HOMING_DIR_FWD,
-  1, // speed at which we move to find the limit 
+  5, // speed at which we move to find the limit 
   &axidraw_kinematics.input_x);
 
   homing.add_axis(
-  // LIMIT_A,
-  IO_D2,
-  0, // coordinate value we want to set at the limit switch
+  LIMIT_B,
+  // IO_D2,
+  3.5, // coordinate value we want to set at the limit switch
   HOMING_DIR_FWD,
-  1, // speed at which we move to find the limit 
+  5, // speed at which we move to find the limit 
   &axidraw_kinematics.input_y);
 
   homing.begin();
@@ -214,9 +222,17 @@ void init_homing() {
 
 void start_homing_test() {
 
-    homing.start_homing_routine();
-    Serial.println("start homing");
+  homing.start_homing_routine();
+  Serial.println("start homing");
     
+}
+
+void draw_abs_test_shape() {
+  // tbi.add_move(1, 6, 5);
+  // tbi.add_move(1, 2, 5);
+  // tbi.add_move(1, 7, 1);
+  // tbi.add_move(1, 0, 0);
+  
 }
 
 void report_overhead(){
@@ -234,7 +250,9 @@ void report_overhead(){
   Serial.print("\n");
 
   Serial.print("channel A: ");
-  Serial.print(channel_a.target_position, 4);
+  Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);
+  Serial.print(" channel B: ");
+  Serial.print(channel_b.input_target_position.read(ABSOLUTE), 4);
   Serial.print(" axidraw X: ");
   Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
     Serial.print(" axidraw Y: ");

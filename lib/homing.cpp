@@ -19,7 +19,7 @@ HomingAxis::HomingAxis(
 void HomingAxis::begin()
 {
     // initialize internal blockport
-    output.begin(&current_position);
+    output.begin(&current_position, BLOCKPORT_OUTPUT);
 
     limit_switch_button.begin(limit_switch_port_number, INPUT_PULLDOWN);
     limit_switch_button.set_mode(BUTTON_MODE_TOGGLE);
@@ -68,7 +68,7 @@ void HomingAxis::run()
             // Serial.print(limit_switch_button.read());
             // Serial.print("\n");
             // are we already at the limit switch?
-            if (limit_switch_button.read()) {
+            if (limit_switch_button.read_raw()) {
                 // we are already at the switch => back off
                 current_homing_state = HOMING_AXIS_STATE_BACKING_OFF;
                 Serial.println("AXIS BACKING OFF (already on switch)");
@@ -84,7 +84,7 @@ void HomingAxis::run()
 
         case HOMING_AXIS_STATE_BACKING_OFF:
             // are we still pressing the limit switch?
-            if (limit_switch_button.read()) {
+            if (limit_switch_button.read_raw()) {
                 // we are still pressing switch => continue backing off
                 // Going backwards compared to the normal homing direction
                 move_backward();
@@ -98,7 +98,7 @@ void HomingAxis::run()
     
         case HOMING_AXIS_STATE_SEEKING:
             // are we at the limit switch?
-            if (limit_switch_button.read()) {
+            if (limit_switch_button.read_raw()) {
                 // we reached the limit
                 current_homing_state = HOMING_STATE_FINISHED;
                 Serial.println("AXIS FINISHED HOMING (HIT LIMIT)");
@@ -120,6 +120,9 @@ void HomingAxis::set_axis_value()
     // in order to set state throughout the chain to be consistent with value_at_limit
 
     // output.push_deep(value_at_limit);
+    Serial.print("Reset deep: ");
+    Serial.println(value_at_limit);
+    output.reset_deep(value_at_limit);
 }
 
 void HomingAxis::move_forward()
