@@ -287,7 +287,7 @@ void VelocityGenerator::enroll(RPC *rpc, const String& instance_name){
 PositionGenerator::PositionGenerator(){};
 
 void PositionGenerator::begin(){
-  output.begin(&current_position); //configure input transmission as interface to target_position
+  output.begin(&current_position, BLOCKPORT_OUTPUT); //configure input transmission as interface to target_position
   register_plugin();
 }
 
@@ -301,10 +301,17 @@ void PositionGenerator::go(float64_t distance_or_position, uint8_t mode){
 
 void PositionGenerator::go(float64_t distance_or_position, uint8_t mode, ControlParameter speed){
   speed_units_per_sec = speed;
-  if(mode == INCREMENTAL){
-    target_position += distance_or_position;
-  }else{ //ABSOLUTE
-    target_position = distance_or_position;
+  switch(mode){
+    case INCREMENTAL:
+      target_position += distance_or_position;
+      break;
+    case ABSOLUTE:
+      target_position = distance_or_position;
+      break;
+    case GLOBAL:
+      output.pull_deep();
+      target_position = distance_or_position;
+      break;
   }
 }
 

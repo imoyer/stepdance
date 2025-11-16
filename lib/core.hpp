@@ -55,13 +55,13 @@ typedef void (*frame_function_pointer)(); //defines function pointers that can b
 // Throughout stepdance, there is a question of whether to operate incrementally or in absolute coordinates.
 // By default, we operate incrementally. But some modules require data to be in absolute values (e.g. non-linear functions)
 
-// enum{
-//   INCREMENTAL, //indicates a position 
-//   ABSOLUTE,
-//   GLOBAL
-// };
-#define INCREMENTAL   0 //data is handled incrementally
-#define ABSOLUTE      1 //data is handled in absolute values
+enum{
+  INCREMENTAL, //indicates a position is being provided incrementally
+  ABSOLUTE, //position should be interpreted as an absolute position, relative to the local state of the component
+  GLOBAL //position should be interpreted as absolute, relative to the global (e.g. channel) state of the machine
+};
+// #define INCREMENTAL   0 //data is handled incrementally
+// #define ABSOLUTE      1 //data is handled in absolute values
 
 #define MIN   0
 #define MAX   1

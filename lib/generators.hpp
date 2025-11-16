@@ -387,7 +387,7 @@ class PositionGenerator : public Plugin{
     /**
      * @brief Command the PositionGenerator to move to a specified distance or position with a specified speed.
      * @param distance_or_position The target distance (incremental) or position (absolute).
-     * @param mode The mode of operation: INCREMENTAL or ABSOLUTE.
+     * @param mode The mode of operation: INCREMENTAL, ABSOLUTE, or GLOBAL
      * @param speed The speed in units per second.
      */
     void go(float64_t distance_or_position, uint8_t mode, ControlParameter speed);
