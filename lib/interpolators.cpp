@@ -1,3 +1,4 @@
+#include <iterator>
 #include <cmath>
 #include "arm_math.h"
 /*
@@ -19,7 +20,6 @@ A part of the Mixing Metaphors Project
 
 TimeBasedInterpolator::TimeBasedInterpolator(){};
 
-
 int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
   // Adds a motion block to the interpolator
   //
@@ -38,15 +38,37 @@ int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
   }
 }
 
-int16_t TimeBasedInterpolator::add_move(float32_t move_time_s, DecimalPosition delta_x, DecimalPosition delta_y, DecimalPosition delta_z, DecimalPosition delta_e, DecimalPosition delta_r, DecimalPosition delta_t){
+int16_t TimeBasedInterpolator::add_move(float32_t move_velocity_per_s, uint8_t mode, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
+  return _add_move(mode, 0, move_velocity_per_s, x, y, z, e, r, t);
+}
+
+int16_t TimeBasedInterpolator::add_timed_move(float32_t move_time_s, uint8_t mode, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
+  return _add_move(mode, move_time_s, 0, x, y, z, e, r, t);
+}
+
+
+int16_t TimeBasedInterpolator::_add_move(float32_t move_time_s, uint8_t mode, float32_t move_velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
   struct motion_block new_block;
-  new_block.block_position_delta.x_mm = delta_x;
-  new_block.block_position_delta.y_mm = delta_y;
-  new_block.block_position_delta.z_mm = delta_z;
-  new_block.block_position_delta.e_mm = delta_e;
-  new_block.block_position_delta.r_mm = delta_r;
-  new_block.block_position_delta.t_rad = delta_t;
+  new_block.block_position.x_mm = x;
+  new_block.block_position.y_mm = y;
+  new_block.block_position.z_mm = z;
+  new_block.block_position.e_mm = e;
+  new_block.block_position.r_mm = r;
+  new_block.block_position.t_rad = t;
   new_block.block_time_s = move_time_s;
+  new_block.block_velocity_per_s = move_velocity_per_s;
+  switch(mode){
+    case INCREMENTAL:
+      new_block.block_type = BLOCK_TYPE_INCREMENTAL;
+      break;
+    case ABSOLUTE:
+      new_block.block_type = BLOCK_TYPE_ABSOLUTE;
+      break;
+    case GLOBAL:
+      new_block.block_type = BLOCK_TYPE_GLOBAL;
+      break;
+  }
+
   return add_block(&new_block);
 }
 
@@ -88,35 +110,63 @@ void TimeBasedInterpolator::run(){
 void TimeBasedInterpolator::pull_block(){
   //Pulls a block from the queue and configures active registers for a move
 
-  float32_t block_time_s = block_queue[next_read_index].block_time_s;
-  if(block_time_s>0){ //catch case where a 0 or negative-time block gets issued
-    active_block_id = block_queue[next_read_index].block_id;
-    active_block_type = block_queue[next_read_index].block_type;
-
-    //manually populate target distances
-    active_axes_remaining_distance_mm[TBI_AXIS_X] = block_queue[next_read_index].block_position_delta.x_mm;
-    active_axes_remaining_distance_mm[TBI_AXIS_Y] = block_queue[next_read_index].block_position_delta.y_mm;
-    active_axes_remaining_distance_mm[TBI_AXIS_Z] = block_queue[next_read_index].block_position_delta.z_mm;
-    active_axes_remaining_distance_mm[TBI_AXIS_E] = block_queue[next_read_index].block_position_delta.e_mm;
-    active_axes_remaining_distance_mm[TBI_AXIS_R] = block_queue[next_read_index].block_position_delta.r_mm;
-    active_axes_remaining_distance_mm[TBI_AXIS_T] = block_queue[next_read_index].block_position_delta.t_rad;
-    active_axes_remaining_distance_mm[TBI_AXIS_V] = 1; //virtual axis, always set to 1mm
-
-    // configure the other active move registers
-    for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes
-      float64_t axis_distance_mm = active_axes_remaining_distance_mm[axis_index];
-      if(axis_distance_mm != 0){
-        active_axes[axis_index] = TBI_AXIS_ACTIVE; //flag active axes
-        active_axes_velocity_mm_per_frame[axis_index] = (axis_distance_mm / block_time_s) * CORE_FRAME_PERIOD_S; //set velocity of each axis, in mm/frame
-      }else{
-        active_axes[axis_index] = TBI_AXIS_INACTIVE; //clear active flag
-      }
+  // Step 1: calculate remaining distance, based on mode
+  uint8_t block_type = block_queue[next_read_index].block_type;
+  if(block_type == BLOCK_TYPE_INCREMENTAL){ //INCREMENTAL positions were provided, copy directly
+    active_axes_remaining_distance_mm[TBI_AXIS_X] = block_queue[next_read_index].block_position.x_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_Y] = block_queue[next_read_index].block_position.y_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_Z] = block_queue[next_read_index].block_position.z_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_E] = block_queue[next_read_index].block_position.e_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_R] = block_queue[next_read_index].block_position.r_mm;
+    active_axes_remaining_distance_mm[TBI_AXIS_T] = block_queue[next_read_index].block_position.t_rad;
+    active_axes_remaining_distance_mm[TBI_AXIS_V] = 1; //virtual axis, always set to 1mm    
+  }else{ //ABSOLUTE OR GLOBAL positions provided
+    if(block_type == BLOCK_TYPE_GLOBAL){ //synchronize state on all positions
+      output_x.pull_deep();
+      output_y.pull_deep();
+      output_z.pull_deep();
+      output_e.pull_deep();
+      output_r.pull_deep();
+      output_t.pull_deep();
     }
-
-    slots_remaining ++; //increment slots remaining
-    advance_head(&next_read_index); //advance read head
-    in_block = 1; //flag that we are now in a block
+    active_axes_remaining_distance_mm[TBI_AXIS_X] = block_queue[next_read_index].block_position.x_mm - output_position_x;
+    active_axes_remaining_distance_mm[TBI_AXIS_Y] = block_queue[next_read_index].block_position.y_mm - output_position_y;
+    active_axes_remaining_distance_mm[TBI_AXIS_Z] = block_queue[next_read_index].block_position.z_mm - output_position_z;
+    active_axes_remaining_distance_mm[TBI_AXIS_E] = block_queue[next_read_index].block_position.e_mm - output_position_e;
+    active_axes_remaining_distance_mm[TBI_AXIS_R] = block_queue[next_read_index].block_position.r_mm - output_position_r;
+    active_axes_remaining_distance_mm[TBI_AXIS_T] = block_queue[next_read_index].block_position.t_rad - output_position_t;
+    active_axes_remaining_distance_mm[TBI_AXIS_V] = 1; //virtual axis, always set to 1mm   
   }
+
+  float32_t block_time_s = block_queue[next_read_index].block_time_s;
+  float32_t block_velocity_per_s = block_queue[next_read_index].block_velocity_per_s;
+  if(block_time_s == 0){ //velocity-based move
+    if(block_velocity_per_s > 0){ //need to calculate block time based on velocity and distance
+      float64_t move_distance = 0;
+      for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes to calc distance^2
+        move_distance += (active_axes_remaining_distance_mm[axis_index] * active_axes_remaining_distance_mm[axis_index]);
+      }
+      move_distance = std::sqrt(move_distance);
+      block_time_s = move_distance / block_velocity_per_s;
+    }else{
+      return; //both time and velocity are zero, skip block.
+    }
+  }
+
+  // configure the other active move registers
+  for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes
+    float64_t axis_distance_mm = active_axes_remaining_distance_mm[axis_index];
+    if(axis_distance_mm != 0){
+      active_axes[axis_index] = TBI_AXIS_ACTIVE; //flag active axes
+      active_axes_velocity_mm_per_frame[axis_index] = (axis_distance_mm / block_time_s) * CORE_FRAME_PERIOD_S; //set velocity of each axis, in mm/frame
+    }else{
+      active_axes[axis_index] = TBI_AXIS_INACTIVE; //clear active flag
+    }
+  }
+
+  slots_remaining ++; //increment slots remaining
+  advance_head(&next_read_index); //advance read head
+  in_block = 1; //flag that we are now in a block
 }
 
 void TimeBasedInterpolator::run_frame_on_active_block(){
@@ -144,12 +194,12 @@ void TimeBasedInterpolator::run_frame_on_active_block(){
 }
 
 void TimeBasedInterpolator::begin(){
-  output_x.begin(&output_position_x);
-  output_y.begin(&output_position_y);
-  output_z.begin(&output_position_z);
-  output_e.begin(&output_position_e);
-  output_r.begin(&output_position_r);
-  output_t.begin(&output_position_t);
+  output_x.begin(&output_position_x, BLOCKPORT_OUTPUT);
+  output_y.begin(&output_position_y, BLOCKPORT_OUTPUT);
+  output_z.begin(&output_position_z, BLOCKPORT_OUTPUT);
+  output_e.begin(&output_position_e, BLOCKPORT_OUTPUT);
+  output_r.begin(&output_position_r, BLOCKPORT_OUTPUT);
+  output_t.begin(&output_position_t, BLOCKPORT_OUTPUT);
   reset_block_queue();
   register_plugin();
 }
