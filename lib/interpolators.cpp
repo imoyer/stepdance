@@ -38,16 +38,16 @@ int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
   }
 }
 
-int16_t TimeBasedInterpolator::add_move(float32_t move_velocity_per_s, uint8_t mode, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
+int16_t TimeBasedInterpolator::add_move(uint8_t mode, float32_t move_velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
   return _add_move(mode, 0, move_velocity_per_s, x, y, z, e, r, t);
 }
 
-int16_t TimeBasedInterpolator::add_timed_move(float32_t move_time_s, uint8_t mode, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
+int16_t TimeBasedInterpolator::add_timed_move(uint8_t mode, float32_t move_time_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
   return _add_move(mode, move_time_s, 0, x, y, z, e, r, t);
 }
 
 
-int16_t TimeBasedInterpolator::_add_move(float32_t move_time_s, uint8_t mode, float32_t move_velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
+int16_t TimeBasedInterpolator::_add_move(uint8_t mode, float32_t move_time_s, float32_t move_velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t){
   struct motion_block new_block;
   new_block.block_position.x_mm = x;
   new_block.block_position.y_mm = y;

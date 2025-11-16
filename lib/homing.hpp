@@ -17,8 +17,8 @@ A part of the Mixing Metaphors Project
 #ifndef homing_h //prevent importing twice
 #define homing_h
 
-#define HOMING_DIR_FWD 1
-#define HOMING_DIR_BWD -1
+#define HOMING_DIR_FWD 1.0
+#define HOMING_DIR_BWD -1.0
 
 // --- HOMING STATE ---
 #define HOMING_AXIS_STATE_BEGIN        0   // beginning homing on the axis
@@ -59,7 +59,7 @@ class HomingAxis : public Plugin {
         uint8_t limit_switch_port_number;
         Button limit_switch_button;
         DecimalPosition value_at_limit;
-        uint8_t homing_direction;
+        int homing_direction;
         DecimalPosition homing_velocity;
 
         uint8_t current_homing_state;

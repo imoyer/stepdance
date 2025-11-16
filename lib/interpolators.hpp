@@ -53,8 +53,8 @@ class TimeBasedInterpolator : public Plugin{
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
-    int16_t add_move(float32_t velocity_per_s, uint8_t mode, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
-    int16_t add_timed_move(float32_t time_s, uint8_t mode, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
+    int16_t add_move(uint8_t mode, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
+    int16_t add_timed_move(uint8_t mode, float32_t time_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
     volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
     void begin();
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
@@ -94,7 +94,7 @@ class TimeBasedInterpolator : public Plugin{
     volatile float32_t active_axes_velocity_mm_per_frame[TBI_NUM_AXES];
     BlockPort* output_BlockPorts[TBI_NUM_AXES - 1] = {&output_x, &output_y, &output_z, &output_e, &output_r, &output_t};
     void run_frame_on_active_block(); //run a frame of the currently active block
-    int16_t _add_move(float32_t move_time_s, uint8_t mode, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
+    int16_t _add_move(uint8_t mode, float32_t move_time_s, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
     
     enum{
       BLOCK_TYPE_INCREMENTAL,

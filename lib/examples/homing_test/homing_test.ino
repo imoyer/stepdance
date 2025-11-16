@@ -56,6 +56,9 @@ Button button_d2;
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
+PositionGenerator position_gen_x;
+PositionGenerator position_gen_y;
+
 TimeBasedInterpolator tbi;
 
 Homing homing;
@@ -139,6 +142,12 @@ void setup() {
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
 
+  position_gen_x.output.map(&axidraw_kinematics.input_x);
+  position_gen_x.begin();
+
+  position_gen_y.output.map(&axidraw_kinematics.input_y);
+  position_gen_y.begin();
+
   // -- Configure Homing --
   // HomingAxis home_x(
   //   LIMIT_A,
@@ -169,7 +178,15 @@ void setup() {
 
   rpc.enroll("testValue", testValue);
   rpc.enroll("axidraw_kinematics", axidraw_kinematics);
+
+  // {"name": "home_axes"}
   rpc.enroll("home_axes", start_homing_test);
+
+  // {"name": "go_to_xy", "args": [6, 5]}
+  rpc.enroll("go_to_xy", go_to_xy);
+
+  // {"name": "draw_abs_test_shape"}
+  rpc.enroll("draw_abs_test_shape", draw_abs_test_shape);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -202,17 +219,17 @@ void pen_up(){
 void init_homing() {
   Serial.println("Init homing");
   homing.add_axis(
-  LIMIT_A,
-  // IO_D1,
-  10, // coordinate value we want to set at the limit switch
+  // LIMIT_A,
+  IO_D1,
+  50, // coordinate value we want to set at the limit switch
   HOMING_DIR_FWD,
   5, // speed at which we move to find the limit 
   &axidraw_kinematics.input_x);
 
   homing.add_axis(
-  LIMIT_B,
-  // IO_D2,
-  3.5, // coordinate value we want to set at the limit switch
+  // LIMIT_B,
+  IO_D2,
+  20, // coordinate value we want to set at the limit switch
   HOMING_DIR_FWD,
   5, // speed at which we move to find the limit 
   &axidraw_kinematics.input_y);
@@ -228,11 +245,18 @@ void start_homing_test() {
 }
 
 void draw_abs_test_shape() {
-  // tbi.add_move(1, 6, 5);
+  tbi.add_move(GLOBAL, 1, 6, 5, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
   // tbi.add_move(1, 2, 5);
   // tbi.add_move(1, 7, 1);
   // tbi.add_move(1, 0, 0);
-  
+}
+
+void go_to_xy(float x, float y, float v) {
+  // position_gen_x.go(x, GLOBAL, 1);
+  // position_gen_y.go(y, GLOBAL, 1);
+
+  tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+
 }
 
 void report_overhead(){
