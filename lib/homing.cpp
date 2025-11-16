@@ -22,7 +22,7 @@ void HomingAxis::begin()
     output.begin(&current_position, BLOCKPORT_OUTPUT);
 
     limit_switch_button.begin(limit_switch_port_number, INPUT_PULLDOWN);
-    limit_switch_button.set_mode(BUTTON_MODE_TOGGLE);
+    limit_switch_button.set_mode(BUTTON_MODE_STANDARD);
 
     // Serial.print("Address of output blockport (begin) ");
     // Serial.println(((unsigned int)&this->output));  
