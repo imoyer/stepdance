@@ -36,10 +36,10 @@ A part of the Mixing Metaphors Project
   #define OUTPUT_B_ENABLE   13
   #define OUTPUT_C_ENABLE   39
   #define OUTPUT_D_ENABLE   33
-  #define OUTPUT_A_LIMIT    29
-  #define OUTPUT_B_LIMIT    30
-  #define OUTPUT_C_LIMIT    31
-  #define OUTPUT_D_LIMIT    32
+  #define LIMIT_A           29
+  #define LIMIT_B           30
+  #define LIMIT_C           31
+  #define LIMIT_D           32
 #endif
 
 #ifdef module_legacy
@@ -65,10 +65,10 @@ A part of the Mixing Metaphors Project
   #define OUTPUT_B_ENABLE   TEENSY_PIN_NULL
   #define OUTPUT_C_ENABLE   TEENSY_PIN_NULL
   #define OUTPUT_D_ENABLE   TEENSY_PIN_NULL
-  #define OUTPUT_A_LIMIT    TEENSY_PIN_NULL
-  #define OUTPUT_B_LIMIT    TEENSY_PIN_NULL
-  #define OUTPUT_C_LIMIT    TEENSY_PIN_NULL
-  #define OUTPUT_D_LIMIT    TEENSY_PIN_NULL
+  #define LIMIT_A           TEENSY_PIN_NULL
+  #define LIMIT_B           TEENSY_PIN_NULL
+  #define LIMIT_C           TEENSY_PIN_NULL
+  #define LIMIT_D           TEENSY_PIN_NULL
 #endif
 
 // // CONFIGURATION FUNCTIONS

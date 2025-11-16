@@ -13,6 +13,7 @@
 #include "output_ports.hpp"
 #include "recording.hpp"
 #include "rpc.hpp"
+#include "homing.hpp"
 
 
 
