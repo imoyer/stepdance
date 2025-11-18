@@ -50,8 +50,8 @@ Encoder encoder_1;  // left knob, controls horizontal
 Encoder encoder_2;  // right knob, controls vertical
 
 // -- Define Input Button --
-Button button_d1;
-Button button_d2;
+// Button button_d1;
+// Button button_d2;
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
@@ -149,27 +149,9 @@ void setup() {
   position_gen_y.begin();
 
   // -- Configure Homing --
-  // HomingAxis home_x(
-  //   LIMIT_A,
-  //   0, // coordinate value we want to set at the limit switch
-  //   HOMING_DIR_FWD,
-  //   10 // speed at which we move to find the limit 
-  // );
-
-
-  // homing.add_axis(
-  //   LIMIT_A,
-  //   0, // coordinate value we want to set at the limit switch
-  //   HOMING_DIR_FWD,
-  //   10, // speed at which we move to find the limit 
-  //   &axidraw_kinematics.input_x);
-    
-  // homing.begin();
-
   init_homing();
 
   // TBI
-
   tbi.begin();
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
@@ -180,13 +162,11 @@ void setup() {
   rpc.enroll("axidraw_kinematics", axidraw_kinematics);
 
   // {"name": "home_axes"}
-  rpc.enroll("home_axes", start_homing_test);
+  rpc.enroll("home_axes", home_axes);
 
-  // {"name": "go_to_xy", "args": [6, 5]}
+  // {"name": "go_to_xy", "args": [6, 5, 10]}
+  // args are: absolute X, absolute Y, speed (mm/s)
   rpc.enroll("go_to_xy", go_to_xy);
-
-  // {"name": "draw_abs_test_shape"}
-  rpc.enroll("draw_abs_test_shape", draw_abs_test_shape);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -219,36 +199,27 @@ void pen_up(){
 void init_homing() {
   Serial.println("Init homing");
   homing.add_axis(
-  // LIMIT_A,
-  IO_D1,
-  50, // coordinate value we want to set at the limit switch
-  HOMING_DIR_FWD,
+  IO_D1, // Stepdance board port for the limit switch
+  0, // coordinate value we want to set at the limit switch
+  HOMING_DIR_BWD,
   5, // speed at which we move to find the limit 
   &axidraw_kinematics.input_x);
 
   homing.add_axis(
-  // LIMIT_B,
-  IO_D2,
-  20, // coordinate value we want to set at the limit switch
-  HOMING_DIR_FWD,
+  IO_D2, // Stepdance board port for the limit switch
+  0, // coordinate value we want to set at the limit switch
+  HOMING_DIR_BWD,
   5, // speed at which we move to find the limit 
   &axidraw_kinematics.input_y);
 
   homing.begin();
 }
 
-void start_homing_test() {
+void home_axes() {
 
   homing.start_homing_routine();
   Serial.println("start homing");
     
-}
-
-void draw_abs_test_shape() {
-  tbi.add_move(GLOBAL, 1, 6, 5, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-  // tbi.add_move(1, 2, 5);
-  // tbi.add_move(1, 7, 1);
-  // tbi.add_move(1, 0, 0);
 }
 
 void go_to_xy(float x, float y, float v) {
@@ -261,17 +232,17 @@ void go_to_xy(float x, float y, float v) {
 
 void report_overhead(){
 
-  Serial.print("button values: ");
-  Serial.print(digitalReadFast(LIMIT_A));
-  Serial.print(",");
-  Serial.print(digitalReadFast(LIMIT_B));
-  Serial.print(",");
-  Serial.print(digitalReadFast(LIMIT_C));
-  Serial.print(",");
-  Serial.print(digitalReadFast(IO_D1));
-  Serial.print(",");
-  Serial.print(digitalReadFast(IO_D2));
-  Serial.print("\n");
+  // Serial.print("button values: ");
+  // Serial.print(digitalReadFast(LIMIT_A));
+  // Serial.print(",");
+  // Serial.print(digitalReadFast(LIMIT_B));
+  // Serial.print(",");
+  // Serial.print(digitalReadFast(LIMIT_C));
+  // Serial.print(",");
+  // Serial.print(digitalReadFast(IO_D1));
+  // Serial.print(",");
+  // Serial.print(digitalReadFast(IO_D2));
+  // Serial.print("\n");
 
   Serial.print("channel A: ");
   Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);
