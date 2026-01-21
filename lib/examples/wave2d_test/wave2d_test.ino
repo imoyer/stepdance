@@ -60,6 +60,7 @@ PositionGenerator position_gen;
 
 WaveGenerator2D wave2d_gen;
 Vector2DToAngle vec2angle;
+MoveDurationToFrequency durationToFreq;
 
 TimeBasedInterpolator tbi;
 
@@ -146,6 +147,7 @@ void setup() {
   tbi.begin();
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
+  tbi.output_virtual.map(&wave2d_gen.input_t, ABSOLUTE);
 
   vec2angle.input_x.map(&tbi.output_x);
   vec2angle.input_y.map(&tbi.output_y);
@@ -156,11 +158,18 @@ void setup() {
   wave2d_gen.output_y.map(&axidraw_kinematics.input_y);
   wave2d_gen.begin();
 
+  durationToFreq.input_move_duration.map(&tbi.output_duration, ABSOLUTE);
+  durationToFreq.output_frequency.map(&wave2d_gen.input_frequency);
+  durationToFreq.target_frequency = 1.0;
+  durationToFreq.begin();
+
   // pedal
-  analog_a1.set_floor(0, 25);
-  analog_a1.set_ceiling(20, 1020); //radians per second
-  analog_a1.map(&wave2d_gen.amplitude);
-  analog_a1.begin(IO_A1);
+  // analog_a1.set_floor(0, 25);
+  // analog_a1.set_ceiling(20, 1020); //radians per second
+  // analog_a1.map(&wave2d_gen.amplitude);
+  // analog_a1.begin(IO_A1);
+
+  wave2d_gen.amplitude = 0.0;
 
   // -- Configure Homing --
   init_homing();
@@ -178,6 +187,11 @@ void setup() {
 
   // {"name": "set_noise_freq", "args": [10]}
   rpc.enroll("set_noise_freq", set_noise_freq);
+  // {"name": "set_noise_amp", "args": [10]}
+  rpc.enroll("set_noise_amp", set_noise_amp);
+
+  // {"name": "corner_test"}
+  rpc.enroll("corner_test", corner_test);
 
 
   // -- Start the stepdance library --
@@ -243,8 +257,20 @@ void go_to_xy(float x, float y, float v) {
 
 }
 
+void corner_test() {
+  tbi.add_move(GLOBAL, 10, 0, 0, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+  tbi.add_move(GLOBAL, 10, 50, 0, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+  tbi.add_move(GLOBAL, 10, 50, 30, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+
+}
+
+void set_noise_amp(float amp) {
+  wave2d_gen.amplitude = amp;
+}
+
 void set_noise_freq(float freq) {
-  wave2d_gen.frequency = freq;
+  // wave2d_gen.frequency = freq;
+  durationToFreq.target_frequency = freq;
 }
 
 void report_overhead(){
@@ -254,6 +280,8 @@ void report_overhead(){
   vec2angle.debugPrint();
 
   wave2d_gen.debugPrint();
+
+  // durationToFreq.debugPrint();
 
   // Serial.print("channel A: ");
   // Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);

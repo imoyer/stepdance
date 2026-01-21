@@ -70,6 +70,9 @@ class TimeBasedInterpolator : public Plugin{
     BlockPort output_r;
     BlockPort output_t;
 
+    BlockPort output_virtual;
+    BlockPort output_duration;
+
   private:
     // BlockPort State Variables
     DecimalPosition output_position_x;
@@ -78,6 +81,9 @@ class TimeBasedInterpolator : public Plugin{
     DecimalPosition output_position_e;
     DecimalPosition output_position_r;
     DecimalPosition output_position_t;
+
+    DecimalPosition output_position_virtual; // from 0 to 1, corresponds to progress ratio along active motion segment
+    DecimalPosition output_value_duration;
 
     struct motion_block block_queue[TBI_BLOCK_QUEUE_SIZE]; // stores all pending motion blocks
     volatile uint16_t next_write_index; //next write index in the block queue

@@ -13,8 +13,8 @@ A part of the Mixing Metaphors Project
 */
 #include "core.hpp"
 
-#ifndef geometry_h //prevent importing twice
-#define geometry_h
+#ifndef math_utils_h //prevent importing twice
+#define math_utils_h
 
 
 class Vector2DToAngle : public Plugin{
@@ -23,8 +23,6 @@ class Vector2DToAngle : public Plugin{
 
     void begin();
     void debugPrint();
-
-    // void enroll(RPC *rpc, const String& instance_name);
 
     // BlockPort input; 
     BlockPort input_x;
@@ -36,6 +34,29 @@ class Vector2DToAngle : public Plugin{
     DecimalPosition input_x_position = 0.0;
     DecimalPosition input_y_position = 0.0;
     DecimalPosition output_theta_position = 0.0;
+
+    protected:
+
+      void run();
+};
+
+class MoveDurationToFrequency : public Plugin{
+  public:
+    MoveDurationToFrequency();
+
+    volatile ControlParameter target_frequency = 1.0;
+
+    void begin();
+    void debugPrint();
+
+    // BlockPort input; 
+    BlockPort input_move_duration;
+    BlockPort output_frequency;
+
+    private:
+    // DecimalPosition input_position; 
+    DecimalPosition input_move_duration_value = 0.0;
+    DecimalPosition output_frequency_value = 0.0;
 
     protected:
 

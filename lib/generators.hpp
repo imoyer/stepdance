@@ -207,30 +207,43 @@ class WaveGenerator2D : public Plugin{
     WaveGenerator2D();
     volatile ControlParameter amplitude = 1.0;
     volatile ControlParameter phase = 0.0;
-    volatile ControlParameter frequency = 10.0;
+
+    // volatile ControlParameter frequency = 10.0; // pi
     // volatile bool no_input = false; //if set to true uses the frame value to update the output
 
     void begin();
-    // void setNoInput();
 
     void debugPrint();
 
     void enroll(RPC *rpc, const String& instance_name);
 
-    // BlockPort input; 
+    void setNoInput();
+
+
+    // This exposes the frequency as a blockport,
+    // can be useful to vary it depending on the length of the current segment
+    // I also considered making it a constant. It seems like it'd be nice to have both options
+    // maybe we need a "constant generator" to be able to plug in either a varying value or a constant
+    BlockPort input_frequency;
+    BlockPort input_t;
+
     BlockPort input_theta;
     BlockPort output_x;
     BlockPort output_y;
 
     private:
     // DecimalPosition input_position; 
+    DecimalPosition input_frequency_value;
+    DecimalPosition input_t_value;
+
     DecimalPosition input_theta_value;
     DecimalPosition output_x_position;
     DecimalPosition output_y_position;
 
+    bool no_input = false; //if set to true uses the frame value to update the output
+
     protected:
       volatile float64_t current_angle_rad = 0;
-      // volatile float64_t delta = 0;
 
       void run();
 };
