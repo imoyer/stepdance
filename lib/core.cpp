@@ -106,12 +106,18 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_input_port_frame_plugins[num_registered_input_port_frame_plugins] = this;
         num_registered_input_port_frame_plugins ++;
       }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
+      }
       break;
 
     case PLUGIN_FRAME_PRE_CHANNEL:
       if(num_registered_pre_channel_frame_plugins < MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS){
         registered_pre_channel_frame_plugins[num_registered_pre_channel_frame_plugins] = this;
         num_registered_pre_channel_frame_plugins ++;
+      }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
       }
       break;
 
@@ -120,6 +126,9 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_post_channel_frame_plugins[num_registered_post_channel_frame_plugins] = this;
         num_registered_post_channel_frame_plugins ++;
       }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
+      }
       break;
 
     case PLUGIN_KILOHERTZ:
@@ -127,12 +136,18 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_kilohertz_plugins[num_registered_kilohertz_plugins] = this;
         num_registered_kilohertz_plugins ++;
       }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
+      }
       break;
     
     case PLUGIN_LOOP:
       if(num_registered_loop_plugins < MAX_NUM_LOOP_PLUGINS){
         registered_loop_plugins[num_registered_loop_plugins] = this;
         num_registered_loop_plugins ++;
+      }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
       }
       break;
   }
