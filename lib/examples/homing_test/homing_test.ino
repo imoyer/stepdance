@@ -13,8 +13,8 @@ A part of the Mixing Metaphors Project
 
 // Machine Selection
 // Choose one of the two machines below
-#define axidraw 
-// #define pocket_plotter
+// #define axidraw 
+#define pocket_plotter
 
 #include "stepdance.hpp"  // Import the stepdance library
 // -- Define Input Ports --
@@ -43,31 +43,21 @@ Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
 KinematicsCoreXY axidraw_kinematics;
 
-// -- Define Encoders --
-// Encoders read quadrature input signals and can drive kinematics or other elements
-// We use rotary optical encoders for the two etch-a-sketch knobs
-Encoder encoder_1;  // left knob, controls horizontal
-Encoder encoder_2;  // right knob, controls vertical
-
-// -- Define Input Button --
-// Button button_d1;
-// Button button_d2;
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
-PositionGenerator position_gen_x;
-PositionGenerator position_gen_y;
-
+// -- Time based interpolator (used for testing the coordinate system) --
 TimeBasedInterpolator tbi;
 
+// -- Homing --
 Homing homing;
 
 // -- RPC Interface --
 RPC rpc;
-DecimalPosition testValue = 1.234;
 
 void setup() {
+
   // -- Configure and start the output ports --
   output_a.begin(OUTPUT_A); // "OUTPUT_A" specifies the physical port on the PCB for the output.
   output_b.begin(OUTPUT_B);
@@ -84,83 +74,42 @@ void setup() {
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.invert_output();
 
-// #ifdef axidraw
-  // channel_a.set_ratio(25.4, 2874);
-  // channel_b.set_ratio(25.4, 2874);
-// #endif
-// #ifdef pocket_plotter
+#ifdef axidraw
+  channel_a.set_ratio(25.4, 2874);
+  channel_b.set_ratio(25.4, 2874);
+#endif
+#ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
   channel_b.set_ratio(40, 3200);
-// #endif
+#endif
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
 
-  // -- Configure and start the input port --
-  input_a.begin(INPUT_A);
-  input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_x.map(&axidraw_kinematics.input_x);
-
-  input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_y.map(&axidraw_kinematics.input_y);
-
-  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_z.map(&channel_z.input_target_position);
-
-  // -- Configure and start the encoders --
-  encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
-  encoder_1.set_ratio(24, 2400);  // 24mm per revolution, where 1 rev == 2400 encoder pulses
-                                  //We're using a 600CPR encoder, which generates 4 edge transitions per cycle.
-  encoder_1.invert(); //invert the encoder direction
-  encoder_1.output.map(&axidraw_kinematics.input_x);
-
-
-  encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(24, 2400);
-  encoder_2.invert();
-  encoder_2.output.map(&axidraw_kinematics.input_y); // map the right encoder to the y axis input of the kinematics
 
   // -- Configure and start the kinematics module --
   axidraw_kinematics.begin();
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
-
-  // -- Configure Button --
-  // button_d1.begin(IO_D1, INPUT_PULLDOWN);
-  // button_d1.set_mode(BUTTON_MODE_TOGGLE);
-  // button_d1.set_callback_on_press(&init_homing);
-  // button_d1.set_callback_on_release(&pen_down);
-
-  // button_d2.begin(IO_D2, INPUT_PULLDOWN);
-  // button_d2.set_mode(BUTTON_MODE_TOGGLE);
-  // button_d2.set_callback_on_press(&start_homing_test);
-
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
 
-  position_gen_x.output.map(&axidraw_kinematics.input_x);
-  position_gen_x.begin();
-
-  position_gen_y.output.map(&axidraw_kinematics.input_y);
-  position_gen_y.begin();
-
   // -- Configure Homing --
   init_homing();
 
-  // TBI
+  // TBI (can be used to test that the homing works properly)
   tbi.begin();
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
 
   rpc.begin();
 
-  rpc.enroll("testValue", testValue);
-  rpc.enroll("axidraw_kinematics", axidraw_kinematics);
-
+  // Start the homing routine: axes will move until the limit switch button is hit
+  // See init_homing() function to configure the homing routine and axes
   // {"name": "home_axes"}
   rpc.enroll("home_axes", home_axes);
 
@@ -188,43 +137,41 @@ void pen_up(){
   position_gen.go(4, ABSOLUTE, 100);
 }
 
-// void motors_enable(){
-//   enable_drivers();
-// }
-
-// void motors_disable(){
-//   disable_drivers();
-// }
-
+// This function registers the two axes we want to home in (X and Y)
+// and provides specific info about the physical machine setup (homing button pins, home coordinates).
+// The order in which the axes are added specifies the order in which they will be homed (eg first X then Y here).
+// Note that the axes to home are workspace axes (XY) and not stepper motor axes (AB).
+// Generally, we want to home in the axes that we think of as "design" axes, those in which we want to be able to specify absolute coordinates in.
 void init_homing() {
-  Serial.println("Init homing");
-  homing.add_axis(
-  IO_D1, // Stepdance board port for the limit switch
-  0, // coordinate value we want to set at the limit switch
-  HOMING_DIR_BWD,
-  5, // speed at which we move to find the limit 
-  &axidraw_kinematics.input_x);
+  Serial.println("Initialized homing");
 
   homing.add_axis(
-  IO_D2, // Stepdance board port for the limit switch
-  0, // coordinate value we want to set at the limit switch
-  HOMING_DIR_BWD,
-  5, // speed at which we move to find the limit 
-  &axidraw_kinematics.input_y);
+  IO_D1,                         // Stepdance board port for the limit switch
+  0,                             // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                             // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_x    // Blockport corresponding to the axis to home
+  );
+
+  homing.add_axis(
+  IO_D2,                         // Stepdance board port for the limit switch
+  0,                             // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                             // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_y    // Blockport corresponding to the axis to home
+  );
 
   homing.begin();
 }
 
 void home_axes() {
-
+  // Calling this method launches the homing routine (machine will move until it hits its limit switches)
   homing.start_homing_routine();
   Serial.println("start homing");
     
 }
 
 void go_to_xy(float x, float y, float v) {
-  // position_gen_x.go(x, GLOBAL, 1);
-  // position_gen_y.go(y, GLOBAL, 1);
 
   tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
 
@@ -232,17 +179,17 @@ void go_to_xy(float x, float y, float v) {
 
 void report_overhead(){
 
-  // Serial.print("button values: ");
-  // Serial.print(digitalReadFast(LIMIT_A));
-  // Serial.print(",");
-  // Serial.print(digitalReadFast(LIMIT_B));
-  // Serial.print(",");
-  // Serial.print(digitalReadFast(LIMIT_C));
-  // Serial.print(",");
-  // Serial.print(digitalReadFast(IO_D1));
-  // Serial.print(",");
-  // Serial.print(digitalReadFast(IO_D2));
-  // Serial.print("\n");
+  Serial.println("button values (LIMIT_A, LIMIT_B, LIMIT_C, IO_D1, IO_D2):");
+  Serial.print(digitalReadFast(LIMIT_A));
+  Serial.print(",");
+  Serial.print(digitalReadFast(LIMIT_B));
+  Serial.print(",");
+  Serial.print(digitalReadFast(LIMIT_C));
+  Serial.print(",");
+  Serial.print(digitalReadFast(IO_D1));
+  Serial.print(",");
+  Serial.print(digitalReadFast(IO_D2));
+  Serial.print("\n");
 
   Serial.print("channel A: ");
   Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);
