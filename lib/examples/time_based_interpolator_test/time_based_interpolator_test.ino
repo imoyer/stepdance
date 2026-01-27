@@ -43,20 +43,11 @@ Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
 KinematicsCoreXY axidraw_kinematics;
 
-// -- Define Encoders --
-// Encoders read quadrature input signals and can drive kinematics or other elements
-// We use rotary optical encoders for the two etch-a-sketch knobs
-Encoder encoder_1;  // left knob, controls horizontal
-Encoder encoder_2;  // right knob, controls vertical
-
-// -- Define Input Button --
-// Button button_d1;
-// Button button_d2;
-
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
 TimeBasedInterpolator tbi;
+PositionGenerator perturbator_X;
 
 Homing homing;
 
@@ -118,6 +109,9 @@ void setup() {
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
 
+  perturbator_X.begin();
+  perturbator_X.output.map(&axidraw_kinematics.input_x);
+
   // -- Configure Homing --
   init_homing();
 
@@ -134,8 +128,13 @@ void setup() {
   rpc.enroll("corner_test", corner_test);
 
   // {"name": "draw_letter_h_at", "args": [10, 10]}
+  // args are: start X, start Y
   rpc.enroll("draw_letter_h_at", draw_letter_h_at);
 
+  // {"name": "perturb_x", "args": [10]}
+  // arg is: delta value of the perturbation along the X axis
+  // Use this to test how the TBI in "GLOBAL" mode recovers from the perturbations in subsequent motions
+  rpc.enroll("perturb_x", perturb_x);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -224,17 +223,13 @@ void draw_letter_h_at(float x_start, float y_start) {
   tbi.add_move(GLOBAL, 10, x_start, y_start, 0, 0, 0, 0); 
 }
 
+void perturb_x(float delta) {
+  perturbator_X.go(delta, INCREMENTAL, 10);
+}
+
 
 void report_overhead(){
-  // Serial.println(channel_z.target_position, 4);
-  // Serial.println(stepdance_get_cpu_usage(), 4);
 
-  // durationToFreq.debugPrint();
-
-  // Serial.print("channel A: ");
-  // Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);
-  // Serial.print(" channel B: ");
-  // Serial.print(channel_b.input_target_position.read(ABSOLUTE), 4);
   Serial.print(" axidraw X: ");
   Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
   Serial.print(" axidraw Y: ");

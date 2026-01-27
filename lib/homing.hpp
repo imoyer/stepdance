@@ -42,8 +42,6 @@ class HomingAxis : public Plugin {
 
         void begin();
 
-        // void run();
-
         uint8_t read_state();
 
         void start_homing_routine();
@@ -73,6 +71,12 @@ class HomingAxis : public Plugin {
 
 };
 
+/**
+ * @brief Used for running a homing routine on a machine
+ * @details The Homing plugin lets the user define a number of axes they want to home
+ * Here's an example of how to configure and run a homing routine :
+ * @snippet snippets.cpp ThresholdGenerator
+ */
 class Homing : public Plugin{
 
   public:

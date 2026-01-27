@@ -262,7 +262,6 @@ void WaveGenerator2D::debugPrint() {
 
 void WaveGenerator2D::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name + ".amplitude", amplitude);
-  rpc->enroll(instance_name + ".phase", phase);
   // rpc->enroll(instance_name + ".frequency", frequency);
 }
 

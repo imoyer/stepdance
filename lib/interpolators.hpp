@@ -31,10 +31,20 @@ A part of the Mixing Metaphors Project
 #define TBI_AXIS_T 5
 #define TBI_AXIS_V 6 //virtual axis. we use this for detecting the end of a move
 
+
+/**
+ * @brief Enables scheduling a sequence of pre-planned motions towards given coordinate points, the system will create linearly interpolating motion between the input points
+ * 
+ * For an example of how to use this class, see:
+ * @snippet snippets.cpp TimeBasedInterpolator
+ */
 class TimeBasedInterpolator : public Plugin{
   public:
     TimeBasedInterpolator();
     
+    /** \cond
+     * hidden from Doxygen. Currently we don't expose the option for users to create their own motion blocks and add them, they can use add_move and add_timed_move
+     */
     struct position{
       float64_t x_mm; // X
       float64_t y_mm; // Y
@@ -53,24 +63,108 @@ class TimeBasedInterpolator : public Plugin{
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
+    /** \endcond */
+
+    /**
+     * @brief Add a move to the list of moves the interpolator will perform (indicate target velocity).
+     * @param mode The mode of operation: INCREMENTAL, ABSOLUTE or GLOBAL.
+     * @param velocity_per_s The velocity of motion
+     * @param x Target x position for the move
+     * @param y Target y position for the move
+     * @param z Target z position for the move
+     * @param e Target e position for the move
+     * @param r Target r position for the move
+     * @param t Target t position for the move
+     */
     int16_t add_move(uint8_t mode, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
+
+    /**
+     * @brief Add a move to the list of moves the interpolator will perform (indicate motion time).
+     * @param mode The mode of operation: INCREMENTAL, ABSOLUTE or GLOBAL.
+     * @param time_s The duration of the move
+     * @param x Target x position for the move
+     * @param y Target y position for the move
+     * @param z Target z position for the move
+     * @param e Target e position for the move
+     * @param r Target r position for the move
+     * @param t Target t position for the move
+     */
     int16_t add_timed_move(uint8_t mode, float32_t time_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
+
+    /**
+     * @brief ControlParameter specifying a multiplicative modifier for the interpolator speed
+     */
     volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
+
+    /**
+     * @brief Initialize the time-based interpolator. This must be called to set up the interpolator.
+     */
     void begin();
+
+    /** \cond
+     * hidden from Doxygen.
+     */
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
+    /** \endcond */
+
     bool is_idle(); //returns true if the interpolator is idle
     bool queue_is_full();
+
+    /**
+     * \cond
+     * Hidden from Doxygen: enrollment for RPC exposure.
+     */
     void enroll(RPC *rpc, const String& instance_name);
+    /** \endcond */
     
     // BlockPorts
+    /**
+     * @brief Output BlockPort for the generated position signal on axis X.
+     * @code
+     * tbi.output_x.map(&kinematics.input_x); // Control the X axis of a machine
+     * @endcode
+     */
     BlockPort output_x;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis Y.
+     * @code
+     * tbi.output_y.map(&kinematics.input_y); // Control the Y axis of a machine
+     * @endcode
+     */
     BlockPort output_y;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis Z.
+     */
     BlockPort output_z;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis E.
+     */
     BlockPort output_e;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis R.
+     */
     BlockPort output_r;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis T.
+     */
     BlockPort output_t;
 
-    BlockPort output_virtual;
+    /**
+     * @brief Output BlockPort for the generated position signal of a parameter in [0, 1] range.
+     * The parameter varies from 0 to 1 along each linear segment corresponding to a single move.
+     */
+    BlockPort output_parameter;
+
+    /**
+     * @brief Output BlockPort for the duration of the active move.
+     * Indicates the time the entire move is scheduled to take.
+     * This is useful to plan parallel motion that we want to happen *during* moves.
+     */
     BlockPort output_duration;
 
   private:
@@ -82,7 +176,7 @@ class TimeBasedInterpolator : public Plugin{
     DecimalPosition output_position_r;
     DecimalPosition output_position_t;
 
-    DecimalPosition output_position_virtual; // from 0 to 1, corresponds to progress ratio along active motion segment
+    DecimalPosition output_position_parameter;
     DecimalPosition output_value_duration;
 
     struct motion_block block_queue[TBI_BLOCK_QUEUE_SIZE]; // stores all pending motion blocks

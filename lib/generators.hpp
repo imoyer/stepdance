@@ -201,22 +201,41 @@ class WaveGenerator1D : public Plugin{
       void run();
 };
 
-
+/**
+ * @brief Used for generating a 2D sinusoidal waveform signal along a given 2D direction.
+ * @ingroup generators
+ * 
+ * A WaveGenerator2D produces a sinusoidal waveform output based on 
+ * an input 2D direction (provided as an angle input_theta).
+ * It allows control over amplitude, phase, and frequency, making it useful for generating or modifying motion signals with an oscillation.
+ * Here's an example of how to instantiate and configure a WaveGenerator2D:
+ * @snippet snippets.cpp WaveGenerator2D
+ */
 class WaveGenerator2D : public Plugin{
   public:
     WaveGenerator2D();
+    /**
+     * @brief Wave amplitude
+     */
     volatile ControlParameter amplitude = 1.0;
-    volatile ControlParameter phase = 0.0;
+    // volatile ControlParameter frequency = 10.0; // I set this up as a blockport below to be able to pass in variable values
 
-    // volatile ControlParameter frequency = 10.0; // pi
-    // volatile bool no_input = false; //if set to true uses the frame value to update the output
-
+    /**
+     * @brief Initialize the time-based interpolator. This must be called to set up the interpolator.
+     */
     void begin();
 
+    /**
+     * \cond
+     * Hidden from Doxygen.
+     */
     void debugPrint();
-
     void enroll(RPC *rpc, const String& instance_name);
+    /** \endcond */
 
+    /**
+     * @brief Call to configure the wave generator to not need/user input_t and instead just base the wave parameter on system clock.
+     */
     void setNoInput();
 
 
@@ -224,23 +243,68 @@ class WaveGenerator2D : public Plugin{
     // can be useful to vary it depending on the length of the current segment
     // I also considered making it a constant. It seems like it'd be nice to have both options
     // maybe we need a "constant generator" to be able to plug in either a varying value or a constant
+    /**
+     * @brief Input BlockPort to map a variable wave frequency value.
+     * @code
+     * // Using the MoveDurationToFrequency utility plugin (durationToFreq), 
+     * // compute the closest matching frequency to the target frequency (1.0)
+     * // such that we obtain an integer number of half-periods over 
+     * // the entire current move segment from the TimeBasedInterpolator (tbi)
+     * durationToFreq.input_move_duration.map(&tbi.output_duration, ABSOLUTE);
+     * durationToFreq.output_frequency.map(&wave2d_gen.input_frequency);
+     * durationToFreq.target_frequency = 1.0;
+     * @endcode
+     */
     BlockPort input_frequency;
+
+    /**
+     * @brief Input BlockPort to map a parameter that will be used to compute the wave.
+     * @code
+     * // map the parameterization of a TimeBasedInterpolator motion 
+     * // to the parameter used to compute the wave2D function
+     * tbi.output_parameter.map(&wave2d_gen.input_t, ABSOLUTE);
+     * @endcode
+     */
     BlockPort input_t;
 
+    /**
+     * @brief Input BlockPort to map the desired 2D orientation of the wave.
+     * This is given as an angle in radians, indicating the desired orientation of the horizontal axis of the wave on the 2D plane.
+     * @code
+     * // Convert the XY vector given by the TimeBasedInterpolator motion into an angle, 
+     * // and pass it to the WaveGenerator2D to set the direction of the wave to match that of the TBI move.
+     * vec2angle.input_x.map(&tbi.output_x);
+     * vec2angle.input_y.map(&tbi.output_y);
+     * vec2angle.output_theta.map(&wave2d_gen.input_theta, ABSOLUTE);
+     * @endcode
+     */
     BlockPort input_theta;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis X.
+     * @code
+     * wave2d_gen.output_x.map(&kinematics.input_x); // Control the X axis of a machine
+     * @endcode
+     */
     BlockPort output_x;
+
+    /**
+     * @brief Output BlockPort for the generated position signal on axis Y.
+     * @code
+     * wave2d_gen.output_y.map(&kinematics.input_y); // Control the Y axis of a machine
+     * @endcode
+     */
     BlockPort output_y;
 
     private:
-    // DecimalPosition input_position; 
-    DecimalPosition input_frequency_value;
-    DecimalPosition input_t_value;
+      DecimalPosition input_frequency_value;
+      DecimalPosition input_t_value;
 
-    DecimalPosition input_theta_value;
-    DecimalPosition output_x_position;
-    DecimalPosition output_y_position;
+      DecimalPosition input_theta_value;
+      DecimalPosition output_x_position;
+      DecimalPosition output_y_position;
 
-    bool no_input = false; //if set to true uses the frame value to update the output
+      bool no_input = false; //if set to true uses the frame value to update the output
 
     protected:
       volatile float64_t current_angle_rad = 0;
