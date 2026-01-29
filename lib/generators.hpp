@@ -387,7 +387,7 @@ class PositionGenerator : public Plugin{
     /**
      * @brief Command the PositionGenerator to move to a specified distance or position with a specified speed.
      * @param distance_or_position The target distance (incremental) or position (absolute).
-     * @param mode The mode of operation: INCREMENTAL, ABSOLUTE, or GLOBAL
+     * @param mode The mode of operation: INCREMENTAL or ABSOLUTE.
      * @param speed The speed in units per second.
      */
     void go(float64_t distance_or_position, uint8_t mode, ControlParameter speed);
@@ -443,29 +443,23 @@ class PathLengthGenerator2D : public Plugin{
      * @param ratio The proportionality constant (output / input).
      */
     void set_ratio(ControlParameter ratio);
-    inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
+    /**
+     * @brief Set the ratio between output distance and input path length.
+     * @param output_distance The desired output distance.
+     * @param input_distance The corresponding input path length.
+     */
+    inline void set_ratio(ControlParameter output_distance, 
+      ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }
     /**
-     * @brief Configure the generator for circular motion (e.g., from CircleGenerator).
-     * Sets the ratio so that the output advances by the specified distance per complete revolution.
-     * @param circle_radius The radius of the circle being traced by the inputs.
-     * @param output_per_revolution Distance the output should advance per full circle (e.g., 1.0 for 1mm per revolution).
-     * 
-     * For example, to move Z-axis 1mm for each complete circle of radius 10mm:
-     * @code
-     * path_gen.set_ratio_for_circle(10.0, 1.0);
-     * @endcode
-     */
-    void set_ratio_for_circle(ControlParameter circle_radius, ControlParameter output_per_revolution);
-    /**
      * \cond
      * Hidden from Doxygen: enrollment for RPC exposure.
-     */
+     */   
     void enroll(RPC *rpc, const String& instance_name);
     /** \endcond */
     /**
-     * @brief ControlParameter scaling output relative to input path length (output/input).
+     * @brief ControlParameter scaling output relative to input path length (output/input).   
      */
     ControlParameter ratio = 1.0; // output / input
     // BlockPorts
@@ -519,6 +513,11 @@ class PathLengthGenerator3D : public Plugin{
      * @param ratio The proportionality constant (output / input).
      */
     void set_ratio(ControlParameter ratio);
+    /**
+     * @brief Set the ratio between output distance and input path length.
+     * @param output_distance The desired output distance.
+     * @param input_distance The corresponding input path length.
+     */
     inline void set_ratio(ControlParameter output_distance, ControlParameter input_distance){
       set_ratio(output_distance / input_distance);
     }

@@ -30,7 +30,10 @@ A part of the Mixing Metaphors Project
 #define TBI_AXIS_R 4
 #define TBI_AXIS_T 5
 #define TBI_AXIS_V 6 //virtual axis. we use this for detecting the end of a move
-
+/** 
+ * \cond
+ * These definitions will be hidden from Doxygen documentation.
+ */
 class TimeBasedInterpolator : public Plugin{
   public:
     TimeBasedInterpolator();
@@ -48,13 +51,11 @@ class TimeBasedInterpolator : public Plugin{
       uint8_t block_type; //specifies which type of block this is (e.g. delay, absolute, relative, set position, etc...). We don't currently use this.
       uint32_t block_id; //an ID # for the motion block
       float32_t block_time_s; //total time for the block, in seconds. We'll later convert this to frames, but keep it in seconds here for legibility.
-      float32_t block_velocity_per_s;
-      struct position block_position;
+      struct position block_position_delta;
     };
 
     int16_t add_block(struct motion_block* block_to_add); //adds a block to the queue
-    int16_t add_move(uint8_t mode, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
-    int16_t add_timed_move(uint8_t mode, float32_t time_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
+    int16_t add_move(float32_t move_time_s, DecimalPosition delta_x, DecimalPosition delta_y, DecimalPosition delta_z, DecimalPosition delta_e, DecimalPosition delta_r, DecimalPosition delta_t); //generates a move and adds to queue
     volatile ControlParameter speed_overide = 1; //modifier for the interpolator speed.
     void begin();
     volatile uint16_t slots_remaining; //number of slots remaining in block queue
@@ -94,16 +95,9 @@ class TimeBasedInterpolator : public Plugin{
     volatile float32_t active_axes_velocity_mm_per_frame[TBI_NUM_AXES];
     BlockPort* output_BlockPorts[TBI_NUM_AXES - 1] = {&output_x, &output_y, &output_z, &output_e, &output_r, &output_t};
     void run_frame_on_active_block(); //run a frame of the currently active block
-    int16_t _add_move(uint8_t mode, float32_t move_time_s, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
-    
-    enum{
-      BLOCK_TYPE_INCREMENTAL,
-      BLOCK_TYPE_ABSOLUTE,
-      BLOCK_TYPE_GLOBAL
-    };
-
+  
   protected:
     void run();
 };
-
+/** \endcond */
 #endif
