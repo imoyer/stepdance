@@ -489,7 +489,7 @@ void PathLengthGenerator3D::enroll(RPC *rpc, const String& instance_name){
 }
 
 
-SerialConnectionGenerator::SerialConnectionGenerator(){};
+
 SerialControlTrack::SerialControlTrack(){};
 
 void SerialControlTrack::begin() {
@@ -542,8 +542,6 @@ void SerialControlTrack::begin() {
 // }
 
 void SerialControlTrack::run() {
-
-
 
   output.set(current_target_velocity, INCREMENTAL);
   output.push();
