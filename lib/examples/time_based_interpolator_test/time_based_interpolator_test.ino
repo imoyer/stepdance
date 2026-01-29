@@ -43,21 +43,17 @@ Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
 KinematicsCoreXY axidraw_kinematics;
 
-
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
-// -- Time based interpolator (used for testing the coordinate system) --
 TimeBasedInterpolator tbi;
+PositionGenerator perturbator_X;
 
-// -- Homing --
 Homing homing;
 
-// -- RPC Interface --
 RPC rpc;
 
 void setup() {
-
   // -- Configure and start the output ports --
   output_a.begin(OUTPUT_A); // "OUTPUT_A" specifies the physical port on the PCB for the output.
   output_b.begin(OUTPUT_B);
@@ -88,34 +84,57 @@ void setup() {
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
 
+  // -- Configure and start the input port --
+  input_a.begin(INPUT_A);
+  input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_x.map(&axidraw_kinematics.input_x);
+
+  input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_y.map(&axidraw_kinematics.input_y);
+
+  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_a.output_z.map(&channel_z.input_target_position);
 
   // -- Configure and start the kinematics module --
   axidraw_kinematics.begin();
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
+
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
 
-  // -- Configure Homing --
-  init_homing();
-
-  // TBI (can be used to test that the homing works properly)
   tbi.begin();
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
 
+  perturbator_X.begin();
+  perturbator_X.output.map(&axidraw_kinematics.input_x);
+
+  // -- Configure Homing --
+  init_homing();
+
   rpc.begin();
 
-  // Start the homing routine: axes will move until the limit switch button is hit
-  // See init_homing() function to configure the homing routine and axes
   // {"name": "home_axes"}
   rpc.enroll("home_axes", home_axes);
 
   // {"name": "go_to_xy", "args": [6, 5, 10]}
   // args are: absolute X, absolute Y, speed (mm/s)
   rpc.enroll("go_to_xy", go_to_xy);
+
+  // {"name": "corner_test"}
+  rpc.enroll("corner_test", corner_test);
+
+  // {"name": "draw_letter_h_at", "args": [10, 10]}
+  // args are: start X, start Y
+  rpc.enroll("draw_letter_h_at", draw_letter_h_at);
+
+  // {"name": "perturb_x", "args": [10]}
+  // arg is: delta value of the perturbation along the X axis
+  // Use this to test how the TBI in "GLOBAL" mode recovers from the perturbations in subsequent motions
+  rpc.enroll("perturb_x", perturb_x);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -126,6 +145,7 @@ LoopDelay overhead_delay;
 
 void loop() {
   overhead_delay.periodic_call(&report_overhead, 500);
+
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
@@ -137,68 +157,82 @@ void pen_up(){
   position_gen.go(4, ABSOLUTE, 100);
 }
 
-// This function registers the two axes we want to home in (X and Y)
-// and provides specific info about the physical machine setup (homing button pins, home coordinates).
-// The order in which the axes are added specifies the order in which they will be homed (eg first X then Y here).
-// Note that the axes to home are workspace axes (XY) and not stepper motor axes (AB).
-// Generally, we want to home in the axes that we think of as "design" axes, those in which we want to be able to specify absolute coordinates in.
+void motors_enable(){
+  enable_drivers();
+}
+
+void motors_disable(){
+  disable_drivers();
+}
+
 void init_homing() {
-  Serial.println("Initialized homing");
+  Serial.println("Init homing");
+  homing.add_axis(
+  IO_D1, // Stepdance board port for the limit switch
+  0, // coordinate value we want to set at the limit switch
+  HOMING_DIR_BWD,
+  5, // speed at which we move to find the limit 
+  &axidraw_kinematics.input_x);
 
   homing.add_axis(
-  IO_D1,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_x    // Blockport corresponding to the axis to home
-  );
-
-  homing.add_axis(
-  IO_D2,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_y    // Blockport corresponding to the axis to home
-  );
+  IO_D2, // Stepdance board port for the limit switch
+  0, // coordinate value we want to set at the limit switch
+  HOMING_DIR_BWD,
+  5, // speed at which we move to find the limit 
+  &axidraw_kinematics.input_y);
 
   homing.begin();
 }
 
 void home_axes() {
-  // Calling this method launches the homing routine (machine will move until it hits its limit switches)
+
   homing.start_homing_routine();
   Serial.println("start homing");
     
 }
 
 void go_to_xy(float x, float y, float v) {
+  // position_gen_x.go(x, GLOBAL, 1);
+  // position_gen_y.go(y, GLOBAL, 1);
 
   tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
 
 }
 
+void corner_test() {
+  tbi.add_move(GLOBAL, 10, 0, 0, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+  tbi.add_move(GLOBAL, 10, 50, 0, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+  tbi.add_move(GLOBAL, 10, 50, 30, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+
+}
+
+void draw_letter_h_at(float x_start, float y_start) {
+  // Coordinates will draw a capital letter H
+  tbi.add_move(GLOBAL, 10, x_start, y_start, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+  tbi.add_move(GLOBAL, 10, x_start + 10, y_start, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 10, y_start + 20, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 30, y_start + 20, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 30, y_start, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 40, y_start, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 40, y_start + 50, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 30, y_start + 50, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 30, y_start + 30, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 10, y_start + 30, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start + 10, y_start + 50, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start, y_start + 50, 0, 0, 0, 0); 
+  tbi.add_move(GLOBAL, 10, x_start, y_start, 0, 0, 0, 0); 
+}
+
+void perturb_x(float delta) {
+  perturbator_X.go(delta, INCREMENTAL, 10);
+}
+
+
 void report_overhead(){
 
-  Serial.println("button values (LIMIT_A, LIMIT_B, LIMIT_C, IO_D1, IO_D2):");
-  Serial.print(digitalReadFast(LIMIT_A));
-  Serial.print(",");
-  Serial.print(digitalReadFast(LIMIT_B));
-  Serial.print(",");
-  Serial.print(digitalReadFast(LIMIT_C));
-  Serial.print(",");
-  Serial.print(digitalReadFast(IO_D1));
-  Serial.print(",");
-  Serial.print(digitalReadFast(IO_D2));
-  Serial.print("\n");
-
-  Serial.print("channel A: ");
-  Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);
-  Serial.print(" channel B: ");
-  Serial.print(channel_b.input_target_position.read(ABSOLUTE), 4);
   Serial.print(" axidraw X: ");
   Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
-    Serial.print(" axidraw Y: ");
+  Serial.print(" axidraw Y: ");
   Serial.print(axidraw_kinematics.input_y.read(ABSOLUTE), 4);
   Serial.print("\n");
-  // Serial.println(stepdance_get_cpu_usage(), 4);
 }

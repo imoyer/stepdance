@@ -153,6 +153,13 @@ void TimeBasedInterpolator::pull_block(){
     }
   }
 
+  // Expose the active block time to other plugins
+  output_duration.set(block_time_s, ABSOLUTE);
+  output_duration.push();
+
+  output_parameter.set(0, ABSOLUTE);
+  output_parameter.push();
+
   // configure the other active move registers
   for(uint8_t axis_index = 0; axis_index < TBI_NUM_AXES; axis_index++){ //iterate over all axes
     float64_t axis_distance_mm = active_axes_remaining_distance_mm[axis_index];
@@ -191,6 +198,10 @@ void TimeBasedInterpolator::run_frame_on_active_block(){
       output_BlockPorts[axis_index]->push();
     }
   }  
+
+  // Update the virtual axis value
+  output_parameter.set(1.0 - active_axes_remaining_distance_mm[TBI_AXIS_V], ABSOLUTE);
+  output_parameter.push();
 }
 
 void TimeBasedInterpolator::begin(){
@@ -200,6 +211,10 @@ void TimeBasedInterpolator::begin(){
   output_e.begin(&output_position_e, BLOCKPORT_OUTPUT);
   output_r.begin(&output_position_r, BLOCKPORT_OUTPUT);
   output_t.begin(&output_position_t, BLOCKPORT_OUTPUT);
+
+  output_parameter.begin(&output_position_parameter, BLOCKPORT_OUTPUT);
+  output_duration.begin(&output_value_duration, BLOCKPORT_OUTPUT);
+
   reset_block_queue();
   register_plugin();
 }

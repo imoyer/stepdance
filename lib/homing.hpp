@@ -17,6 +17,8 @@ A part of the Mixing Metaphors Project
 #ifndef homing_h //prevent importing twice
 #define homing_h
 
+#define MAX_NUM_AXES   5
+
 #define HOMING_DIR_FWD 1.0
 #define HOMING_DIR_BWD -1.0
 
@@ -39,8 +41,6 @@ class HomingAxis : public Plugin {
         );
 
         void begin();
-
-        // void run();
 
         uint8_t read_state();
 
@@ -71,6 +71,12 @@ class HomingAxis : public Plugin {
 
 };
 
+/**
+ * @brief Used for running a homing routine on a machine
+ * @details The Homing plugin lets the user define a number of axes they want to home
+ * Here's an example of how to configure and run a homing routine :
+ * @snippet snippets.cpp ThresholdGenerator
+ */
 class Homing : public Plugin{
 
   public:
@@ -88,7 +94,7 @@ class Homing : public Plugin{
     void start_homing_routine();
 
   private:
-    HomingAxis axes[3];
+    HomingAxis axes[MAX_NUM_AXES];
     int nb_axes = 0;
     int axis_currently_homing = -1;
     DecimalPosition speed;

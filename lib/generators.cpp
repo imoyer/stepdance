@@ -179,38 +179,91 @@ void WaveGenerator1D::enroll(RPC *rpc, const String& instance_name){
 }
 
 
-/*WaveGenerator2D::WaveGenerator2D(){};
+WaveGenerator2D::WaveGenerator2D(){};
 
 void WaveGenerator2D::begin(){
-  input.begin(&input_position);
+  // input.begin(&input_position);
+  input_frequency.begin(&input_frequency_value);
+  input_theta.begin(&input_theta_value);
   output_x.begin(&output_x_position);
   output_y.begin(&output_y_position);
 
   register_plugin();
 }
 
-void WaveGenerator2D::debugPrint(){
-
+void WaveGenerator2D::setNoInput(){
+  no_input = true;
 }
 
 void WaveGenerator2D::run(){
-  input.pull();
-  input.update();
-  
-  float64_t delta_angle_rad = frequency * input.incremental_buffer;
-  current_angle_rad += delta_angle_rad;
+
+  input_frequency.pull();
+  input_frequency.update();
+
+  input_theta.pull();
+  input_theta.update();
+
+  input_t.pull();
+  input_t.update();
+
+  float64_t frequency = input_frequency.absolute_buffer;
+
+  // float64_t current_angle_rad;
+  if(no_input){
+    float64_t delta_angle_rad = frequency * CORE_FRAME_PERIOD_S;
+    current_angle_rad += delta_angle_rad;
+  }
+  else{
+    // We multiply by PI so that we ensure a whole number of half-waves
+    // This is necessary to gracefully end back on the motion segment again
+    current_angle_rad = 3.1415 * frequency * input_t.absolute_buffer;
+  }
+  // float64_t delta_angle_rad = frequency * CORE_FRAME_PERIOD_S;
 
   if(current_angle_rad > (2*PI)){ //let's keep the angle values small
      current_angle_rad -= 2*PI;
   }
-  float64_t delta_x = amplitude * delta_angle_rad * std::cos(current_angle_rad);
-  float64_t delta_y = amplitude * delta_angle_rad * std::sin(current_angle_rad);
 
-  output_x.set(delta_x,INCREMENTAL);
+  // float64_t u = amplitude * std::cos(current_angle_rad);
+  float64_t v = amplitude * std::sin(current_angle_rad);
+
+  // This would create circles
+  // float64_t delta_x = u * std::cos(input_theta.absolute_buffer) - v * std::sin(input_theta.absolute_buffer);
+  // float64_t delta_y = u * std::sin(input_theta.absolute_buffer) + v * std::cos(input_theta.absolute_buffer);
+
+  // This creates waves along the specified input direction
+  float64_t delta_x = - v * std::sin(input_theta.absolute_buffer);
+  float64_t delta_y = v * std::cos(input_theta.absolute_buffer);
+
+  output_x.set(delta_x,ABSOLUTE);
   output_x.push();
-  output_y.set(delta_y,INCREMENTAL);
+  output_y.set(delta_y,ABSOLUTE);
   output_y.push();
-}*/
+}
+
+void WaveGenerator2D::debugPrint() {
+  Serial.print("current angle: ");
+  Serial.print(current_angle_rad);
+  Serial.print(" current u: ");
+  Serial.print(amplitude * std::cos(current_angle_rad));
+  Serial.print(" input_theta: ");
+  Serial.print(input_theta.read(ABSOLUTE));
+  Serial.print(",");
+  Serial.print(" amplitude: ");
+  Serial.print(amplitude);
+  Serial.print(", freq: ");
+  // Serial.print(frequency);
+  Serial.print(input_frequency.read(ABSOLUTE));
+  Serial.print(", output read: ");
+  Serial.print(output_x.read(ABSOLUTE));
+  Serial.print(",");
+  Serial.println(output_y.read(ABSOLUTE));
+}
+
+void WaveGenerator2D::enroll(RPC *rpc, const String& instance_name){
+  rpc->enroll(instance_name + ".amplitude", amplitude);
+  // rpc->enroll(instance_name + ".frequency", frequency);
+}
 
 
 CircleGenerator::CircleGenerator(){};
