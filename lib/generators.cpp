@@ -340,7 +340,7 @@ void VelocityGenerator::enroll(RPC *rpc, const String& instance_name){
 PositionGenerator::PositionGenerator(){};
 
 void PositionGenerator::begin(){
-  output.begin(&current_position, BLOCKPORT_OUTPUT); //configure input transmission as interface to target_position
+  output.begin(&current_position); //configure input transmission as interface to target_position
   register_plugin();
 }
 
@@ -354,17 +354,10 @@ void PositionGenerator::go(float64_t distance_or_position, uint8_t mode){
 
 void PositionGenerator::go(float64_t distance_or_position, uint8_t mode, ControlParameter speed){
   speed_units_per_sec = speed;
-  switch(mode){
-    case INCREMENTAL:
-      target_position += distance_or_position;
-      break;
-    case ABSOLUTE:
-      target_position = distance_or_position;
-      break;
-    case GLOBAL:
-      output.pull_deep();
-      target_position = distance_or_position;
-      break;
+  if(mode == INCREMENTAL){
+    target_position += distance_or_position;
+  }else{ //ABSOLUTE
+    target_position = distance_or_position;
   }
 }
 
@@ -414,14 +407,6 @@ void PathLengthGenerator2D::set_ratio(ControlParameter ratio){
   this->ratio = ratio;
 }
 
-void PathLengthGenerator2D::set_ratio_for_circle(ControlParameter circle_radius, ControlParameter output_per_revolution){
-  // For a circle with radius r, one complete revolution traces a circumference of 2πr
-  // To move output_per_revolution distance for each full circle, the ratio should be:
-  // ratio = output_per_revolution / (2 * π * circle_radius)
-  float64_t circumference = 2.0 * PI * circle_radius;
-  this->ratio = output_per_revolution / circumference;
-}
-
 void PathLengthGenerator2D::run(){
   input_1.pull();
   input_2.pull();
@@ -439,7 +424,6 @@ void PathLengthGenerator2D::run(){
 
 void PathLengthGenerator2D::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "set_ratio", *this, static_cast<void(PathLengthGenerator2D::*)(ControlParameter, ControlParameter)>(&PathLengthGenerator2D::set_ratio));
-  rpc->enroll(instance_name, "set_ratio_for_circle", *this, &PathLengthGenerator2D::set_ratio_for_circle);
   input_1.enroll(rpc, instance_name + ".input_1");
   input_2.enroll(rpc, instance_name + ".input_2");
   output.enroll(rpc, instance_name + ".output");

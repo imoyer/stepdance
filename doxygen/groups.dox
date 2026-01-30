@@ -82,10 +82,3 @@
  * Components for enabling remote procedure calls to control Stepdance
  * systems via serial communication or other interfaces.
  */
-
-/**
- * @defgroup utilities Utilities
- * @brief Helper functions and utilities
- *
- * Miscellaneous utility functions and helper classes.
- */
