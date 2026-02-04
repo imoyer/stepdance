@@ -1014,7 +1014,8 @@ INPUT                  = doc \
                          lib/interpolators.hpp \
                          lib/kinematics.hpp \
                          lib/recording.hpp \
-                         lib/rpc.hpp
+                         lib/rpc.hpp \
+                         lib/homing.hpp
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
