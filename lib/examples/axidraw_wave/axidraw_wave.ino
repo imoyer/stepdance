@@ -1,5 +1,8 @@
 /*
-Step-A-Sketch: A digital etch-a-sketch
+AxiDraw Interface
+
+This extends the Step-A-Sketch demo with an InkScape interface that simulates the AxiDraw's
+EBB Control Board.
 
 Example project for the Stepdance control system.
 
@@ -38,10 +41,23 @@ Channel channel_a;  //AxiDraw "A" axis --> left motor motion
 Channel channel_b;  // AxiDraw "B" axis --> right motor motion
 Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 
+// -- AxiDraw Interface
+Eibotboard ebb_interface;
+
 // -- Define Kinematics --
 // Kinematics convert between two coordinate spaces.
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
 KinematicsCoreXY axidraw_kinematics;
+
+// -- Define Encoders --
+// Encoders read quadrature input signals and can drive kinematics or other elements
+// We use rotary optical encoders for the two etch-a-sketch knobs
+Encoder encoder_1;  // left knob, controls horizontal
+Encoder encoder_2;  // right knob, controls vertical
+
+// -- Define Input Button --
+Button button_d1;
+Button button_d2;
 
 // -- Define Inputs --
 AnalogInput analog_a1; // foot pedal controlling the wave amplitude
@@ -49,16 +65,15 @@ AnalogInput analog_a1; // foot pedal controlling the wave amplitude
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
+
 // -- Wave 2D Generator and utility functions --
 WaveGenerator2D wave2d_gen;
 Vector2DToAngle vec2angle;
 MoveDurationToFrequency durationToFreq;
 
-TimeBasedInterpolator tbi;
-
-Homing homing;
-
-RPC rpc;
+// -- Utils --
+// Homing homing;
+// RPC rpc;
 
 void setup() {
   // -- Configure and start the output ports --
@@ -102,35 +117,60 @@ void setup() {
   input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
   input_a.output_z.map(&channel_z.input_target_position);
 
+  // -- Configure and start the encoders --
+  encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
+  encoder_1.set_ratio(24, 2400);  // 24mm per revolution, where 1 rev == 2400 encoder pulses
+                                  //We're using a 600CPR encoder, which generates 4 edge transitions per cycle.
+  encoder_1.invert(); //invert the encoder direction
+  encoder_1.output.map(&axidraw_kinematics.input_x);
+
+
+  encoder_2.begin(ENCODER_2);
+  encoder_2.set_ratio(24, 2400);
+  encoder_2.invert();
+  encoder_2.output.map(&axidraw_kinematics.input_y); // map the right encoder to the y axis input of the kinematics
+
+  // -- Configure and start EBB Interface --
+  ebb_interface.begin();
+  ebb_interface.output_x.map(&axidraw_kinematics.input_x);
+  ebb_interface.output_y.map(&axidraw_kinematics.input_y);
+  ebb_interface.output_z.map(&channel_z.input_target_position);
+
   // -- Configure and start the kinematics module --
   axidraw_kinematics.begin();
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
 
+  // -- Configure Button --
+  button_d1.begin(IO_D1, INPUT_PULLDOWN);
+  button_d1.set_mode(BUTTON_MODE_TOGGLE);
+  button_d1.set_callback_on_press(&pen_up);
+  button_d1.set_callback_on_release(&pen_down);
+
+  button_d2.begin(IO_D2, INPUT_PULLDOWN);
+  button_d2.set_mode(BUTTON_MODE_TOGGLE);
+  button_d2.set_callback_on_press(&motors_enable);
+  button_d2.set_callback_on_release(&motors_disable);
+
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
 
-  tbi.begin();
-  tbi.output_x.map(&axidraw_kinematics.input_x);
-  tbi.output_y.map(&axidraw_kinematics.input_y);
-
   // -- Configure wave 2D generator --
-
-  vec2angle.input_x.map(&tbi.output_x);
-  vec2angle.input_y.map(&tbi.output_y);
+  ebb_interface.output_parameter.map(&wave2d_gen.input_t, ABSOLUTE);
+  vec2angle.input_x.map(&ebb_interface.output_x);
+  vec2angle.input_y.map(&ebb_interface.output_y);
   vec2angle.output_theta.map(&wave2d_gen.input_theta, ABSOLUTE);
   vec2angle.begin();
 
   wave2d_gen.output_x.map(&axidraw_kinematics.input_x);
   wave2d_gen.output_y.map(&axidraw_kinematics.input_y);
-  wave2d_gen.input_t.map(&tbi.output_parameter, ABSOLUTE);
   wave2d_gen.begin();
 
-  durationToFreq.input_move_duration.map(&tbi.output_duration, ABSOLUTE);
+  durationToFreq.input_move_duration.map(&ebb_interface.output_duration, ABSOLUTE);
   durationToFreq.output_frequency.map(&wave2d_gen.input_frequency);
-  durationToFreq.target_frequency = 1.0;
+  durationToFreq.target_frequency = 10.0;
   durationToFreq.begin();
 
   // Map pedal value to wave amplitude
@@ -139,33 +179,22 @@ void setup() {
   analog_a1.map(&wave2d_gen.amplitude);
   analog_a1.begin(IO_A1);
 
-  wave2d_gen.amplitude = 0.0;
-
   // -- Configure Homing --
-  init_homing();
+  // init_homing();
 
-  rpc.begin();
+  // rpc.begin();
 
-  rpc.enroll("wave2d_gen", wave2d_gen);
+  // // {"name": "home_axes"}
+  // rpc.enroll("home_axes", home_axes);
 
-  // {"name": "home_axes"}
-  rpc.enroll("home_axes", home_axes);
+  // // {"name": "go_to_xy", "args": [6, 5, 10]}
+  // // args are: absolute X, absolute Y, speed (mm/s)
+  // // rpc.enroll("go_to_xy", go_to_xy);
 
-  // {"name": "go_to_xy", "args": [6, 5, 10]}
-  // args are: absolute X, absolute Y, speed (mm/s)
-  rpc.enroll("go_to_xy", go_to_xy);
-
-  // {"name": "set_noise_freq", "args": [5]}
-  rpc.enroll("set_noise_freq", set_noise_freq);
-  // {"name": "set_noise_amp", "args": [1]}
-  rpc.enroll("set_noise_amp", set_noise_amp);
-
-  // {"name": "corner_test"}
-  rpc.enroll("corner_test", corner_test);
-
-  // {"name": "draw_letter_h_at", "args": [10, 10]}
-  // args are: start X, start Y
-  rpc.enroll("draw_letter_h_at", draw_letter_h_at);
+  // // {"name": "set_noise_freq", "args": [5]}
+  // rpc.enroll("set_noise_freq", set_noise_freq);
+  // // {"name": "set_noise_amp", "args": [1]}
+  // rpc.enroll("set_noise_amp", set_noise_amp);
 
 
   // -- Start the stepdance library --
@@ -176,10 +205,37 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  overhead_delay.periodic_call(&report_overhead, 500);
+  // overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
+
+
+// void init_homing() {
+//   Serial.println("Init homing");
+//   homing.add_axis(
+//   IO_D1, // Stepdance board port for the limit switch
+//   0, // coordinate value we want to set at the limit switch
+//   HOMING_DIR_BWD,
+//   5, // speed at which we move to find the limit 
+//   &axidraw_kinematics.input_x);
+
+//   homing.add_axis(
+//   IO_D2, // Stepdance board port for the limit switch
+//   0, // coordinate value we want to set at the limit switch
+//   HOMING_DIR_BWD,
+//   5, // speed at which we move to find the limit 
+//   &axidraw_kinematics.input_y);
+
+//   homing.begin();
+// }
+
+// void home_axes() {
+
+//   homing.start_homing_routine();
+//   Serial.println("start homing");
+    
+// }
 
 void pen_down(){
   position_gen.go(-4, ABSOLUTE, 100);
@@ -189,6 +245,14 @@ void pen_up(){
   position_gen.go(4, ABSOLUTE, 100);
 }
 
+// void set_noise_amp(float amp) {
+//   wave2d_gen.amplitude = amp;
+// }
+
+// void set_noise_freq(float freq) {
+//   durationToFreq.target_frequency = freq;
+// }
+
 void motors_enable(){
   enable_drivers();
 }
@@ -197,74 +261,9 @@ void motors_disable(){
   disable_drivers();
 }
 
-void init_homing() {
-  Serial.println("Init homing");
-  homing.add_axis(
-  IO_D1, // Stepdance board port for the limit switch
-  0, // coordinate value we want to set at the limit switch
-  HOMING_DIR_BWD,
-  5, // speed at which we move to find the limit 
-  &axidraw_kinematics.input_x);
-
-  homing.add_axis(
-  IO_D2, // Stepdance board port for the limit switch
-  0, // coordinate value we want to set at the limit switch
-  HOMING_DIR_BWD,
-  5, // speed at which we move to find the limit 
-  &axidraw_kinematics.input_y);
-
-  homing.begin();
-}
-
-void home_axes() {
-
-  homing.start_homing_routine();
-  Serial.println("start homing");
-    
-}
-
-void go_to_xy(float x, float y, float v) {
-  tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-}
-
-void corner_test() {
-  tbi.add_move(GLOBAL, 10, 20, 20, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-  tbi.add_move(GLOBAL, 10, 70, 20, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-  tbi.add_move(GLOBAL, 10, 70, 50, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-  tbi.add_move(GLOBAL, 10, 20, 20, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-}
-
-void draw_letter_h_at(float x_start, float y_start) {
-  // Coordinates will draw a capital letter H
-  tbi.add_move(GLOBAL, 10, x_start, y_start, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
-  tbi.add_move(GLOBAL, 10, x_start + 10, y_start, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 10, y_start + 20, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 30, y_start + 20, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 30, y_start, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 40, y_start, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 40, y_start + 50, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 30, y_start + 50, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 30, y_start + 30, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 10, y_start + 30, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start + 10, y_start + 50, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start, y_start + 50, 0, 0, 0, 0); 
-  tbi.add_move(GLOBAL, 10, x_start, y_start, 0, 0, 0, 0); 
-}
-
-void set_noise_amp(float amp) {
-  wave2d_gen.amplitude = amp;
-}
-
-void set_noise_freq(float freq) {
-  durationToFreq.target_frequency = freq;
-}
-
 void report_overhead(){
-
-  // vec2angle.debugPrint();
-
-  wave2d_gen.debugPrint();
-
+  // Serial.println(channel_z.target_position, 4);
+  // Serial.println(stepdance_get_cpu_usage(), 4);
   Serial.print(" axidraw X: ");
   Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
   Serial.print(" axidraw Y: ");

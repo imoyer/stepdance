@@ -107,6 +107,21 @@ class Eibotboard : public Plugin{
     BlockPort& output_t = target_interpolator.output_t;
     /** \endcond */
 
+    /**
+     * @brief Output BlockPort for the generated position signal of a parameter in [0, 1] range.
+     * The parameter varies from 0 to 1 along each linear segment corresponding to a single move.
+     */
+    BlockPort& output_parameter = target_interpolator.output_parameter;
+
+    /**
+     * @brief Output BlockPort for the duration of the active move.
+     * Indicates the time the entire move is scheduled to take.
+     * This is useful to plan parallel motion that we want to happen *during* moves.
+     */
+    BlockPort& output_duration = target_interpolator.output_duration;
+
+
+
   protected:
     void loop(); // should be run inside loop
     
@@ -233,6 +248,21 @@ class GCodeInterface : public Plugin{
     BlockPort& output_r = target_interpolator.output_r;
     BlockPort& output_t = target_interpolator.output_t;
     /** \endcond */
+
+    /**
+     * @brief Output BlockPort for the generated position signal of a parameter in [0, 1] range.
+     * The parameter varies from 0 to 1 along each linear segment corresponding to a single move.
+     */
+    BlockPort& output_parameter = target_interpolator.output_parameter;
+
+    /**
+     * @brief Output BlockPort for the duration of the active move.
+     * Indicates the time the entire move is scheduled to take.
+     * This is useful to plan parallel motion that we want to happen *during* moves.
+     */
+    BlockPort& output_duration = target_interpolator.output_duration;
+
+
   protected:
     void loop();
   

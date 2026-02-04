@@ -16,8 +16,8 @@ A part of the Mixing Metaphors Project
 
 // Machine Selection
 // Choose one of the two machines below
-#define axidraw 
-// #define pocket_plotter
+// #define axidraw 
+#define pocket_plotter
 
 #include "stepdance.hpp"  // Import the stepdance library
 // -- Define Input Ports --
@@ -79,14 +79,14 @@ void setup() {
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.invert_output();
 
-// #ifdef axidraw
-  // channel_a.set_ratio(25.4, 2874);
-  // channel_b.set_ratio(25.4, 2874);
-// #endif
-// #ifdef pocket_plotter
+#ifdef axidraw
+  channel_a.set_ratio(25.4, 2874);
+  channel_b.set_ratio(25.4, 2874);
+#endif
+#ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
   channel_b.set_ratio(40, 3200);
-// #endif
+#endif
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 
@@ -174,6 +174,11 @@ void motors_disable(){
 }
 
 void report_overhead(){
-  Serial.println(channel_z.target_position, 4);
-  Serial.println(stepdance_get_cpu_usage(), 4);
+  // Serial.println(channel_z.target_position, 4);
+  // Serial.println(stepdance_get_cpu_usage(), 4);
+  Serial.print(" axidraw X: ");
+  Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
+  Serial.print(" axidraw Y: ");
+  Serial.print(axidraw_kinematics.input_y.read(ABSOLUTE), 4);
+  Serial.print("\n");
 }
