@@ -69,35 +69,40 @@ void setup() {
   channel_b.invert_output();
 
 
-#ifdef axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
-#endif
-#ifdef pocket_plotter
-  channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
-  channel_b.set_ratio(40, 3200);
-#endif
+// #ifdef axidraw
+//   channel_a.set_ratio(25.4, 2874);
+//   channel_b.set_ratio(25.4, 2874);
+// #endif
+// #ifdef pocket_plotter
+//   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
+//   channel_b.set_ratio(40, 3200);
+// #endif
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 
+  channel_a.set_ratio(1, 1);
+  channel_b.set_ratio(1, 1);
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
 
 
   // -- Configure and start the kinematics module --
-  axidraw_kinematics.begin();
-  axidraw_kinematics.output_a.map(&channel_a.input_target_position);
-  axidraw_kinematics.output_b.map(&channel_b.input_target_position);
+  // axidraw_kinematics.begin();
+  // axidraw_kinematics.output_a.map(&channel_a.input_target_position);
+  // axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
 
   // -- Configure Serial generator --
+  connection_generator.output_1.map(&channel_a.input_target_position);
+  connection_generator.output_2.map(&channel_b.input_target_position);
+  connection_generator.output_3.map(&channel_z.input_target_position);
+  // connection_generator.output_1.map(&axidraw_kinematics.input_x);
+  // connection_generator.output_2.map(&axidraw_kinematics.input_y);
   // below mapping causes a crash at runtime I think
-  connection_generator.output_1.map(&axidraw_kinematics.input_x);
-  connection_generator.output_2.map(&axidraw_kinematics.input_y);
   // connection_generator.output_1.map(&input_a.output_x);
   // connection_generator.output_2.map(&input_a.output_y);
   connection_generator.begin();

@@ -655,9 +655,9 @@ class SerialControlTrack {
 
     // TODO: adjusting these values is probably pretty important
     // It will affect how much control we can have over the velocity on the application side
-    static const int buffer_queue_size = 2;
-    static constexpr float64_t velocity_limit = 0.005;
-    static constexpr float64_t MAX_RANGE = 50;
+    // static const int buffer_queue_size = 2;
+    static constexpr float64_t MAX_STEPS_PER_LOOP = 6;
+    // static constexpr float64_t MAX_RANGE = 50;
 
   private:
     DecimalPosition output_position;
@@ -678,12 +678,13 @@ class SerialConnectionGenerator : public Plugin{
 
     void begin();
 
-    static const uint8_t NUM_CHANNELS = 2;
+    static const uint8_t NUM_CHANNELS = 3;
     SerialControlTrack controlled_tracks[NUM_CHANNELS];
 
     // BlockPorts (for now fixed to 2D XY)
     BlockPort& output_1 = controlled_tracks[0].output;
     BlockPort& output_2 = controlled_tracks[1].output;
+    BlockPort& output_3 = controlled_tracks[2].output;
 
 
   protected:

@@ -543,13 +543,13 @@ void SerialControlTrack::begin() {
 
 void SerialControlTrack::run() {
 
-  output.set(current_target_velocity, INCREMENTAL);
+  output.set(current_target_velocity * CORE_FRAME_PERIOD_US / KILOHERTZ_PLUGIN_PERIOD_US , INCREMENTAL);
   output.push();
 }
 
 void SerialControlTrack::loop(int input) {
   // Map to correct range
-  DecimalPosition target_value = input * velocity_limit / 128;
+  DecimalPosition target_value = input * MAX_STEPS_PER_LOOP / 128;
 
   current_target_velocity = target_value;
 
