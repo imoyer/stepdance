@@ -183,7 +183,7 @@ void Plugin::run_post_channel_frame_plugins(){
 
 void Plugin::run_kilohertz_plugins(){
   for(uint8_t plugin_index = 0; plugin_index < num_registered_kilohertz_plugins; plugin_index++){
-    registered_kilohertz_plugins[plugin_index]->run();
+    registered_kilohertz_plugins[plugin_index]->loop(); // EMILIE: changed this so that I can run code on kilohertz interval easily
   }
 }
 

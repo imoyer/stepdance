@@ -554,8 +554,8 @@ void SerialControlTrack::loop(int input) {
   current_target_velocity = target_value;
 
   // send receive notification to server
-  Serial.print("received:");
-  Serial.print(current_target_velocity);
+  // Serial.print("received:");
+  // Serial.print(current_target_velocity);
   // Serial.print(", new received target:");
   // Serial.print(received_target_delta[current_write_idx_in_queue]);
   // Serial.print(", delta to current working target:");
@@ -564,7 +564,7 @@ void SerialControlTrack::loop(int input) {
   // Serial.print(current_read_idx_in_queue);
   // Serial.print(", writing idx:");
   // Serial.print(current_write_idx_in_queue);
-  Serial.print("\n");
+  // Serial.print("\n");
 }
 
 // void SerialControlTrack::loop(int input) {
@@ -609,7 +609,7 @@ void SerialConnectionGenerator::begin(){
   }
 
   register_plugin(); // on frame
-  register_plugin(PLUGIN_LOOP); // on loop
+  register_plugin(PLUGIN_KILOHERTZ); // on kilohertz
 
 
 }
@@ -625,18 +625,31 @@ void SerialConnectionGenerator::run() {
 
 void SerialConnectionGenerator::loop() {
 
+  // Serial.println(Serial.available());
+
   // Read from Serial to set the target values for the current loop iteration
   // Receive input from server
-  if (Serial.available()) {
-    // incomingByte = Serial.read(); // read only one byte and then execute the rest of the loop code (prevent delays?)
+  if (Serial.available() >= NUM_CHANNELS) {
+  //   // incomingByte = Serial.read(); // read only one byte and then execute the rest of the loop code (prevent delays?)
     char serial_in_data[NUM_CHANNELS]; // one char per axis
     Serial.readBytes(serial_in_data, NUM_CHANNELS);
 
+    // Serial.println(serial_in_data);
+
     for (int i = 0; i < NUM_CHANNELS; i++) {
       int raw_value = (signed char) serial_in_data[i];
+      // Serial.println(raw_value);
       controlled_tracks[i].loop(raw_value);
     }
 
+  }
+  else {
+    Serial.println("no serial in");
+
+    for (int i = 0; i < NUM_CHANNELS; i++) {
+      // int raw_value = (signed char) serial_in_data[i];
+      controlled_tracks[i].loop(0);
+    }
   }
 
   // else {
