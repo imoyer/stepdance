@@ -656,7 +656,7 @@ class SerialControlTrack {
     // TODO: adjusting these values is probably pretty important
     // It will affect how much control we can have over the velocity on the application side
     // static const int buffer_queue_size = 2;
-    static constexpr float64_t MAX_STEPS_PER_LOOP = 6;
+    static constexpr float64_t MAX_STEPS_PER_LOOP = 25;
     // static constexpr float64_t MAX_RANGE = 50;
 
   private:
