@@ -146,19 +146,19 @@ void init_homing() {
   Serial.println("Initialized homing");
 
   homing.add_axis(
-  IO_D1,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_x    // Blockport corresponding to the axis to home
+  LIMIT_A,                         // Stepdance board port for the limit switch
+  0,                               // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                  // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                               // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_x      // Blockport corresponding to the axis to home
   );
 
   homing.add_axis(
-  IO_D2,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_y    // Blockport corresponding to the axis to home
+  LIMIT_B,                         // Stepdance board port for the limit switch
+  0,                               // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                  // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                               // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_y      // Blockport corresponding to the axis to home
   );
 
   homing.begin();

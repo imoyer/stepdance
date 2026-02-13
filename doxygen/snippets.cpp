@@ -668,21 +668,40 @@ void loop(){
 
 
     // [Homing]
+#define module_driver 
 
-#define module_driver
+// Machine Selection
+// Choose one of the two machines below
+// #define axidraw 
+#define pocket_plotter
+
 #include "stepdance.hpp"  // Import the stepdance library
 // -- Define Input Ports --
 InputPort input_a;
 
 // -- Define Output Ports --
+// Output ports generate step and direction electrical signals
+// Here, we control two stepper drivers and a servo driver
+// We choose names that match the labels on the PCB
+
 OutputPort output_a;  // Axidraw left motor
 OutputPort output_b;  // Axidraw right motor
 
 // -- Define Motion Channels --
+// Channels track target positions and interface with output ports
+// Generally, we need a channel for each output port
+// We choose names that match the axes of the AxiDraw's motors
+
 Channel channel_a;  //AxiDraw "A" axis --> left motor motion
 Channel channel_b;  // AxiDraw "B" axis --> right motor motion
 
+// -- Define Kinematics --
+// Kinematics convert between two coordinate spaces.
+// We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
 KinematicsCoreXY axidraw_kinematics;
+
+// -- Time based interpolator (used for testing the coordinate system) --
+TimeBasedInterpolator tbi;
 
 // -- Homing --
 Homing homing;
@@ -707,9 +726,16 @@ void setup() {
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.invert_output();
 
-  // Configured for the Axidraw
+#ifdef axidraw
   channel_a.set_ratio(25.4, 2874);
   channel_b.set_ratio(25.4, 2874);
+#endif
+#ifdef pocket_plotter
+  channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
+  channel_b.set_ratio(40, 3200);
+#endif
+                                                // This provides a convenience of converting between input units and motor (micro)steps
+                                                // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 
   // -- Configure and start the kinematics module --
   axidraw_kinematics.begin();
@@ -719,12 +745,21 @@ void setup() {
   // -- Configure Homing --
   init_homing();
 
+  // TBI (can be used to test that the homing works properly)
+  tbi.begin();
+  tbi.output_x.map(&axidraw_kinematics.input_x);
+  tbi.output_y.map(&axidraw_kinematics.input_y);
+
   rpc.begin();
 
   // Start the homing routine: axes will move until the limit switch button is hit
   // See init_homing() function to configure the homing routine and axes
-  // Use in serial monitor by entering: {"name": "home_axes"}
+  // {"name": "home_axes"}
   rpc.enroll("home_axes", home_axes);
+
+  // {"name": "go_to_xy", "args": [6, 5, 10]}
+  // args are: absolute X, absolute Y, speed (mm/s)
+  rpc.enroll("go_to_xy", go_to_xy);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -735,6 +770,7 @@ void loop() {
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
+
 // This function registers the two axes we want to home in (X and Y)
 // and provides specific info about the physical machine setup (homing button pins, home coordinates).
 // The order in which the axes are added specifies the order in which they will be homed (eg first X then Y here).
@@ -744,19 +780,19 @@ void init_homing() {
   Serial.println("Initialized homing");
 
   homing.add_axis(
-  IO_D1,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_x    // Blockport corresponding to the axis to home
+  LIMIT_A,                         // Stepdance board port for the limit switch
+  0,                               // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                  // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                               // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_x      // Blockport corresponding to the axis to home
   );
 
   homing.add_axis(
-  IO_D2,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_y    // Blockport corresponding to the axis to home
+  LIMIT_B,                         // Stepdance board port for the limit switch
+  0,                               // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                  // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                               // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_y      // Blockport corresponding to the axis to home
   );
 
   homing.begin();
@@ -767,6 +803,12 @@ void home_axes() {
   homing.start_homing_routine();
   Serial.println("start homing");
     
+}
+
+void go_to_xy(float x, float y, float v) {
+
+  tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+
 }
 
     // [Homing]
@@ -794,8 +836,6 @@ Channel channel_b;  // AxiDraw "B" axis --> right motor motion
 KinematicsCoreXY axidraw_kinematics;
 
 TimeBasedInterpolator tbi;
-
-Homing homing;
 
 RPC rpc;
 
@@ -937,8 +977,6 @@ MoveDurationToFrequency durationToFreq;
 
 TimeBasedInterpolator tbi;
 
-Homing homing;
-
 RPC rpc;
 
 void setup() {
@@ -1015,9 +1053,6 @@ void setup() {
 
   wave2d_gen.amplitude = 0.0;
 
-  // -- Configure Homing --
-  init_homing();
-
   rpc.begin();
 
   rpc.enroll("wave2d_gen", wave2d_gen);
@@ -1068,31 +1103,6 @@ void motors_disable(){
   disable_drivers();
 }
 
-void init_homing() {
-  Serial.println("Init homing");
-  homing.add_axis(
-  IO_D1, // Stepdance board port for the limit switch
-  0, // coordinate value we want to set at the limit switch
-  HOMING_DIR_BWD,
-  5, // speed at which we move to find the limit 
-  &axidraw_kinematics.input_x);
-
-  homing.add_axis(
-  IO_D2, // Stepdance board port for the limit switch
-  0, // coordinate value we want to set at the limit switch
-  HOMING_DIR_BWD,
-  5, // speed at which we move to find the limit 
-  &axidraw_kinematics.input_y);
-
-  homing.begin();
-}
-
-void home_axes() {
-
-  homing.start_homing_routine();
-  Serial.println("start homing");
-    
-}
 
 void go_to_xy(float x, float y, float v) {
   tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
