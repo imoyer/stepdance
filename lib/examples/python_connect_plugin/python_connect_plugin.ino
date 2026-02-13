@@ -84,7 +84,8 @@ void setup() {
   channel_b.set_ratio(1, 1);
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
-  channel_z.set_ratio(1, 50); //straight step pass-thru.
+  // channel_z.set_ratio(1, 50); //straight step pass-thru.
+  channel_z.set_ratio(1, 1); //straight step pass-thru.
 
 
   // -- Configure and start the kinematics module --
