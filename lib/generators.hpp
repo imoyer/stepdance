@@ -641,4 +641,42 @@ class PathLengthGenerator3D : public Plugin{
     void run();
 };
 
+
+class Attractor2D : public Plugin {
+
+  public:
+    Attractor2D();
+
+    void begin();
+
+    void set_target(float64_t x, float64_t y, uint8_t mode, ControlParameter strength);
+
+    void set_strength(ControlParameter strength);
+
+    /**
+     * \cond
+     * Hidden from Doxygen.
+     */
+    void debugPrint();
+    /** \endcond */
+
+    BlockPort output_x;
+    BlockPort output_y;
+
+  protected:
+    void run();
+
+  private:
+
+    DecimalPosition output_x_position = 0;
+    DecimalPosition output_y_position = 0;
+
+    ControlParameter max_speed = 0;
+    DecimalPosition target_x = 0;
+    DecimalPosition target_y = 0;
+    uint8_t mode = ABSOLUTE;
+
+
+};
+
 #endif //generators_h

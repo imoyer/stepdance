@@ -230,7 +230,23 @@ class BlockPort{
       push_deep(abs_value);
     }
     inline DecimalPosition read_deep(){
-      return pull_deep();
+      switch(blockport_direction){
+        case BLOCKPORT_INPUT:
+          if(parent_Plugin != nullptr){
+            // parent_Plugin->pull_deep(); //this method in parent plugin will call pull_deep on its blockports, and then run e.g. kinematic transform
+            return read(ABSOLUTE); //return our position
+          }
+          break;
+        
+        case BLOCKPORT_OUTPUT:
+          if(target_BlockPort != nullptr){
+            DecimalPosition read_value = target_BlockPort->read_deep();
+            // reset(read_value); //resets internal position to match downstream position
+            return read_value;
+          }
+          break;    
+      }
+      return read(ABSOLUTE);
     }
 
     void enable(); // enables push/pull on blockport
