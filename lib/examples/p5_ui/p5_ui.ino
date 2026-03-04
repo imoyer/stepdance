@@ -4,8 +4,8 @@
 
 // Machine Selection
 // Choose one of the two machines below
-// #define axidraw 
-#define pocket_plotter
+#define axidraw 
+// #define pocket_plotter
 #include "stepdance.hpp"
 
 // Pantograph XY input plugged in input_a
@@ -31,9 +31,6 @@ PositionGenerator position_gen;
 
 // -- Time based interpolator (used for sending XY motion commands from the p5 sketch) --
 TimeBasedInterpolator tbi;
-
-// -- Homing --
-Homing homing;
 
 // -- Wave 2D Generator and utility functions --
 WaveGenerator2D wave2d_gen;
@@ -73,8 +70,10 @@ void setup() {
 
 
 #ifdef axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
+  // channel_a.set_ratio(25.4, 2874);
+  // channel_b.set_ratio(25.4, 2874);
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
 #endif
 #ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
@@ -97,13 +96,11 @@ void setup() {
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
 
-    // -- Configure Homing --
-  init_homing();
-
   // TBI (can be used to test that the homing works properly)
   tbi.begin();
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
+  tbi.output_z.map(&channel_z.input_target_position);
 
   // -- Configure wave 2D generator --
 
@@ -131,11 +128,6 @@ void setup() {
   // expected result: serial monitor prints "hello!{"result":"ok"}"
   rpc.enroll("hello", say_hello);
 
-  // Start the homing routine: axes will move until the limit switch button is hit
-  // See init_homing() function to configure the homing routine and axes
-  // {"name": "home_axes"}
-  rpc.enroll("home_axes", home_axes);
-
   rpc.enroll("pen_down", pen_down);
   rpc.enroll("pen_up", pen_up);
 
@@ -143,6 +135,10 @@ void setup() {
   // {"name": "go_to_xy", "args": [6, 5, 10]}
   // args are: absolute X, absolute Y, speed (mm/s)
   rpc.enroll("go_to_xy", go_to_xy);
+
+  // {"name": "go_to_xyz", "args": [6, 5, 4, 10]}
+  // args are: absolute X, absolute Y, absolute Z, speed (mm/s)
+  rpc.enroll("go_to_xyz", go_to_xyz);
 
   // {"name": "set_noise_freq", "args": [5]}
   rpc.enroll("set_noise_freq", set_noise_freq);
@@ -156,9 +152,6 @@ void setup() {
 }
 
 LoopDelay overhead_delay;
-
-float64_t incoming_offsets[3]; // Fixed at 3 values here for now (TODO: this should be defined based on the input port, within the plugin code)
-String incoming_str[3];
 
 void loop() {
 
@@ -179,38 +172,16 @@ void say_hello(){
   Serial.println("hello!");
 }
 
-void init_homing() {
-  Serial.println("Initialized homing");
-
-  homing.add_axis(
-  IO_D1,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_x    // Blockport corresponding to the axis to home
-  );
-
-  homing.add_axis(
-  IO_D2,                         // Stepdance board port for the limit switch
-  0,                             // Coordinate value we want to assign at the limit switch
-  HOMING_DIR_BWD,                // Direction in which the machine should jog (backward or forward?) to hit the switch
-  5,                             // Speed at which the machine should jog to find the limit 
-  &axidraw_kinematics.input_y    // Blockport corresponding to the axis to home
-  );
-
-  homing.begin();
-}
-
-void home_axes() {
-  // Calling this method launches the homing routine (machine will move until it hits its limit switches)
-  homing.start_homing_routine();
-  Serial.println("start homing");
-    
-}
 
 void go_to_xy(float x, float y, float v) {
 
   tbi.add_move(GLOBAL, v, x, y, 0, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
+
+}
+
+void go_to_xyz(float x, float y, float z, float v) {
+
+  tbi.add_move(GLOBAL, v, x, y, z, 0, 0, 0); // mode, vel, x, y, 0, 0, 0, 0
 
 }
 
