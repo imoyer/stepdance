@@ -4,8 +4,8 @@
 
 // Machine Selection
 // Choose one of the two machines below
-// #define axidraw 
-#define pocket_plotter
+#define axidraw 
+// #define pocket_plotter
 #include "stepdance.hpp"
 
 // Pantograph XY input plugged in input_a
@@ -24,7 +24,7 @@ Channel channel_z;
 // -- Define Kinematics --
 // Kinematics convert between two coordinate spaces.
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
-KinematicsCoreXY axidraw_kinematics;
+// KinematicsCoreXY axidraw_kinematics;
 
 // Knobs input
 Encoder encoder_1; 
@@ -41,7 +41,7 @@ Button button_d2;
 SerialConnectionGenerator connection_generator;
 
 // -- Position Generator for Pen Up/Down --
-PositionGenerator position_gen;
+// PositionGenerator position_gen;
 
 
 char incomingByte = 0;
@@ -69,14 +69,14 @@ void setup() {
   channel_b.invert_output();
 
 
-// #ifdef axidraw
-//   channel_a.set_ratio(25.4, 2874);
-//   channel_b.set_ratio(25.4, 2874);
-// #endif
-// #ifdef pocket_plotter
-//   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
-//   channel_b.set_ratio(40, 3200);
-// #endif
+#ifdef axidraw
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
+#endif
+#ifdef pocket_plotter
+  channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
+  channel_b.set_ratio(40, 3200);
+#endif
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 
@@ -87,25 +87,10 @@ void setup() {
   // channel_z.set_ratio(1, 50); //straight step pass-thru.
   channel_z.set_ratio(1, 1); //straight step pass-thru.
 
-
-  // -- Configure and start the kinematics module --
-  // axidraw_kinematics.begin();
-  // axidraw_kinematics.output_a.map(&channel_a.input_target_position);
-  // axidraw_kinematics.output_b.map(&channel_b.input_target_position);
-
-  // -- Configure Position Generator --
-  position_gen.output.map(&channel_z.input_target_position);
-  position_gen.begin();
-
   // -- Configure Serial generator --
   connection_generator.output_1.map(&channel_a.input_target_position);
   connection_generator.output_2.map(&channel_b.input_target_position);
   connection_generator.output_3.map(&channel_z.input_target_position);
-  // connection_generator.output_1.map(&axidraw_kinematics.input_x);
-  // connection_generator.output_2.map(&axidraw_kinematics.input_y);
-  // below mapping causes a crash at runtime I think
-  // connection_generator.output_1.map(&input_a.output_x);
-  // connection_generator.output_2.map(&input_a.output_y);
   connection_generator.begin();
 
 
@@ -121,10 +106,6 @@ void setup() {
 }
 
 LoopDelay overhead_delay;
-const int SIZE = 26;
-
-float64_t incoming_offsets[3]; // Fixed at 3 values here for now (TODO: this should be defined based on the input port, within the plugin code)
-String incoming_str[3];
 
 void loop() {
 
@@ -136,13 +117,6 @@ void loop() {
   // incomingByte = 0;
 }
 
-void pen_down(){
-  position_gen.go(-4, ABSOLUTE, 100);
-}
-
-void pen_up(){
-  position_gen.go(4, ABSOLUTE, 100);
-}
 
 void report_overhead(){
 
