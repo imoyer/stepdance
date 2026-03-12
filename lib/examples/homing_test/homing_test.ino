@@ -75,8 +75,8 @@ void setup() {
   channel_b.invert_output();
 
 #ifdef axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
 #endif
 #ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.

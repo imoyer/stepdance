@@ -73,14 +73,14 @@ void setup() {
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.invert_output();
 
-// #ifdef axidraw
-  // channel_a.set_ratio(25.4, 2874);
-  // channel_b.set_ratio(25.4, 2874);
-// #endif
-// #ifdef pocket_plotter
+#ifdef axidraw
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
+#endif
+#ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
   channel_b.set_ratio(40, 3200);
-// #endif
+#endif
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 

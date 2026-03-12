@@ -70,8 +70,6 @@ void setup() {
 
 
 #ifdef axidraw
-  // channel_a.set_ratio(25.4, 2874);
-  // channel_b.set_ratio(25.4, 2874);
   channel_a.set_ratio(25.4, 2032);
   channel_b.set_ratio(25.4, 2032);
 #endif

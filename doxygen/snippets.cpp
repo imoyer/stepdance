@@ -727,8 +727,8 @@ void setup() {
   channel_b.invert_output();
 
 #ifdef axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
 #endif
 #ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
@@ -856,8 +856,8 @@ void setup() {
   channel_b.invert_output();
 
   // Axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
 
   // -- Configure and start the input port --
   input_a.begin(INPUT_A);
@@ -997,8 +997,8 @@ void setup() {
   channel_b.invert_output();
 
   // For Axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
