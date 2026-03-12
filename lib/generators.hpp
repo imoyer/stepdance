@@ -675,7 +675,7 @@ class Attractor2D : public Plugin {
     DecimalPosition target_x = 0;
     DecimalPosition target_y = 0;
     uint8_t mode = ABSOLUTE;
-}
+};
 
 
 
