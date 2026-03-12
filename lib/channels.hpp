@@ -160,6 +160,8 @@ class Channel : public Plugin{
    */
    void enroll(RPC *rpc, const String& instance_name);     
    void run(); //Drives the current position to the target position by one pulse, and generates a signal
+
+   DecimalPosition read_deep(BlockPort& in_blockport) override; //is not user-facing.
  /** \endcond */
   
   
