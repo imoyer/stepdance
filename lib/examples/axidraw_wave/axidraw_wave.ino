@@ -1,7 +1,8 @@
 /*
-AxiDraw Recorder Demo
+AxiDraw Interface
 
-This extends the axidraw interface demo with recording functionality.
+This extends the Step-A-Sketch demo with an InkScape interface that simulates the AxiDraw's
+EBB Control Board.
 
 Example project for the Stepdance control system.
 
@@ -15,8 +16,8 @@ A part of the Mixing Metaphors Project
 
 // Machine Selection
 // Choose one of the two machines below
-#define axidraw 
-// #define pocket_plotter
+// #define axidraw 
+#define pocket_plotter
 
 #include "stepdance.hpp"  // Import the stepdance library
 // -- Define Input Ports --
@@ -57,14 +58,22 @@ Encoder encoder_2;  // right knob, controls vertical
 // -- Define Input Button --
 Button button_d1;
 Button button_d2;
-Button button_a4;
+
+// -- Define Inputs --
+AnalogInput analog_a1; // foot pedal controlling the wave amplitude
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
-// -- Recorder --
-FourTrackRecorder recorder;
-FourTrackPlayer player;
+
+// -- Wave 2D Generator and utility functions --
+WaveGenerator2D wave2d_gen;
+Vector2DToAngle vec2angle;
+MoveDurationToFrequency durationToFreq;
+
+// -- Utils --
+// Homing homing;
+// RPC rpc;
 
 void setup() {
   // -- Configure and start the output ports --
@@ -132,17 +141,6 @@ void setup() {
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
-  // -- Configure and start the recorder --
-  recorder.input_1.map(&axidraw_kinematics.input_x);
-  recorder.input_2.map(&axidraw_kinematics.input_y);
-  recorder.input_3.map(&channel_z.input_target_position);
-  recorder.begin();
-
-  player.output_1.map(&axidraw_kinematics.input_x);
-  player.output_2.map(&axidraw_kinematics.input_y);
-  player.output_3.map(&channel_z.input_target_position);
-  player.begin();
-
 
   // -- Configure Button --
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
@@ -152,16 +150,52 @@ void setup() {
 
   button_d2.begin(IO_D2, INPUT_PULLDOWN);
   button_d2.set_mode(BUTTON_MODE_TOGGLE);
-  button_d2.set_callback_on_press(&start_recording);
-  button_d2.set_callback_on_release(&stop_recording);
-
-  button_a4.begin(IO_A4, INPUT_PULLDOWN);
-  button_a4.set_mode(BUTTON_MODE_STANDARD);
-  button_a4.set_callback_on_press(&playback_control);
+  button_d2.set_callback_on_press(&motors_enable);
+  button_d2.set_callback_on_release(&motors_disable);
 
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
+
+  // -- Configure wave 2D generator --
+  ebb_interface.output_parameter.map(&wave2d_gen.input_t, ABSOLUTE);
+  vec2angle.input_x.map(&ebb_interface.output_x);
+  vec2angle.input_y.map(&ebb_interface.output_y);
+  vec2angle.output_theta.map(&wave2d_gen.input_theta, ABSOLUTE);
+  vec2angle.begin();
+
+  wave2d_gen.output_x.map(&axidraw_kinematics.input_x);
+  wave2d_gen.output_y.map(&axidraw_kinematics.input_y);
+  wave2d_gen.begin();
+
+  durationToFreq.input_move_duration.map(&ebb_interface.output_duration, ABSOLUTE);
+  durationToFreq.output_frequency.map(&wave2d_gen.input_frequency);
+  durationToFreq.target_frequency = 10.0;
+  durationToFreq.begin();
+
+  // Map pedal value to wave amplitude
+  analog_a1.set_floor(0, 25);
+  analog_a1.set_ceiling(10, 1020); //radians per second
+  analog_a1.map(&wave2d_gen.amplitude);
+  analog_a1.begin(IO_A1);
+
+  // -- Configure Homing --
+  // init_homing();
+
+  // rpc.begin();
+
+  // // {"name": "home_axes"}
+  // rpc.enroll("home_axes", home_axes);
+
+  // // {"name": "go_to_xy", "args": [6, 5, 10]}
+  // // args are: absolute X, absolute Y, speed (mm/s)
+  // // rpc.enroll("go_to_xy", go_to_xy);
+
+  // // {"name": "set_noise_freq", "args": [5]}
+  // rpc.enroll("set_noise_freq", set_noise_freq);
+  // // {"name": "set_noise_amp", "args": [1]}
+  // rpc.enroll("set_noise_amp", set_noise_amp);
+
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -171,10 +205,37 @@ void setup() {
 LoopDelay overhead_delay;
 
 void loop() {
-  overhead_delay.periodic_call(&report_overhead, 500);
+  // overhead_delay.periodic_call(&report_overhead, 500);
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
+
+
+// void init_homing() {
+//   Serial.println("Init homing");
+//   homing.add_axis(
+//   IO_D1, // Stepdance board port for the limit switch
+//   0, // coordinate value we want to set at the limit switch
+//   HOMING_DIR_BWD,
+//   5, // speed at which we move to find the limit 
+//   &axidraw_kinematics.input_x);
+
+//   homing.add_axis(
+//   IO_D2, // Stepdance board port for the limit switch
+//   0, // coordinate value we want to set at the limit switch
+//   HOMING_DIR_BWD,
+//   5, // speed at which we move to find the limit 
+//   &axidraw_kinematics.input_y);
+
+//   homing.begin();
+// }
+
+// void home_axes() {
+
+//   homing.start_homing_routine();
+//   Serial.println("start homing");
+    
+// }
 
 void pen_down(){
   position_gen.go(-4, ABSOLUTE, 100);
@@ -184,6 +245,14 @@ void pen_up(){
   position_gen.go(4, ABSOLUTE, 100);
 }
 
+// void set_noise_amp(float amp) {
+//   wave2d_gen.amplitude = amp;
+// }
+
+// void set_noise_freq(float freq) {
+//   durationToFreq.target_frequency = freq;
+// }
+
 void motors_enable(){
   enable_drivers();
 }
@@ -192,56 +261,12 @@ void motors_disable(){
   disable_drivers();
 }
 
-void start_recording(){
-  recorder.start("my_recording");
-  Serial.println("STARTED RECORDING");
-}
-
-void stop_recording(){
-  recorder.stop();
-  Serial.println("STOPPED RECORDING");
-}
-
-void playback_control(){
-  if(player.playback_active){
-    stop_playback();
-  }else{
-    start_playback();
-  }
-}
-
-void start_playback(){
-  player.start("my_recording");
-  Serial.println("STARTED PLAYING");
-  int duration_s = player.max_num_playback_samples / (CORE_FRAME_FREQ_HZ);
-  Serial.print("DURATION: ");
-  Serial.print(static_cast<int>(duration_s / 60));
-  Serial.print("m:");
-  Serial.print(duration_s % 60);
-  Serial.println("s");
-}
-
-void stop_playback(){
-  player.stop();
-}
-
 void report_overhead(){
-  if(recorder.recorder_active){
-    Serial.print("RECORDING... ");
-    int duration_s = recorder.current_sample_index / (CORE_FRAME_FREQ_HZ);
-    Serial.print(static_cast<int>(duration_s / 60));
-    Serial.print("m:");
-    Serial.print(duration_s % 60);
-    Serial.println("s");
-  }
-  if(player.playback_active){
-    Serial.print("PLAYING... ");
-    int duration_s = player.current_sample_index / (CORE_FRAME_FREQ_HZ);
-    Serial.print(static_cast<int>(duration_s / 60));
-    Serial.print("m:");
-    Serial.print(duration_s % 60);
-    Serial.println("s");
-  }  
   // Serial.println(channel_z.target_position, 4);
   // Serial.println(stepdance_get_cpu_usage(), 4);
+  Serial.print(" axidraw X: ");
+  Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
+  Serial.print(" axidraw Y: ");
+  Serial.print(axidraw_kinematics.input_y.read(ABSOLUTE), 4);
+  Serial.print("\n");
 }

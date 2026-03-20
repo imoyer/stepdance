@@ -195,6 +195,11 @@ void Plugin::run_loop_plugins(){
 
 void Plugin::push_deep(){};
 void Plugin::pull_deep(){};
+DecimalPosition Plugin::read_deep(BlockPort& in_blockport){
+  // By default (if unimplemented) return the value of the input blockport
+  Serial.println("WARNING: this method is unimplemented for a plugin you're calling read_deep through, this is likely to give unexpected results.");
+  return in_blockport.read_absolute();
+};
 
 
 
@@ -389,6 +394,26 @@ DecimalPosition BlockPort::pull_deep(){
   }
   return read(ABSOLUTE);
 }
+
+DecimalPosition BlockPort::read_deep(){
+      switch(blockport_direction){
+        case BLOCKPORT_INPUT:
+          if(parent_Plugin != nullptr){
+            return parent_Plugin->read_deep(*this); //this method in parent plugin will call pull_deep on its blockports, and then run e.g. kinematic transform
+            // return read(ABSOLUTE); //return our position
+          }
+          break;
+        
+        case BLOCKPORT_OUTPUT:
+          if(target_BlockPort != nullptr){
+            DecimalPosition read_value = target_BlockPort->read_deep();
+            // reset(read_value); //resets internal position to match downstream position
+            return read_value;
+          }
+          break;    
+      }
+      return read(ABSOLUTE);
+    }
 
 
 void BlockPort::enable(){

@@ -80,14 +80,17 @@ float stepdance_get_cpu_usage(); //returns a value from 0-1 indicating the maxim
 static volatile float stepdance_max_cpu_usage = 0; //stores a running count of the maximum CPU usage, in the range 0-1;
 static volatile uint32_t stepdance_interrupt_entry_cycle_count = 0; //stores the entry value of ARM_DWT_CYCCNT
 
+// Forward declaration (because we use BlockPort in Plugin class read_deep method signature declaration)
+class BlockPort;
+
 // -- Plug-In Base Class --
 //
 // This provides a common interface for any filters, synthesizers, kinematics, etc that need access to the core frame.
 #define MAX_NUM_INPUT_PORT_FRAME_PLUGINS   10 //plugins that execute at the start of the frame. This is reserved for input ports
-#define MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS   10 //plugins that execute in the frame, before the channels are evaluated
+#define MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS   20 //plugins that execute in the frame, before the channels are evaluated
 #define MAX_NUM_POST_CHANNEL_FRAME_PLUGINS  10 //plugins that execute in the frame, after the channels are evaluated
 #define MAX_NUM_KILOHERTZ_PLUGINS 10 //plugins that execute at a 1khz rate, independent of the frame, and with a lower priority
-#define MAX_NUM_LOOP_PLUGINS 10 //plugins that execute in the main loop.
+#define MAX_NUM_LOOP_PLUGINS 20 //plugins that execute in the main loop.
 /** \cond */
 /**
  * Plugin Base Class will be hidden from Doxygen documentation.
@@ -107,6 +110,7 @@ class Plugin{
     virtual void enroll(RPC *rpc, const String& instance_name); //enrolls the plugin in an RPC. This should be overridden by the derived class, and is responsible for enrolling any members.
     virtual void push_deep(); //deep push across the plugin (e.g. from input to output blockports) for state sync.
     virtual void pull_deep(); //performs a deep pull across the plugin (e.g. from output to input blockports) for state sync
+    virtual DecimalPosition read_deep(BlockPort& in_blockport); //performs a deep read across the plugin (e.g. from output to input blockports) for state sync
 
   private:
     static Plugin* registered_input_port_frame_plugins[MAX_NUM_INPUT_PORT_FRAME_PLUGINS]; //stores all registered input port plugins
@@ -229,9 +233,8 @@ class BlockPort{
     inline void reset_deep(DecimalPosition abs_value){
       push_deep(abs_value);
     }
-    inline DecimalPosition read_deep(){
-      return pull_deep();
-    }
+    
+    DecimalPosition read_deep();
 
     void enable(); // enables push/pull on blockport
     void disable(); // disables push/pull

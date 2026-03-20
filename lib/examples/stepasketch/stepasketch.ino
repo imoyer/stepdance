@@ -61,13 +61,13 @@ void setup() {
   channel_a.begin(&output_a, SIGNAL_E); // Connects the channel to the "E" signal on "output_a".
                                         // We choose the "E" signal because it results in a step pulse of 7us,
                                         // which is more than long enough for the driver IC.
-  channel_a.set_ratio(25.4, 2874); // Sets the input/output transmission ratio for the channel.
+  channel_a.set_ratio(25.4, 2032); // Sets the input/output transmission ratio for the channel.
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the axidraw, 25.4mm == 2874 steps
   channel_a.invert_output();  // CALL THIS TO INVERT THE MOTOR DIRECTION IF NEEDED
 
   channel_b.begin(&output_b, SIGNAL_E);
-  channel_b.set_ratio(25.4, 2874);
+  channel_b.set_ratio(25.4, 2032);
   channel_b.invert_output();
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width

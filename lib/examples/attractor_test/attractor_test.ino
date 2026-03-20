@@ -1,7 +1,5 @@
 /*
-AxiDraw Recorder Demo
-
-This extends the axidraw interface demo with recording functionality.
+Step-A-Sketch: A digital etch-a-sketch
 
 Example project for the Stepdance control system.
 
@@ -15,8 +13,8 @@ A part of the Mixing Metaphors Project
 
 // Machine Selection
 // Choose one of the two machines below
-#define axidraw 
-// #define pocket_plotter
+// #define axidraw 
+#define pocket_plotter
 
 #include "stepdance.hpp"  // Import the stepdance library
 // -- Define Input Ports --
@@ -40,33 +38,32 @@ Channel channel_a;  //AxiDraw "A" axis --> left motor motion
 Channel channel_b;  // AxiDraw "B" axis --> right motor motion
 Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 
-// -- AxiDraw Interface
-Eibotboard ebb_interface;
-
-// -- Define Kinematics --
-// Kinematics convert between two coordinate spaces.
-// We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
-KinematicsCoreXY axidraw_kinematics;
-
 // -- Define Encoders --
 // Encoders read quadrature input signals and can drive kinematics or other elements
 // We use rotary optical encoders for the two etch-a-sketch knobs
 Encoder encoder_1;  // left knob, controls horizontal
 Encoder encoder_2;  // right knob, controls vertical
 
-// -- Define Input Button --
-Button button_d1;
-Button button_d2;
-Button button_a4;
+// -- Define Kinematics --
+// Kinematics convert between two coordinate spaces.
+// We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
+KinematicsCoreXY axidraw_kinematics;
+
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
-// -- Recorder --
-FourTrackRecorder recorder;
-FourTrackPlayer player;
+// -- Attractor2D Generator --
+Attractor2D attractor_gen;
+
+// -- Homing --
+Homing homing;
+
+// -- RPC Interface --
+RPC rpc;
 
 void setup() {
+
   // -- Configure and start the output ports --
   output_a.begin(OUTPUT_A); // "OUTPUT_A" specifies the physical port on the PCB for the output.
   output_b.begin(OUTPUT_B);
@@ -97,16 +94,11 @@ void setup() {
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
 
-  // -- Configure and start the input port --
-  input_a.begin(INPUT_A);
-  input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_x.map(&axidraw_kinematics.input_x);
 
-  input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_y.map(&axidraw_kinematics.input_y);
-
-  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_z.map(&channel_z.input_target_position);
+  // -- Configure and start the kinematics module --
+  axidraw_kinematics.begin();
+  axidraw_kinematics.output_a.map(&channel_a.input_target_position);
+  axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
   // -- Configure and start the encoders --
   encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
@@ -115,53 +107,41 @@ void setup() {
   encoder_1.invert(); //invert the encoder direction
   encoder_1.output.map(&axidraw_kinematics.input_x);
 
-
   encoder_2.begin(ENCODER_2);
   encoder_2.set_ratio(24, 2400);
   encoder_2.invert();
   encoder_2.output.map(&axidraw_kinematics.input_y); // map the right encoder to the y axis input of the kinematics
 
-  // -- Configure and start EBB Interface --
-  ebb_interface.begin();
-  ebb_interface.output_x.map(&axidraw_kinematics.input_x);
-  ebb_interface.output_y.map(&axidraw_kinematics.input_y);
-  ebb_interface.output_z.map(&channel_z.input_target_position);
-
-  // -- Configure and start the kinematics module --
-  axidraw_kinematics.begin();
-  axidraw_kinematics.output_a.map(&channel_a.input_target_position);
-  axidraw_kinematics.output_b.map(&channel_b.input_target_position);
-
-  // -- Configure and start the recorder --
-  recorder.input_1.map(&axidraw_kinematics.input_x);
-  recorder.input_2.map(&axidraw_kinematics.input_y);
-  recorder.input_3.map(&channel_z.input_target_position);
-  recorder.begin();
-
-  player.output_1.map(&axidraw_kinematics.input_x);
-  player.output_2.map(&axidraw_kinematics.input_y);
-  player.output_3.map(&channel_z.input_target_position);
-  player.begin();
-
-
-  // -- Configure Button --
-  button_d1.begin(IO_D1, INPUT_PULLDOWN);
-  button_d1.set_mode(BUTTON_MODE_TOGGLE);
-  button_d1.set_callback_on_press(&pen_up);
-  button_d1.set_callback_on_release(&pen_down);
-
-  button_d2.begin(IO_D2, INPUT_PULLDOWN);
-  button_d2.set_mode(BUTTON_MODE_TOGGLE);
-  button_d2.set_callback_on_press(&start_recording);
-  button_d2.set_callback_on_release(&stop_recording);
-
-  button_a4.begin(IO_A4, INPUT_PULLDOWN);
-  button_a4.set_mode(BUTTON_MODE_STANDARD);
-  button_a4.set_callback_on_press(&playback_control);
+  // -- Attactor --
+  attractor_gen.begin();
+  attractor_gen.output_x.map(&axidraw_kinematics.input_x);
+  attractor_gen.output_y.map(&axidraw_kinematics.input_y);
 
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
+
+  // -- Configure Homing --
+  init_homing();
+
+
+
+
+  // -- RPC --
+  rpc.begin();
+
+  // Start the homing routine: axes will move until the limit switch button is hit
+  // See init_homing() function to configure the homing routine and axes
+  // {"name": "home_axes"}
+  rpc.enroll("home_axes", home_axes);
+
+  // {"name": "debug_print"}
+  rpc.enroll("debug_print", debug_print);
+
+
+  // {"name": "go_to_xy", "args": [6, 5, 10]}
+  // args are: absolute X, absolute Y, speed (mm/s)
+  rpc.enroll("go_to_xy", go_to_xy);
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -172,7 +152,6 @@ LoopDelay overhead_delay;
 
 void loop() {
   overhead_delay.periodic_call(&report_overhead, 500);
-
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
@@ -184,64 +163,63 @@ void pen_up(){
   position_gen.go(4, ABSOLUTE, 100);
 }
 
-void motors_enable(){
-  enable_drivers();
+// This function registers the two axes we want to home in (X and Y)
+// and provides specific info about the physical machine setup (homing button pins, home coordinates).
+// The order in which the axes are added specifies the order in which they will be homed (eg first X then Y here).
+// Note that the axes to home are workspace axes (XY) and not stepper motor axes (AB).
+// Generally, we want to home in the axes that we think of as "design" axes, those in which we want to be able to specify absolute coordinates in.
+void init_homing() {
+  Serial.println("Initialized homing");
+
+  homing.add_axis(
+  LIMIT_A,                         // Stepdance board port for the limit switch
+  0,                               // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                  // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                               // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_x      // Blockport corresponding to the axis to home
+  );
+
+  homing.add_axis(
+  LIMIT_B,                         // Stepdance board port for the limit switch
+  0,                               // Coordinate value we want to assign at the limit switch
+  HOMING_DIR_BWD,                  // Direction in which the machine should jog (backward or forward?) to hit the switch
+  5,                               // Speed at which the machine should jog to find the limit 
+  &axidraw_kinematics.input_y      // Blockport corresponding to the axis to home
+  );
+
+  homing.begin();
 }
 
-void motors_disable(){
-  disable_drivers();
+void home_axes() {
+  // Calling this method launches the homing routine (machine will move until it hits its limit switches)
+  homing.start_homing_routine();
+  Serial.println("start homing");
+    
 }
 
-void start_recording(){
-  recorder.start("my_recording");
-  Serial.println("STARTED RECORDING");
+void go_to_xy(float x, float y, float v) {
+
+  // In INCREMENTAL mode, the end-effector will be attracted to the position that is [x, y] away from the current
+  // position, at the time set_target is called
+  // attractor_gen.set_target(x, y, INCREMENTAL, v);
+  attractor_gen.set_target(x, y, GLOBAL, v);
+
 }
 
-void stop_recording(){
-  recorder.stop();
-  Serial.println("STOPPED RECORDING");
-}
-
-void playback_control(){
-  if(player.playback_active){
-    stop_playback();
-  }else{
-    start_playback();
-  }
-}
-
-void start_playback(){
-  player.start("my_recording");
-  Serial.println("STARTED PLAYING");
-  int duration_s = player.max_num_playback_samples / (CORE_FRAME_FREQ_HZ);
-  Serial.print("DURATION: ");
-  Serial.print(static_cast<int>(duration_s / 60));
-  Serial.print("m:");
-  Serial.print(duration_s % 60);
-  Serial.println("s");
-}
-
-void stop_playback(){
-  player.stop();
+void debug_print() {
+  attractor_gen.debugPrint();
 }
 
 void report_overhead(){
-  if(recorder.recorder_active){
-    Serial.print("RECORDING... ");
-    int duration_s = recorder.current_sample_index / (CORE_FRAME_FREQ_HZ);
-    Serial.print(static_cast<int>(duration_s / 60));
-    Serial.print("m:");
-    Serial.print(duration_s % 60);
-    Serial.println("s");
-  }
-  if(player.playback_active){
-    Serial.print("PLAYING... ");
-    int duration_s = player.current_sample_index / (CORE_FRAME_FREQ_HZ);
-    Serial.print(static_cast<int>(duration_s / 60));
-    Serial.print("m:");
-    Serial.print(duration_s % 60);
-    Serial.println("s");
-  }  
-  // Serial.println(channel_z.target_position, 4);
+
+  // Serial.print("channel A: ");
+  // Serial.print(channel_a.input_target_position.read(ABSOLUTE), 4);
+  // Serial.print(" channel B: ");
+  // Serial.print(channel_b.input_target_position.read(ABSOLUTE), 4);
+  Serial.print(" axidraw X: ");
+  Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
+    Serial.print(" axidraw Y: ");
+  Serial.print(axidraw_kinematics.input_y.read(ABSOLUTE), 4);
+  Serial.print("\n");
   // Serial.println(stepdance_get_cpu_usage(), 4);
 }

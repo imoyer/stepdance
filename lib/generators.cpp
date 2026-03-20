@@ -487,3 +487,76 @@ void PathLengthGenerator3D::enroll(RPC *rpc, const String& instance_name){
   output.enroll(rpc, instance_name + ".output");
   rpc->enroll(instance_name + ".ratio", ratio);
 }
+
+Attractor2D::Attractor2D()
+{
+}
+
+void Attractor2D::begin()
+{
+  output_x.begin(&output_x_position, BLOCKPORT_OUTPUT);
+  output_y.begin(&output_y_position, BLOCKPORT_OUTPUT);
+  register_plugin();
+}
+
+void Attractor2D::set_target(float64_t x, float64_t y, uint8_t mode, ControlParameter max_speed)
+{
+  this->mode = mode;
+  if (mode == INCREMENTAL) {
+    float64_t p_x = output_x.pull_deep();
+    float64_t p_y = output_y.pull_deep();
+    target_x = p_x + x;
+    target_y = p_y + y;
+  }
+
+  else {
+    target_x = x;
+    target_y = y;
+  }
+
+  this->max_speed = max_speed;
+}
+
+void Attractor2D::set_strength(ControlParameter max_speed)
+{
+  this->max_speed = max_speed;
+}
+
+void Attractor2D::run() {
+
+  float64_t p_x = output_x.read_deep();
+  float64_t p_y = output_y.read_deep();
+
+  float64_t v_x = target_x - p_x;
+  float64_t v_y = target_y - p_y;
+
+  float64_t v_norm = std::sqrt((v_x * v_x) + (v_y * v_y));
+
+  // Clamp velocity  
+  // TODO: choose small epsilon value appropriately
+  if (v_norm > max_speed * CORE_FRAME_PERIOD_S && v_norm > 1e-6) {
+    v_x = v_x * max_speed * CORE_FRAME_PERIOD_S / v_norm;
+    v_y = v_y * max_speed * CORE_FRAME_PERIOD_S / v_norm;
+  }
+  // Serial.println(v_x);
+
+  output_x.set(v_x, INCREMENTAL);
+  output_y.set(v_y, INCREMENTAL);
+  output_x.push();
+  output_y.push();
+
+}
+
+void Attractor2D::debugPrint() {
+  Serial.print("p_x: ");
+  Serial.print(output_x.read_deep());
+  Serial.print(" p_y: ");
+  Serial.print(output_y.read_deep());
+  Serial.print(" target_x: ");
+  Serial.print(target_x);
+  Serial.print(" target_y: ");
+  Serial.print(target_y);
+  Serial.print(" max speed: ");
+  Serial.println(max_speed);
+  // Serial.print(", output read: ");
+}

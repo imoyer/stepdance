@@ -78,8 +78,8 @@ void setup() {
   channel_b.invert_output();
 
 #ifdef axidraw
-  channel_a.set_ratio(25.4, 2874);
-  channel_b.set_ratio(25.4, 2874);
+  channel_a.set_ratio(25.4, 2032);
+  channel_b.set_ratio(25.4, 2032);
 #endif
 #ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
@@ -115,7 +115,6 @@ void setup() {
   tbi.begin();
   tbi.output_x.map(&axidraw_kinematics.input_x);
   tbi.output_y.map(&axidraw_kinematics.input_y);
-  tbi.output_parameter.map(&wave2d_gen.input_t, ABSOLUTE);
 
   // -- Configure wave 2D generator --
 
@@ -126,6 +125,7 @@ void setup() {
 
   wave2d_gen.output_x.map(&axidraw_kinematics.input_x);
   wave2d_gen.output_y.map(&axidraw_kinematics.input_y);
+  wave2d_gen.input_t.map(&tbi.output_parameter, ABSOLUTE);
   wave2d_gen.begin();
 
   durationToFreq.input_move_duration.map(&tbi.output_duration, ABSOLUTE);
