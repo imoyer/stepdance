@@ -1,6 +1,6 @@
-\page stepasketch Step-A-Sketch Example
+# Step-A-Sketch Example
 ## Overview
-![](/doc/images/step-a-sketch_teaser.png)
+![](../images/step-a-sketch_teaser.png)
 
 This example uses two encoders to control a pen plotter (e.g. an AxiDraw) in realtime, a la etch-a-sketch. One knob is mapped to the X axis, and the other to the Y axis. You will learn how to:
 
@@ -16,22 +16,22 @@ The axidraw has two stepper motors for XY positioning and a single servo motor f
 - To set 1/16 microstepping, install jumpers on both microstepping headers for the A and B output ports as shown below. The jumpers should be oriented vertically (see the Stepper Drivers and Motor Interfaces section on the main page).
 - Install two TMC2209 stepper drivers and one [Hobby Servo Driver](../readme.md#hobby-servo-driver) as shown below.
 
-![](/doc/images/step-a-sketch_board.png)
+![](../images/step-a-sketch_board.png)
 
 ## Wiring
-![](/doc/images/step-a-sketch_wiring.png)
+![](../images/step-a-sketch_wiring.png)
 
 There are eight wiring connections to be made:
 
 - Both AxiDraw stepper motors to Output Ports A and B. We've wired the left motor to A, and the right motor to B.
 - The servo motor to Output Port C.
-- Two encoders, one to each of the encoder input ports ENC1 and ENC2. \ref taiss "Details on wiring Taiss encoders are here". Refer to the board reference on the main page for general info on wiring encoders.
+- Two encoders, one to each of the encoder input ports ENC1 and ENC2. [Details on wiring Taiss encoders are here](../taiss.md). Refer to the board reference on the main page for general info on wiring encoders.
 - One pushbutton to digital input port D1.
 - 5VDC to the Teensy 4.1, delivered over a micro-usb cable. This powers the logic for all of the electronics, except for the hobby servo driver, which generates its own 5V supply. Initially, power this via your computer while programming the Teensy with firmware. Then, you can provide power from a USB charger etc.
 - 12VDC to the 5.5mm OD / 2.1mm ID barrel plug.
 
 ### Wiring Stepper Motors
-![](/doc/images/stepper_wiring.png)
+![](../images/stepper_wiring.png)
 
 The Stepdance driver board supports _two phase_ stepper motors. These phases "A" and "B" (represented by blue and red inductor symbols in the diagram above) each has two wires coming off the motor, for four leads total. In order for the motor to spin, it is essential that each phase's two wires enter the connector at adjacent pins.
 
@@ -41,15 +41,15 @@ Flipping the two wires within a phase, or flipping the two phases, will change t
 
 Below illustrates the color codes used in the AxiDraw V3.
 
-![](/doc/images/axidraw_wiring.png)
+![](../images/axidraw_wiring.png)
 
 ### Wiring the Servo Motor
-![](/doc/images/servo_wiring.png)
+![](../images/servo_wiring.png)
 
 Note that the servo is wired into the same 4-pin connector and header as the stepper motors.
 
 ### Wiring the Button
-![](/doc/images/button_wiring.png)
+![](../images/button_wiring.png)
 
 The button should be wired across the INPUT and 3V3 pins of the Molex SL connector, as shown. We will configure the Teensy to apply an internal pull-down resistor to the input pin, which will cause the input to read LOW when not pressed and HIGH when pressed.
 
@@ -65,7 +65,7 @@ Motors are typically rated in amps/phase, which is a root-mean-square (RMS) valu
 The BIGTREETECH TMC2209 drivers are configured with a gain of 1V/1A, so to calculate the reference voltage, you simply multiply the target peak current by 1.0. For the Axidraw V3, the reference voltage is 1.4V.
 
 #### Set the Reference Voltage
-![](/doc/images/ref_voltage.png)
+![](../images/ref_voltage.png)
 
 Using a multimeter, measure the voltage between VREF and GND as shown in the image, and slowly turn the potentiometer until the reading matches your target voltage. A few important notes:
 
@@ -75,7 +75,7 @@ Using a multimeter, measure the voltage between VREF and GND as shown in the ima
 ## Code
 The Step A Sketch code is in the example folder. In the sections below, we walk thru the code by section and explain how all the pieces fit together.
 
-![](/doc/images/stepasketch_diagram.png)
+![](../images/stepasketch_diagram.png)
 
 ### Board Definition
 ```

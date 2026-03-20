@@ -9,15 +9,15 @@ Stepdance is a framework for creative motion control. Stepdance is:
 ***
 ## Getting Started
 
-Looking for installation and onboarding instructions? See the dedicated @ref getting_started "Getting Started Guide".
+Looking for installation and onboarding instructions? See the dedicated [Getting Started Guide](getting_started.md).
 
 ***
 ## Hardware Documentation
-For detailed information about Stepdance hardware modules, ports, and specifications, see the @ref hardware "Hardware Documentation".
+For detailed information about Stepdance hardware modules, ports, and specifications, see the [Hardware Documentation](hardware/readme.md).
 ***
 
 ## Stepdance Software Library (SSL) Documentation
-For detailed information about programming Stepdance hardware modules, see the @ref ssl "SSL Documentation".
+For detailed information about programming Stepdance hardware modules, see the [SSL Documentation](SSL/readme.md).
 ***
 
 

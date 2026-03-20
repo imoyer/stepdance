@@ -1,5 +1,4 @@
-\page highspeed High-Speed Frame Configuration
-## High-Speed Frame Configuration
+# High-Speed Frame Configuration
 
 Stepdance normally operates with a 40µs frame period, allowing up to four axis signals (R, θ, Z, E) in a single frame with 2µs inter-signal gaps. Certain applications benefit from higher frame rates (shorter frame periods) to reduce motion granularity and improve control loop responsiveness.
 
@@ -20,4 +19,4 @@ When enabling a high-speed mode:
 Implementation details (API to select frame period, dynamic signal packing algorithm) will be documented here once stabilized.
 
 ### See Also
-\ref stepasketch for a baseline example at the default frame rate.
+[Step-A-Sketch](examples/stepasketch.md) for a baseline example at the default frame rate.

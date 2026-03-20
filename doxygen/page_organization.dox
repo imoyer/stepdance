@@ -1,65 +1,66 @@
-/** \page documentation Documentation
+/** \mainpage Stepdance Software Library
 
-This page provides an organized index of all Stepdance documentation.
+Stepdance is a motion control framework that scaffolds a wide range of modular software components. These can do things like:
+ - real-time control of motors from encoders and potentiometers
+ - emulate standard motion controllers to interpret pre-planned motion formats like G-code and AxiDraw
+ - record and replay motion streams
+ - apply filters such as scaling and rotation
+ - generate a host of motion signals including transiting to a position, constant velocity, sinusoidal position, etc.
+ - convert between coordinate systems, e.g. polar and cartesian
+ - mix signal sources in real-time
 
-## Categories
+Most of the Stepdance framework is interrupt-driven and operates in the background, by taking advantage of the relatively massive computing power of the Teensy 4/4.1 (based on the iMXRT1062).
 
-- \subpage software_docs
-- \subpage hardware_docs  
-- \subpage tutorials_docs
-- \subpage code_examples
+This resource provides comprehensive documentation on the Stepdance Software Library. For instructions and support on the entire Stepdance system (hardware, examples, etc.) visit [stepdance.org](https://stepdance.org)
 
-*/
+## Library Overview
 
-/** \page software_docs Software Documentation
+The Stepdance library provides a flexible architecture for motion control through several key components:
 
-Documentation for the Stepdance Software Library and its components.
+- **BlockPorts**: Unified interface for connecting components and routing data between them (see BlockPort and @ref core)
+- **Channels**: Position state management and step/direction signal generation (see Channel and @ref channels)
+- **Input/Output Ports**: Physical hardware interface for receiving and transmitting motion signals (see InputPort, OutputPort, and @ref io)
+- **Generators**: Motion pattern and trajectory generation (see @ref generators)
+- **Kinematics**: Coordinate system transformations (Cartesian, polar, CoreXY, etc.) (see @ref kinematics)
+- **Filters**: Signal smoothing and noise reduction (see @ref filters)
+- **Interfaces**: External protocol support (G-code, EiBotBoard, etc.) (see GCodeInterface, Eibotboard, and @ref interfaces)
+- **Recording**: Motion recording and playback functionality (see FourTrackRecorder, FourTrackPlayer, and @ref recording)
+- **Inputs**: Physical input device handling (see AnalogInput, Button, Encoder, and @ref inputs)
 
-### Pages
+## Getting Started
 
-- \subpage ssl
+To get started with Stepdance programming:
 
-*/
+1. **Understand BlockPorts**: BlockPorts are the fundamental communication mechanism between components. See the BlockPort class and @ref core module for details.
+2. **Configure Output Ports**: Set up your physical output ports to send step/direction signals. See the OutputPort class and @ref io module for configuration.
+3. **Create Channels**: Channels drive motors to target positions. See the Channel class and @ref channels module for setup and usage.
+4. **Add Motion Sources**: Connect input ports, generators, or other motion sources to your channels using BlockPort mapping. See @ref generators and @ref inputs for available sources.
 
-/** \page hardware_docs Hardware Documentation
+## Module Organization
 
-Information about Stepdance hardware platforms and configurations.
+The library is organized into functional modules:
 
-### Pages
+- **@ref core** — Core framework components
+- **@ref io** — Hardware I/O interfaces
+- **@ref channels** — Position control
+- **@ref generators** — Motion generation
+- **@ref kinematics** — Coordinate transformations
+- **@ref filters** — Signal processing
+- **@ref interfaces** — External protocols
+- **@ref recording** — Motion recording and playback
+- **@ref inputs** — Physical input devices
+- **@ref rpc** — Remote procedure calls
+- **@ref utilities** — Helper functions and utilities
 
-- \subpage hardware
-- \subpage taiss
+## Code Examples
 
-*/
+For complete working examples, see the \ref examples page, which includes:
 
-/** \page tutorials_docs Tutorials & Guides
-
-Step-by-step guides and tutorials for using Stepdance.
-
-### Pages
-
-- \subpage getting_started
-- \subpage ebb
-- \subpage stepasketch
-- \subpage highspeed
-
-*/
-
-/** \page code_examples Code Examples
-
-Working code examples organized by category.
-
-### Overview
-
-- \subpage examples
-
-### Example Categories
-
-- \subpage examples_core
-- \subpage examples_motion
-- \subpage examples_plotting
-- \subpage examples_clayprinter
-- \subpage examples_kinematics
-- \subpage examples_legacy
+- \ref examples_core "Core Concepts" — analog input, encoders, I/O ports, motor configuration
+- \ref examples_motion "Motion & Drawing" — pantograph, wheelbot, harmonograph
+- \ref examples_plotting "Plotting & AxiDraw" — plotter movement, recording, G-code
+- \ref examples_clayprinter "Clay 3D Printer" — clay printing and extrusion control
+- \ref examples_kinematics "Kinematics" — coordinate transforms
+- \ref examples_legacy "Legacy / Experimental" — older sketches
 
 */
