@@ -35,17 +35,10 @@ class Channel : public Plugin{
   public:
     // Public State
     /**
-     * @brief Target position of the channel in pulses. Target positon is what the channel is driving toward.
+     * @brief Blockport managing the target position of the channel in pulses. Target positon is what the channel is driving toward.
      */
-    DecimalPosition target_position; //primary target position, in pulses.
-    /**
-     * @brief Current position of the channel in pulses. Current position is where the channel is currently at.
-     */
-    DecimalPosition current_position; //tracks the current position, in pulses.
-    /**
-     * @brief Filtered target position of the channel in pulses. This is used when the enableFiltering() method is used to smooth out motion.
-     */
-    DecimalPosition filtered_target_position; // filtered target position
+    BlockPort input_target_position;
+
     /**
      * @brief Flag indicating whether filtering is enabled for the channel.
      */
@@ -55,10 +48,12 @@ class Channel : public Plugin{
  /**
    * These properties will be hidden from Doxygen documentation.
    */
+    DecimalPosition target_position; //primary target position, in pulses.
     DecimalPosition target_position_2; // secondary target position, used for coordinate transforms.
+    DecimalPosition current_position; //tracks the current position, in pulses.
+    DecimalPosition filtered_target_position; // filtered target position
     float32_t num_averaging_samples = 20; //samples in the averaging window
     // BlockPorts
-    BlockPort input_target_position;
     BlockPort input_target_position_2;
 
     void push_deep();

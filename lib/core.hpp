@@ -170,6 +170,11 @@ class BlockPort{
      * @param mode Mode of operation: INCREMENTAL or ABSOLUTE.
      */
     void map(BlockPort *map_target, uint8_t mode); //maps this BlockPort's pipe to a target BlockPort
+
+    /** 
+     * @brief Maps this BlockPort to a target BlockPort in INCREMENTAL mode.
+     * @param map_target Pointer to the target BlockPort to map to.
+     */
     inline void map(BlockPort *map_target){
       map(map_target, INCREMENTAL); //default internal mode is INCREMENTAL
     }
