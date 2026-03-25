@@ -39,9 +39,8 @@ Encoder encoder_2;
 
 
 // -- Define Input Button --
-// Just like the step-a-sketch example, we use two buttons for pen up / pen down
+// Just like the step-a-sketch example, we use a button for pen up / pen down
 Button button_d1;
-Button button_d2;
 
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
@@ -98,15 +97,6 @@ void setup() {
 
   // -- Configure the circle generator --
   // TODO
-  // Configure CircleGenerator with radius 10mm, 1 revolution per second
-  circle_gen.radius = 1.0;
-  circle_gen.rotational_speed_rev_per_sec = 10.0;
-  circle_gen.setNoInput(); // Use internal frame count
-
-  // Map circle outputs to X and Y channels
-  circle_gen.output_x.map(&axidraw_kinematics.input_x);
-  circle_gen.output_y.map(&axidraw_kinematics.input_y);
-  circle_gen.begin();
 
 
   // -- Configure and start the kinematics module --
