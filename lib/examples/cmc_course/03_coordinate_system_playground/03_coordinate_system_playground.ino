@@ -90,7 +90,7 @@ void setup() {
   position_gen_y.output.map(&axidraw_kinematics.input_y);
   position_gen_y.begin();
 
-  // TBI (can be used to test that the homing works properly)
+  // TBI (can be used to queue motions)
   time_based_interpolator.begin();
   time_based_interpolator.output_x.map(&axidraw_kinematics.input_x);
   time_based_interpolator.output_y.map(&axidraw_kinematics.input_y);
