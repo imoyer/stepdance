@@ -108,6 +108,14 @@ void setup() {
   // expected result: this rests the origin of the coordinate system to whatever position we are in right now
   rpc.enroll("reset_origin", reset_origin);
 
+  // Call example: {"name": "motors_enable"}
+  // expected result: this enables the motors
+  rpc.enroll("motors_enable", motors_enable);
+
+  // Call example: {"name": "motors_disable"}
+  // expected result: this disables the motors (so that you can manually move the machine without motors being engaged)
+  rpc.enroll("motors_disable", motors_disable);
+
   // {"name": "go_to_x", "args": [10]}
   // args are: absolute X
   rpc.enroll("go_to_x", go_to_x);
