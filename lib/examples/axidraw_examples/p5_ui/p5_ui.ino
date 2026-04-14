@@ -21,6 +21,11 @@ Channel channel_a;
 Channel channel_b;
 Channel channel_z;
 
+// Inputs
+Encoder encoder_1;  // left knob, controls horizontal
+Encoder encoder_2;  // right knob, controls vertical
+
+
 // -- Define Kinematics --
 // Kinematics convert between two coordinate spaces.
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
@@ -90,6 +95,16 @@ void setup() {
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
 
+  encoder_1.begin(ENCODER_1);
+  encoder_1.set_ratio(24, 2400);  // 24mm per revolution, 2400 pulses per rev
+  encoder_1.invert();
+  encoder_1.output.map(&axidraw_kinematics.input_x);
+
+  encoder_2.begin(ENCODER_2);
+  encoder_2.set_ratio(24, 2400);
+  encoder_2.invert();
+  encoder_2.output.map(&axidraw_kinematics.input_y);
+
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
@@ -128,6 +143,9 @@ void setup() {
 
   rpc.enroll("pen_down", pen_down);
   rpc.enroll("pen_up", pen_up);
+
+  rpc.enroll("drivers_off", motors_disable);
+  rpc.enroll("drivers_on", motors_enable);
 
 
   // {"name": "go_to_xy", "args": [6, 5, 10]}
@@ -168,6 +186,15 @@ void pen_up(){
 
 void say_hello(){
   Serial.println("hello!");
+}
+
+
+void motors_enable(){
+  enable_drivers();
+}
+
+void motors_disable(){
+  disable_drivers();
 }
 
 
