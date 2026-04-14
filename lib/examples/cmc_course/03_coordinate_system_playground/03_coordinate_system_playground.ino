@@ -151,11 +151,12 @@ void motors_disable(){
 
 void reset_origin() {
   axidraw_kinematics.input_x.reset_deep(0);
-  axidraw_kinematics.input_x.reset_deep(0);
+  axidraw_kinematics.input_y.reset_deep(0);
 }
 
 void go_to_x(float x) {
   // Arguments are: value, mode (GLOBAL ensures we work in absolute coordinates), speed
+
   position_gen_x.go(x, GLOBAL, 15.0);
 }
 
