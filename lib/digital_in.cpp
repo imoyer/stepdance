@@ -35,8 +35,28 @@ void Button::set_callback_on_press(void (*callback_function)()){
   callback_on_press = callback_function;
 }
 
+void Button::set_callback_on_first_press(void (*callback_function)()){
+  callback_on_first_press = callback_function;
+}
+
+void Button::set_callback_on_second_press(void (*callback_function)()){
+  callback_on_second_press = callback_function;
+}
+
+void Button::set_callback_on_third_press(void (*callback_function)()){
+  callback_on_third_press = callback_function;
+}
+
 void Button::set_callback_on_release(void (*callback_function)()){
   callback_on_release = callback_function;
+}
+
+void Button::set_callback_on_doublepress(void (*callback_function)()){
+  callback_on_doublepress = callback_function;
+}
+
+void Button::set_callback_on_triplepress(void (*callback_function)()){
+  callback_on_triplepress = callback_function;
 }
 
 void Button::set_debounce_ms(uint16_t debounce_ms){
@@ -77,6 +97,16 @@ void Button::begin(uint8_t pin, uint8_t pin_mode){
 }
 
 void Button::on_frame(){
+  /*if(button_mode == BUTTON_MODE_MULTIPRESS && !timer_started){
+    timer_started = true;
+  }
+  if(timer_started){
+   current_ms ++;
+  }
+  if(button_mode == BUTTON_MODE_MULTIPRESS){
+
+  }
+  else*/ 
   if(debounce_blackout_remaining_ms > 0){ // do nothing if the button has changed within the debounce blackout period
     debounce_blackout_remaining_ms --;
   }else{
@@ -107,6 +137,21 @@ void Button::on_frame(){
     }
     if((button_mode == BUTTON_MODE_TOGGLE) && (callback_on_toggle != nullptr)){
       callback_on_toggle();
+      change_flag = 0;    
+    }
+    if((button_mode == BUTTON_MODE_TOGGLE_THREE_STATE) && (callback_on_toggle != nullptr)){
+      if(press_num == 0){
+        callback_on_first_press();
+        press_num = 1;
+      }
+      else if(press_num == 1){
+        callback_on_second_press();
+        press_num = 2;
+      }
+      else if(press_num == 2){
+        callback_on_third_press();
+        press_num = 0;
+      }
       change_flag = 0;    
     }
   }
