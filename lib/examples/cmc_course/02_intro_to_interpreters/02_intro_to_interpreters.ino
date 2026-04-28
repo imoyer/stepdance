@@ -18,8 +18,6 @@ A part of the Mixing Metaphors Project
 #define axidraw 
 
 #include "stepdance.hpp"  // Import the stepdance library
-// -- Define Input Ports --
-InputPort input_a;
 
 // -- Define Output Ports --
 // Output ports generate step and direction electrical signals
@@ -90,17 +88,6 @@ void setup() {
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
-
-  // -- Configure and start the input port --
-  input_a.begin(INPUT_A);
-  input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_x.map(&axidraw_kinematics.input_x);
-
-  input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_y.map(&axidraw_kinematics.input_y);
-
-  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_z.map(&channel_z.input_target_position);
 
   // -- Configure and start the encoders --
   encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
