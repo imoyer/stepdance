@@ -277,6 +277,10 @@ void AnalogInput::begin(uint8_t pin_reference){
   }
 }
 
+void AnalogInput::set_callback(void (*callback_function)()) {
+  this->callback_function = callback_function;
+}
+
 void AnalogInput::invert(){
   inversion_multiplier *= -1;
 }
