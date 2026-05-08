@@ -1,27 +1,24 @@
 /*
-AxiDraw Interface
-
-This extends the Step-A-Sketch demo with an InkScape interface that simulates the AxiDraw's
-EBB Control Board.
+Step-A-Sketch: A digital etch-a-sketch
 
 Example project for the Stepdance control system.
 
 A part of the Mixing Metaphors Project
 
-// (c) 2026 Ilan Moyer, Jennifer Jacobs, Emilie Yu, Alejandro Aponte
 */
 
 #define module_driver   // tells compiler we're using the Stepdance Driver Module PCB
                         // This configures pin assignments for the Teensy 4.1
 
 // Machine Selection
+// Choose one of the two machines below
 //#define axidraw 
 #define pocket_plotter
-
 
 #include "stepdance.hpp"  // Import the stepdance library
 // -- Define Input Ports --
 InputPort input_a;
+InputPort input_b;
 
 // -- Define Output Ports --
 // Output ports generate step and direction electrical signals
@@ -41,9 +38,6 @@ Channel channel_a;  //AxiDraw "A" axis --> left motor motion
 Channel channel_b;  // AxiDraw "B" axis --> right motor motion
 Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 
-// -- AxiDraw Interface
-Eibotboard ebb_interface;
-
 // -- Define Kinematics --
 // Kinematics convert between two coordinate spaces.
 // We think in XY, but the axidraw moves in AB according to "CoreXY" (also "HBot") kinematics
@@ -62,11 +56,14 @@ Button button_d2;
 // -- Position Generator for Pen Up/Down --
 PositionGenerator position_gen;
 
-// -- 2D Scaling Filter to scale up/down output --//
-ScalingFilter2D scalingFilter2D;
+// -- AxiDraw Interface
+Eibotboard ebb_interface;
 
-// -- Potentiometer to control scaling ratio -- //
-AnalogInput scaling_slider_a2;
+
+AnalogInput analog_a1; //radius control for circle generator
+
+// -- Circle Generator to add to end-effector motion --
+CircleGenerator circle_gen;
 
 void setup() {
   // -- Configure and start the output ports --
@@ -85,21 +82,21 @@ void setup() {
   channel_b.begin(&output_b, SIGNAL_E);
   channel_b.invert_output();
 
-#ifdef axidraw
-  channel_a.set_ratio(25.4, 2032);
-  channel_b.set_ratio(25.4, 2032);
-#endif
-#ifdef pocket_plotter
+// #ifdef axidraw
+  // channel_a.set_ratio(25.4, 2874);
+  // channel_b.set_ratio(25.4, 2874);
+// #endif
+// #ifdef pocket_plotter
   channel_a.set_ratio(40, 3200); // Sets the input/output transmission ratio for the channel.
   channel_b.set_ratio(40, 3200);
-#endif
+// #endif
                                                 // This provides a convenience of converting between input units and motor (micro)steps
                                                 // For the pocket plotter, 40mm == 3200 steps (1/16 microstepping)
 
   channel_z.begin(&output_c, SIGNAL_E); //servo motor, so we use a long pulse width
   channel_z.set_ratio(1, 50); //straight step pass-thru.
 
-  // -- Configure and start the input port --
+  // -- Configure and start the input ports --
   input_a.begin(INPUT_A);
   input_a.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
   input_a.output_x.map(&axidraw_kinematics.input_x);
@@ -107,8 +104,17 @@ void setup() {
   input_a.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
   input_a.output_y.map(&axidraw_kinematics.input_y);
 
-  input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
-  input_a.output_z.map(&channel_z.input_target_position);
+  //input_a.output_z.set_ratio(0.01, 1); //1 step is 0.01mm
+  //input_a.output_z.map(&channel_z.input_target_position);
+
+// -- Configure and start the input ports --
+  input_b.begin(INPUT_B);
+  input_b.output_x.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_b.output_x.map(&axidraw_kinematics.input_x);
+
+  input_b.output_y.set_ratio(0.01, 1); //1 step is 0.01mm
+  input_b.output_y.map(&axidraw_kinematics.input_y);
+
 
   // -- Configure and start the encoders --
   encoder_1.begin(ENCODER_1); // "ENCODER_1" specifies the physical port on the PCB
@@ -123,19 +129,7 @@ void setup() {
   encoder_2.invert();
   encoder_2.output.map(&axidraw_kinematics.input_y); // map the right encoder to the y axis input of the kinematics
 
-  // -- Configure and start EBB Interface --
-  ebb_interface.begin();
-  ebb_interface.output_x.map(&axidraw_kinematics.input_x);
-  ebb_interface.output_y.map(&axidraw_kinematics.input_y);
-  ebb_interface.output_z.map(&channel_z.input_target_position);
-
-  // -- Configure and start the kinematics module --
-  axidraw_kinematics.begin();
-  // -- Map the kinematics output to the scaling filter input --//
-  axidraw_kinematics.output_a.map(&scalingFilter2D.input_1);
-  axidraw_kinematics.output_b.map(&scalingFilter2D.input_2);
-
-   // Configure CircleGenerator with radius 10mm, 1 revolution per second
+  // Configure CircleGenerator with radius 10mm, 1 revolution per second
   circle_gen.radius = 1.0;
   circle_gen.rotational_speed_rev_per_sec = 10.0;
   circle_gen.setNoInput(); // Use internal frame count
@@ -145,14 +139,25 @@ void setup() {
   circle_gen.output_y.map(&channel_b.input_target_position);
   circle_gen.begin();
 
+  // -- Configure and start EBB Interface --
+  ebb_interface.begin();
+  ebb_interface.output_x.map(&axidraw_kinematics.input_x);
+  ebb_interface.output_y.map(&axidraw_kinematics.input_y);
+  ebb_interface.output_z.map(&channel_z.input_target_position);
 
-// radius knnob
+  // -- Configure and start the kinematics module --
+  axidraw_kinematics.begin();
+  axidraw_kinematics.output_a.map(&channel_a.input_target_position);
+  axidraw_kinematics.output_b.map(&channel_b.input_target_position);
+
+
+  // -- configure radius knob -- 
   analog_a1.set_floor(0, 25);
   analog_a1.set_ceiling(20, 1020); //radians per second
   analog_a1.map(&circle_gen.radius);
   analog_a1.begin(IO_A1);
 
-  // -- Configure Buttons --
+  // -- Configure Button --
   button_d1.begin(IO_D1, INPUT_PULLDOWN);
   button_d1.set_mode(BUTTON_MODE_TOGGLE);
   button_d1.set_callback_on_press(&pen_up);
@@ -166,21 +171,6 @@ void setup() {
   // -- Configure Position Generator --
   position_gen.output.map(&channel_z.input_target_position);
   position_gen.begin();
-
-// -- Configure the Scaling Filter -- //
-  scalingFilter2D.begin(); 
-  scalingFilter2D.set_ratio(0.5); // this will ultimately be set by the scaling slider below
-  scalingFilter2D.output_1.map(&channel_a.input_target_position); // map the outputs of the scaling filter to channel a and b inputs
-  scalingFilter2D.output_2.map(&channel_b.input_target_position);
-
-// -- Configure the scaling slider -- //
-  scaling_slider_a2.begin(IO_A2);
-  scaling_slider_a2.set_floor(0.5);
-  scaling_slider_a2.set_ceiling(2);
-  scaling_slider_a2.set_deadband(1, 509, 4); // deadband controls designated range where input movements do not produce output change to avoid jitter.
-  scaling_slider_a2.map(&scalingFilter2D.ratio); // map the value of the slider to the scaling filter ratio.
-
-
 
   // -- Start the stepdance library --
   // This activates the system.
@@ -212,11 +202,9 @@ void motors_disable(){
 }
 
 void report_overhead(){
-  // Serial.println(channel_z.target_position, 4);
-  // Serial.println(stepdance_get_cpu_usage(), 4);
-  Serial.print(" axidraw X: ");
+Serial.print(" axidraw X: ");
   Serial.print(axidraw_kinematics.input_x.read(ABSOLUTE), 4);
   Serial.print(" axidraw Y: ");
   Serial.print(axidraw_kinematics.input_y.read(ABSOLUTE), 4);
-  Serial.print("\n");
+  Serial.print("\n");  Serial.println(stepdance_get_cpu_usage(), 4);
 }
