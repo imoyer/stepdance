@@ -3,28 +3,28 @@ Core foundational Stepdance sketches illustrating hardware input, encoder usage,
 
 ## Example Files
 
-### @ref analog_in_test/analog_in_test.ino "Analog Input Test"
-**File:** `lib/examples/analog_in_test/analog_in_test.ino`
+### Analog Input Test
+@ref analog_in_test/analog_in_test.ino
 
 Basic example demonstrating analog input reading and processing.
 
-### @ref encoder_test/encoder_test.ino "Encoder Test"
-**File:** `lib/examples/encoder_test/encoder_test.ino`
+### Encoder Test
+@ref encoder_test/encoder_test.ino
 
 Example showing how to read and configure rotary encoders.
 
-### @ref io_port_test/io_port_test.ino "I/O Port Test"
-**File:** `lib/examples/io_port_test/io_port_test.ino`
+### I/O Port Test
+@ref io_port_test/io_port_test.ino
 
 Tests input and output port functionality.
 
-### @ref set_motor_currents/set_motor_currents.ino "Set Motor Currents"
-**File:** `lib/examples/set_motor_currents/set_motor_currents.ino`
+### Set Motor Currents
+@ref set_motor_currents/set_motor_currents.ino
 
 Example for configuring motor current settings.
 
-### @ref remote_procedure_call/remote_procedure_call.ino "Remote Procedure Call"
-**File:** `lib/examples/remote_procedure_call/remote_procedure_call.ino`
+### Remote Procedure Call
+@ref remote_procedure_call/remote_procedure_call.ino
 
 Example demonstrating the RPC (Remote Procedure Call) system for remote control and communication.
 

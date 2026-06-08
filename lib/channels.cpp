@@ -234,6 +234,10 @@ void Channel::push_deep(){ //gets called on a state synchronization
   current_position = filtered_target_position;
 }
 
+DecimalPosition Channel::read_deep(BlockPort& in_blockport){
+  return target_position;
+}
+
 void Channel::enroll(RPC *rpc, const String& instance_name){
   rpc->enroll(instance_name, "set_ratio", *this, &Channel::set_ratio);
   rpc->enroll(instance_name, "set_upper_limit", *this, &Channel::set_upper_limit);

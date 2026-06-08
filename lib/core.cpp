@@ -106,12 +106,18 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_input_port_frame_plugins[num_registered_input_port_frame_plugins] = this;
         num_registered_input_port_frame_plugins ++;
       }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
+      }
       break;
 
     case PLUGIN_FRAME_PRE_CHANNEL:
       if(num_registered_pre_channel_frame_plugins < MAX_NUM_PRE_CHANNEL_FRAME_PLUGINS){
         registered_pre_channel_frame_plugins[num_registered_pre_channel_frame_plugins] = this;
         num_registered_pre_channel_frame_plugins ++;
+      }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
       }
       break;
 
@@ -120,6 +126,9 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_post_channel_frame_plugins[num_registered_post_channel_frame_plugins] = this;
         num_registered_post_channel_frame_plugins ++;
       }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
+      }
       break;
 
     case PLUGIN_KILOHERTZ:
@@ -127,12 +136,18 @@ void Plugin::register_plugin(uint8_t execution_target){
         registered_kilohertz_plugins[num_registered_kilohertz_plugins] = this;
         num_registered_kilohertz_plugins ++;
       }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
+      }
       break;
     
     case PLUGIN_LOOP:
       if(num_registered_loop_plugins < MAX_NUM_LOOP_PLUGINS){
         registered_loop_plugins[num_registered_loop_plugins] = this;
         num_registered_loop_plugins ++;
+      }
+      else {
+        Serial.println("WARNING: failed to register a plugin (nb of plugins registered > max number).");
       }
       break;
   }
@@ -180,6 +195,11 @@ void Plugin::run_loop_plugins(){
 
 void Plugin::push_deep(){};
 void Plugin::pull_deep(){};
+DecimalPosition Plugin::read_deep(BlockPort& in_blockport){
+  // By default (if unimplemented) return the value of the input blockport
+  Serial.println("WARNING: this method is unimplemented for a plugin you're calling read_deep through, this is likely to give unexpected results.");
+  return in_blockport.read_absolute();
+};
 
 
 
@@ -223,6 +243,10 @@ float64_t BlockPort::read(uint8_t mode){
   }else{
     // pre-update, so we provide an estimate of what the target state will be post-update.
     if(mode == INCREMENTAL){
+      if (target == nullptr) {
+        Serial.println("ERROR: target is nullptr");
+        return 0.0;
+      }
       // We return an estimate of the CHANGE to target. 
       return convert_block_to_world_units(incremental_buffer + (absolute_buffer - *target)); //this subtraction term will result in 0 if nothing has been written to the buffer
 
@@ -279,6 +303,7 @@ void BlockPort::reverse_update(){
 void BlockPort::set(float64_t value, uint8_t mode){
   // add following 3 lines
   if (target == nullptr){
+    Serial.println("ERROR: target is nullptr");
     return;
   }
   update_has_run = true; //we set this to reflect that the buffers contain the current state of the target
@@ -369,6 +394,26 @@ DecimalPosition BlockPort::pull_deep(){
   }
   return read(ABSOLUTE);
 }
+
+DecimalPosition BlockPort::read_deep(){
+      switch(blockport_direction){
+        case BLOCKPORT_INPUT:
+          if(parent_Plugin != nullptr){
+            return parent_Plugin->read_deep(*this); //this method in parent plugin will call pull_deep on its blockports, and then run e.g. kinematic transform
+            // return read(ABSOLUTE); //return our position
+          }
+          break;
+        
+        case BLOCKPORT_OUTPUT:
+          if(target_BlockPort != nullptr){
+            DecimalPosition read_value = target_BlockPort->read_deep();
+            // reset(read_value); //resets internal position to match downstream position
+            return read_value;
+          }
+          break;    
+      }
+      return read(ABSOLUTE);
+    }
 
 
 void BlockPort::enable(){

@@ -57,6 +57,21 @@ void KinematicsCoreXY::pull_deep(){
   input_y.reset(0.5*(position_a - position_b), true);
 }
 
+DecimalPosition KinematicsCoreXY::read_deep(BlockPort& in_blockport) {
+  float64_t a = output_a.read_deep();
+  float64_t b = output_b.read_deep();
+
+  if (&input_x == &in_blockport) {
+    return 0.5 * (a + b);
+  }
+
+  if (&input_y == &in_blockport) {
+    return 0.5 * (a - b);
+  }
+
+  return 0.0;
+}
+
 
 KinematicsPolarToCartesian::KinematicsPolarToCartesian(){};
 

@@ -1,10 +1,10 @@
-\page getting_started Getting Started with Stepdance
+# Getting Started with Stepdance
 
 ## Overview
 This guide walks you through installing the development environment, adding the Stepdance library, and confirming communication with your Stepdance hardware module.
 
 ## 1. Set Up Your Hardware
-Build or acquire a Stepdance module (Driver Module or Basic Module). See @ref hardware "Hardware Documentation" for physical specifications and pinouts.
+Build or acquire a Stepdance module (Driver Module or Basic Module). See [Hardware Documentation](hardware/readme.md) for physical specifications and pinouts.
 
 ## 2. Set Up Arduino Programming Environment
 
@@ -32,7 +32,7 @@ ln -s /Users/emilie/Documents/Work/stepdance/stepdance/lib stepdance
 ### C. Connect and Select the Board
 Plug the Stepdance module into your computer via a USB cable connected to the Teensy. Select the Teensy 4.1 (or 4.0) board and correct port from the Arduino IDE toolbar dropdown.
 
-![](/doc/images/teensy_select.png)
+![](images/teensy_select.png)
 
 Set USB Type: Tools > USB Type > Dual Serial. If you skip this, you will see the compile-time error:
 ```
@@ -50,11 +50,11 @@ Upload using the arrow icon.
 ### D. Test Serial Monitor
 Open the Serial Monitor (magnifying glass icon). If you do not see output from `Serial.println()`, switch ports under Tools > Port. On macOS you may see devices like `/dev/cu.usbmodem...`; on Windows, use the appropriate `COM` port.
 
-![](/doc/images/stepdance_serial.png)
+![](images/stepdance_serial.png)
 
 ## 3. Next Steps
-- Explore @ref ssl "Software Library Documentation"
+- Explore [Software Library Documentation](SSL/readme.md)
 - Try filtering or mapping inputs to motion channels.
 - Experiment with generators (e.g., WaveGenerator1D, PositionGenerator).
 
-Return to the main documentation: @ref getting_started "Getting Started" | @ref hardware "Hardware" | @ref ssl "SSL"
+Return to the main documentation: [Getting Started](getting_started.md) | [Hardware](hardware/readme.md) | [SSL](SSL/readme.md)

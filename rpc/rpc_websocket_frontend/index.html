@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset='utf-8'>
+	<meta name='viewport' content='width=device-width,initial-scale=1'>
+
+	<style>
+		body {
+			font-family: monospace;
+			padding: 5px;
+		}
+		.example-row {
+			margin: 10px 0;
+		}
+	</style>
+
+	<title>Stepdance serial JS example</title>
+	<body>
+		<h1>Stepdance serial JS example</h1>
+
+		<div class="example-row">
+			<button onclick="callRPC('hello')">Hello serial</button>
+		</div>
+		<div class="example-row">
+			<label for="x">x</label>
+			<input
+			type="number"
+			id="x"
+			name="x"/>
+
+			<label for="y">y</label>
+			<input
+			type="number"
+			id="y"
+			name="y"/>
+
+			<button onclick="callGoTo()">Go</button>
+		</div>
+
+		<h2>Log (messages from serial)</h2>
+		<div id="serial-messages">
+
+		</div>
+	</body>
+	<script src='/rpc_websocket_frontend.js'></script>
+</head>
+
+<body>
+</body>
+</html>

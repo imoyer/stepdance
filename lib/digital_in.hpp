@@ -21,6 +21,9 @@ A part of the Mixing Metaphors Project
 // Button Mode
 #define BUTTON_MODE_STANDARD 0 // button state reflects pin state, modulo debounce and invert flag
 #define BUTTON_MODE_TOGGLE 1 // button state toggles each button press
+#define BUTTON_MODE_TOGGLE_THREE_STATE 2 // button state toggles to three distinct states
+#define BUTTON_MODE_MULTIPRESS 3 // button state activates different states on single, double, triple press 
+
 #define BUTTON_NON_INVERTED 0
 #define BUTTON_INVERTED 1
 
@@ -98,6 +101,31 @@ class Button : public Plugin{
      * @brief Sets a callback function to be called when the button is released.
      * @param callback_function Pointer to the callback function. 
      **/
+      void set_callback_on_first_press(void (*callback_function)());
+    /** 
+     * @brief Sets a callback function to be called when the button is pressed a first time.
+     * @param callback_function Pointer to the callback function. 
+     **/
+      void set_callback_on_second_press(void (*callback_function)());
+    /** 
+     * @brief Sets a callback function to be called when the button is pressed a second time.
+     * @param callback_function Pointer to the callback function. 
+     **/
+      void set_callback_on_third_press(void (*callback_function)());
+    /** 
+     * @brief Sets a callback function to be called when the button is pressed a third time.
+     * @param callback_function Pointer to the callback function. 
+     **/
+    void set_callback_on_doublepress(void (*callback_function)());
+    /** 
+     * @brief Sets a callback function to be called when the button is pressed twice within a window
+     * @param callback_function Pointer to the callback function. 
+     **/
+    void set_callback_on_triplepress(void (*callback_function)());
+    /** 
+     * @brief Sets a callback function to be called when the button is pressed three times within a window
+     * @param callback_function Pointer to the callback function. 
+     **/
     void set_callback_on_release(void (*callback_function)());
     /** 
      * @brief Sets the debounce period for the button. Debouncing refers to checking the button state over a short period to avoid false triggering due to mechanical noise.
@@ -134,14 +162,21 @@ class Button : public Plugin{
     uint8_t input_pin;
     uint8_t invert = BUTTON_NON_INVERTED;
     uint16_t debounce_period_ms = DIGITAL_IN_DEFAULT_DEBOUNCE_MS;
+    uint16_t current_ms = 0; //started when button is pressed, stores time between each press.
     uint8_t button_mode = BUTTON_MODE_STANDARD;
     volatile uint16_t debounce_blackout_remaining_ms = 0; //starts at debounce_period_ms, and counts down to zero
     volatile uint8_t button_state = 0;
     volatile uint8_t change_flag = 0; //set when the button state changes, unless a callback is provided
+    volatile uint8_t press_num = 0; //used to track number of presses for multi-press mode
     volatile uint8_t last_raw_pin_state = 0;
     void (*callback_on_toggle)() = nullptr;
     void (*callback_on_press)() = nullptr;
     void (*callback_on_release)() = nullptr;
+    void (*callback_on_first_press)() = nullptr;
+    void (*callback_on_second_press)() = nullptr;
+    void (*callback_on_third_press)() = nullptr;
+    void (*callback_on_doublepress)() = nullptr;
+    void (*callback_on_triplepress)() = nullptr;
 };
 
 
