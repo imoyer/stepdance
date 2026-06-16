@@ -68,9 +68,9 @@ void setup() {
   channel_a.begin(&output_a, SIGNAL_E); // Connects the channel to the "E" signal on "output_a".
                                       // We choose the "E" signal because it results in a step pulse of 7us,
                                       // which is more than long enough for the driver IC
-  channel_a.invert_output();  // CALL THIS TO INVERT THE MOTOR DIRECTION IF NEEDED
+  // channel_a.invert_output();  // CALL THIS TO INVERT THE MOTOR DIRECTION IF NEEDED
   channel_b.begin(&output_b, SIGNAL_E);
-  channel_b.invert_output();
+  // channel_b.invert_output();
 
   channel_a.set_ratio(1, 1);
   channel_b.set_ratio(1, 1);
