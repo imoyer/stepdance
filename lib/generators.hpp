@@ -713,13 +713,14 @@ class SerialConnectionGenerator : public Plugin{
 
     void begin();
 
-    static const uint8_t NUM_CHANNELS = 3;
+    static const uint8_t NUM_CHANNELS = 4;
     SerialControlTrack controlled_tracks[NUM_CHANNELS];
 
-    // BlockPorts (for now fixed to 2D XY)
+    // BlockPorts
     BlockPort& output_1 = controlled_tracks[0].output;
     BlockPort& output_2 = controlled_tracks[1].output;
     BlockPort& output_3 = controlled_tracks[2].output;
+    BlockPort& output_4 = controlled_tracks[3].output;
 
 
   protected:
