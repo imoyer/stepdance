@@ -629,22 +629,29 @@ void SerialConnectionGenerator::loop() {
 
   // Read from Serial to set the target values for the current loop iteration
   // Receive input from server
-  if (Serial.available() >= NUM_CHANNELS) {
-  //   // incomingByte = Serial.read(); // read only one byte and then execute the rest of the loop code (prevent delays?)
-    char serial_in_data[NUM_CHANNELS]; // one char per axis
-    Serial.readBytes(serial_in_data, NUM_CHANNELS);
-
-    // Serial.println(serial_in_data);
-
-    for (int i = 0; i < NUM_CHANNELS; i++) {
-      int raw_value = (signed char) serial_in_data[i];
-      // Serial.println(raw_value);
-      controlled_tracks[i].loop(raw_value);
+  if (Serial.available() >= NUM_CHANNELS + 1) {
+    int flag = Serial.read();
+    if (flag == 0) {
+      Serial.println("HELLO");
     }
+
+    if (flag == 1) {
+      char serial_in_data[NUM_CHANNELS]; // one char per axis
+      Serial.readBytes(serial_in_data, NUM_CHANNELS);
+
+
+      for (int i = 0; i < NUM_CHANNELS; i++) {
+        int raw_value = (signed char) serial_in_data[i];
+        // Serial.println(raw_value);
+        controlled_tracks[i].loop(raw_value);
+      }
+    }
+
 
   }
   else {
-    Serial.println("no serial in");
+
+    // Serial.println("no serial in");
 
     for (int i = 0; i < NUM_CHANNELS; i++) {
       // int raw_value = (signed char) serial_in_data[i];
