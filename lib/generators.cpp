@@ -492,8 +492,9 @@ void PathLengthGenerator3D::enroll(RPC *rpc, const String& instance_name){
 
 SerialControlTrack::SerialControlTrack(){};
 
-void SerialControlTrack::begin() {
+void SerialControlTrack::begin(float64_t max_steps_per_loop) {
   output.begin(&output_position);
+  this->max_steps_per_loop = max_steps_per_loop;
 }
 
 
@@ -549,7 +550,7 @@ void SerialControlTrack::run() {
 
 void SerialControlTrack::loop(int input) {
   // Map to correct range
-  DecimalPosition target_value = input * MAX_STEPS_PER_LOOP / 128;
+  DecimalPosition target_value = input * max_steps_per_loop / 128;
 
   current_target_velocity = target_value;
 
@@ -605,7 +606,7 @@ void SerialConnectionGenerator::begin(){
   // Register the plugin on the main loop and on the frame
 
   for (int i = 0; i < NUM_CHANNELS; i++){
-    controlled_tracks[i].begin();
+    controlled_tracks[i].begin(MAX_STEPS_PER_LOOP_PER_CHANNEL[i]);
   }
 
   register_plugin(); // on frame

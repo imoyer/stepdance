@@ -682,7 +682,7 @@ class Attractor2D : public Plugin {
 class SerialControlTrack {
   public:
     SerialControlTrack();
-    void begin();
+    void begin(float64_t max_steps);
     void run();
     void loop(int input);
 
@@ -691,8 +691,8 @@ class SerialControlTrack {
     // TODO: adjusting these values is probably pretty important
     // It will affect how much control we can have over the velocity on the application side
     // static const int buffer_queue_size = 2;
-    // static constexpr float64_t MAX_STEPS_PER_LOOP = 25;
-    static constexpr float64_t MAX_STEPS_PER_LOOP = 5;
+    float64_t max_steps_per_loop = 25;
+    // static constexpr float64_t MAX_STEPS_PER_LOOP = 5;
     // static constexpr float64_t MAX_RANGE = 50;
 
   private:
@@ -715,6 +715,7 @@ class SerialConnectionGenerator : public Plugin{
     void begin();
 
     static const uint8_t NUM_CHANNELS = 4;
+    static constexpr float64_t MAX_STEPS_PER_LOOP_PER_CHANNEL[NUM_CHANNELS] = {5, 5, 5, 5};
     SerialControlTrack controlled_tracks[NUM_CHANNELS];
 
     // BlockPorts
