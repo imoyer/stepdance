@@ -15,16 +15,19 @@ Channel channel_e;
 KinematicsPolarToCartesian polar_kinematics;
 
 AnalogInput analog_a1; //foot pedal
-AnalogInput analog_a2; //linear pot
-AnalogInput analog_a3; //linear pot
-AnalogInput analog_a4; //rotary pot
-Button button_1; //pushbutton
+AnalogInput analog_a2; //rotary pot (extrusion multiplier)
+AnalogInput analog_a3; //linear pot (wave amplitude)
+AnalogInput analog_a4; //linear pot (wave frequency)
+Button button_1; //pushbutton (start/stop prime)
+Button button_2; //pushbutton (start/stop going down back to bed)
 
 
-Encoder encoder_1; //hand lever
+Encoder encoder_1; //hand lever (radius)
 Encoder encoder_2; //z babystep
 
 VelocityGenerator velocity_gen;
+VelocityGenerator extrusion_gen;
+VelocityGenerator home_z_gen;
 
 ScalingFilter1D z_gen;
 
@@ -66,8 +69,17 @@ void setup() {
   velocity_gen.begin();
   velocity_gen.output.map(&polar_kinematics.input_angle);
 
+  extrusion_gen.begin();
+  extrusion_gen.output.map(&channel_e.input_target_position);
+  extrusion_gen.speed_units_per_sec = 0.0;
+
+  home_z_gen.begin();
+  home_z_gen.output.map(&channel_z.input_target_position);
+  home_z_gen.speed_units_per_sec = 0.0;
+
   encoder_1.begin(ENCODER_1);
-  encoder_1.set_ratio(1, 2400); //25mm per revolution
+  // encoder_1.set_ratio(1, 2400); //25mm per revolution
+  encoder_1.set_ratio(1, 1000); //25mm per revolution (faster r change)
   encoder_1.output.map(&polar_kinematics.input_radius);
   encoder_1.invert();
 
@@ -102,17 +114,34 @@ void setup() {
   analog_a1.map(&velocity_gen.speed_units_per_sec);
   analog_a1.begin(IO_A1);
 
+  // extrusion multiplier
+  analog_a2.set_floor(0.5, 25);
+  analog_a2.set_ceiling(2, 1020); //radians per second
+  analog_a2.begin(IO_A2);
+
+
   //xy amplitude
-  analog_a3.set_floor(0, 25);
+  analog_a3.set_floor(0, 30);
   analog_a3.set_ceiling(10, 1020);
   analog_a3.map(&xy_wave_generator.amplitude);
   analog_a3.begin(IO_A3);
   
   //xy frequency
   analog_a4.set_floor(0, 25);
-  analog_a4.set_ceiling(10, 1020);
+  analog_a4.set_ceiling(30, 1020);
   analog_a4.map(&xy_wave_generator.frequency);
   analog_a4.begin(IO_A4);
+
+    // -- Configure Button --
+  button_1.begin(IO_D1, INPUT_PULLDOWN);
+  button_1.set_mode(BUTTON_MODE_TOGGLE);
+  button_1.set_callback_on_press(&prime_start);
+  button_1.set_callback_on_release(&prime_stop);
+
+  button_2.begin(IO_D2, INPUT_PULLDOWN);
+  button_2.set_mode(BUTTON_MODE_TOGGLE);
+  button_2.set_callback_on_press(&jog_down_start);
+  button_2.set_callback_on_release(&jog_down_stop);
 
 
   dance_start();
@@ -123,7 +152,7 @@ LoopDelay overhead_delay;
 void loop() {
  
   overhead_delay.periodic_call(&report_overhead, 500);
-  extrusionMultiplier = analog_a3.read();
+  extrusionMultiplier = analog_a2.read();
   float64_t segmentLength = 1.0;
   extrusionRate = (4*layerHeight * extrusionMultiplier * nozzleDiameter * segmentLength) / (PI*nozzleDiameter*nozzleDiameter);
   e_gen.set_ratio(extrusionRate);
@@ -131,6 +160,26 @@ void loop() {
   report_overhead();
 
 
+}
+
+void prime_start() {
+  Serial.println("start priming");
+  extrusion_gen.speed_units_per_sec = 200.0;
+}
+
+void prime_stop() {
+  Serial.println("stop priming");
+  extrusion_gen.speed_units_per_sec = 0.0;
+}
+
+void jog_down_start() {
+  Serial.println("jogging Z down");
+  home_z_gen.speed_units_per_sec = -10.0;
+}
+
+void jog_down_stop(){
+  Serial.println("stop homing Z");
+  home_z_gen.speed_units_per_sec = 0.0;
 }
 
 void report_overhead(){
@@ -145,6 +194,6 @@ void report_overhead(){
   //Serial.println(tiny_circles.radius);
   //Serial.println(tiny_circles.output_x.read(INCREMENTAL));
   //Serial.println(tiny_circles.output_y.read(INCREMENTAL));*/
-
+  Serial.println(analog_a3.read());
  
 }
