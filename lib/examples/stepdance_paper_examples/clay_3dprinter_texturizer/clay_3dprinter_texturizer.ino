@@ -35,10 +35,18 @@ PathLengthGenerator2D e_gen; //generates extruder signal
 
 WaveGenerator1D xy_wave_generator;
 
+// -- Remote Procedure Call --
+// This is the object that will listen for messages over Serial, and trigger callback functions.
+// In setup, we will map callback functions to specific Serial messages.
+// The Python server will be responsible for sending 
+RPC rpc;
+
 float64_t layerHeight = 2.0;
 float64_t nozzleDiameter = 4.0;
 volatile float64_t extrusionMultiplier = 1.0;
 volatile float64_t extrusionRate = 0.0;
+float64_t minExtrusionMultiplier = 5.0;
+float64_t maxExtrusionMultiplier = 20.0;
 
 
 void setup() {
@@ -81,10 +89,11 @@ void setup() {
   // encoder_1.set_ratio(1, 2400); //25mm per revolution
   encoder_1.set_ratio(1, 1000); //25mm per revolution (faster r change)
   encoder_1.output.map(&polar_kinematics.input_radius);
-  encoder_1.invert();
+  // encoder_1.invert();
 
   encoder_2.begin(ENCODER_2);
-  encoder_2.set_ratio(1, 2400); //25mm per revolution
+  // encoder_2.set_ratio(1, 2400); //25mm per revolution
+  encoder_2.set_ratio(1, 1000); //25mm per revolution (faster z change)
   encoder_2.output.map(&channel_z.input_target_position);
   encoder_2.invert();
 
@@ -115,9 +124,10 @@ void setup() {
   analog_a1.begin(IO_A1);
 
   // extrusion multiplier
-  analog_a2.set_floor(0.5, 25);
-  analog_a2.set_ceiling(2, 1020); //radians per second
+  analog_a2.set_floor(minExtrusionMultiplier, 25);
+  analog_a2.set_ceiling(maxExtrusionMultiplier, 1020); //radians per second
   analog_a2.begin(IO_A2);
+  // analog_a2.invert();
 
 
   //xy amplitude
@@ -143,6 +153,15 @@ void setup() {
   button_2.set_callback_on_press(&jog_down_start);
   button_2.set_callback_on_release(&jog_down_stop);
 
+  // -- RPC Configuration
+  rpc.begin();
+
+  // Call example: {"name": "start_retract"}
+  rpc.enroll("start_retract", start_retract);
+
+  // Call example: {"name": "stop_retract"}
+  rpc.enroll("stop_retract", stop_retract);
+
 
   dance_start();
 }
@@ -152,7 +171,8 @@ LoopDelay overhead_delay;
 void loop() {
  
   overhead_delay.periodic_call(&report_overhead, 500);
-  extrusionMultiplier = analog_a2.read();
+  // This is because the potentiometer is wired reversed
+  extrusionMultiplier = minExtrusionMultiplier + maxExtrusionMultiplier - analog_a2.read();
   float64_t segmentLength = 1.0;
   extrusionRate = (4*layerHeight * extrusionMultiplier * nozzleDiameter * segmentLength) / (PI*nozzleDiameter*nozzleDiameter);
   e_gen.set_ratio(extrusionRate);
@@ -182,6 +202,14 @@ void jog_down_stop(){
   home_z_gen.speed_units_per_sec = 0.0;
 }
 
+void start_retract() {
+  extrusion_gen.speed_units_per_sec = -100.0;
+}
+
+void stop_retract() {
+  extrusion_gen.speed_units_per_sec = 0.0;
+}
+
 void report_overhead(){
   //wave_generator1D.debugPrint();
   //Serial.println(stepdance_get_cpu_usage(), 4);
@@ -194,6 +222,7 @@ void report_overhead(){
   //Serial.println(tiny_circles.radius);
   //Serial.println(tiny_circles.output_x.read(INCREMENTAL));
   //Serial.println(tiny_circles.output_y.read(INCREMENTAL));*/
-  Serial.println(analog_a3.read());
+  // Serial.println(analog_a2.read());
+  // Serial.println(minExtrusionMultiplier + maxExtrusionMultiplier - analog_a2.read());
  
 }
