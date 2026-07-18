@@ -83,6 +83,9 @@ void TimeBasedInterpolator::reset_block_queue(){
   slots_remaining = TBI_BLOCK_QUEUE_SIZE;
   next_read_index = 0;
   next_write_index = 0;
+
+  // cancel current block
+  in_block = 0;
 }
 
 bool TimeBasedInterpolator::is_idle(){

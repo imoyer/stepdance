@@ -119,7 +119,7 @@ void setup() {
 
   durationToFreq.input_move_duration.map(&tbi.output_duration, ABSOLUTE);
   durationToFreq.output_frequency.map(&wave2d_gen.input_frequency);
-  durationToFreq.target_frequency = 5.0;
+  durationToFreq.target_frequency = 10.0;
   durationToFreq.begin();
 
   // Map pedal value to wave amplitude
@@ -136,8 +136,8 @@ void setup() {
   // expected result: serial monitor prints "hello!{"result":"ok"}"
   rpc.enroll("hello", say_hello);
 
-  rpc.enroll("pen_down", pen_down);
-  rpc.enroll("pen_up", pen_up);
+  // rpc.enroll("pen_down", pen_down);
+  // rpc.enroll("pen_up", pen_up);
 
   rpc.enroll("drivers_off", motors_disable);
   rpc.enroll("drivers_on", motors_enable);
@@ -156,6 +156,8 @@ void setup() {
   // {"name": "set_noise_amp", "args": [1]}
   rpc.enroll("set_noise_amp", set_noise_amp);
 
+  rpc.enroll("interrupt_and_home", interrupt_and_home);
+
 
   dance_start();
 
@@ -171,13 +173,13 @@ void loop() {
   overhead_delay.periodic_call(&report_overhead, 100);
 }
 
-void pen_down(){
-  position_gen.go(-4, ABSOLUTE, 100);
-}
+// void pen_down(){
+//   position_gen.go(-4, ABSOLUTE, 100);
+// }
 
-void pen_up(){
-  position_gen.go(4, ABSOLUTE, 100);
-}
+// void pen_up(){
+//   position_gen.go(4, ABSOLUTE, 100);
+// }
 
 void say_hello(){
   Serial.println("hello!");
@@ -213,6 +215,14 @@ void set_noise_amp(float amp) {
 void set_noise_freq(float freq) {
   durationToFreq.target_frequency = freq;
   Serial.println(durationToFreq.target_frequency);
+}
+
+void interrupt_and_home() {
+  tbi.reset_block_queue();
+  Serial.println(axidraw_kinematics.input_x.read(GLOBAL));
+  // Pen up
+  tbi.add_move(GLOBAL, 30.0, axidraw_kinematics.input_x.read(GLOBAL), axidraw_kinematics.input_y.read(GLOBAL), 4, 0, 0, 0);
+  tbi.add_move(GLOBAL, 30.0, 0, 0, 4, 0, 0, 0);
 }
 
 void report_overhead(){

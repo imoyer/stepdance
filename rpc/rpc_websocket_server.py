@@ -21,7 +21,7 @@ parser.add_argument(
     "--arduino-port", default="COM4", help="Arduino port"
 )
 parser.add_argument(
-    "--serial-send-delay", default=0.1, help="The amount of time we wait between each send of a command through serial"
+    "--serial-send-delay", default=0.1, type=float, help="The amount of time we wait between each send of a command through serial"
 )
 
 args = parser.parse_args()

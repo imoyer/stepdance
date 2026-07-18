@@ -167,6 +167,12 @@ class TimeBasedInterpolator : public Plugin{
      */
     BlockPort output_duration;
 
+    /**
+     * @brief Cancel the current queue.
+     */
+    void reset_block_queue();
+
+
   private:
     // BlockPort State Variables
     DecimalPosition output_position_x;
@@ -184,7 +190,6 @@ class TimeBasedInterpolator : public Plugin{
     volatile uint16_t next_read_index; //next read index in the block queue 
 
     void advance_head(volatile uint16_t* target_head); //handles roll-overs etc
-    void reset_block_queue();
     void pull_block(); //pulls a block from the queue and into the active buffer
     volatile uint8_t in_block = 0; //1 if actively reading a block
     volatile uint16_t active_block_id; //stores the current active block
