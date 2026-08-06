@@ -412,7 +412,7 @@ float32_t AnalogInput::get_interrupt_duration_us(){
 void AnalogInput::adc1_on_interrupt(){
   // uint32_t entry_counter_value = ARM_DWT_CYCCNT;
   // noInterrupts();
-  // __NOP();
+  __NOP();
   AnalogInput *this_module = AnalogInput::adc1_inputs[AnalogInput::module_current_input_index[ADC_MODULE_1]];
 
   // Read and Store ADC Value
@@ -440,7 +440,7 @@ void AnalogInput::adc1_on_interrupt(){
     this_module->callback_function();
   }
   // interrupts();
-  // __NOP();
+  __NOP();
 
   // Refresh count
   // this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
@@ -450,7 +450,7 @@ void AnalogInput::adc1_on_interrupt(){
 
 void AnalogInput::adc2_on_interrupt(){
   // noInterrupts();
-  // __NOP();
+  __NOP();
   // uint32_t entry_counter_value = ARM_DWT_CYCCNT;
   AnalogInput *this_module = AnalogInput::adc2_inputs[AnalogInput::module_current_input_index[ADC_MODULE_2]];
 
@@ -479,7 +479,7 @@ void AnalogInput::adc2_on_interrupt(){
     this_module->callback_function();
   }
   // interrupts();
-  // __NOP();
+  __NOP();
   // Refresh count
   // this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
   // this_module->last_refresh_cycle_count_value = entry_counter_value;

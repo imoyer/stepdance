@@ -155,13 +155,13 @@ void setup() {
   knob_orange.set_floor(0, 25);
   knob_orange.set_ceiling(3, 1020); //radius
   knob_orange.map(&circle_gen.radius);
-  knob_orange.begin(IO_A3);
+  knob_orange.begin(IO_A2);
 
   //velocity
   knob_purple.set_floor(0, 25);
   knob_purple.set_ceiling(40, 1020); //rad/sec
   knob_purple.map(&circle_gen.rotational_speed_rev_per_sec);
-  knob_purple.begin(IO_A4);
+  knob_purple.begin(IO_A3);
 
 
   // // -- Configure Position Generator --
