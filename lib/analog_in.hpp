@@ -215,6 +215,9 @@ private:
   volatile uint32_t last_refresh_cycle_count_value = 0; //stores the last ARM_DWT_CYCCNT value from most recent call
   volatile uint32_t counts_since_last_refresh = 0;
   volatile uint32_t counts_in_interrupt_handler = 0;
+
+  // ISR exit barrier to resolve timing issues that were causing USB faults
+  static inline void adc_isr_exit_barrier(){ __asm__ volatile("dsb" ::: "memory");};
 };
 
 #endif

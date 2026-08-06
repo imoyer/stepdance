@@ -410,9 +410,8 @@ float32_t AnalogInput::get_interrupt_duration_us(){
 
 // Interrupt Routines
 void AnalogInput::adc1_on_interrupt(){
-  // uint32_t entry_counter_value = ARM_DWT_CYCCNT;
-  // noInterrupts();
-  __NOP();
+  uint32_t entry_counter_value = ARM_DWT_CYCCNT;
+
   AnalogInput *this_module = AnalogInput::adc1_inputs[AnalogInput::module_current_input_index[ADC_MODULE_1]];
 
   // Read and Store ADC Value
@@ -439,19 +438,18 @@ void AnalogInput::adc1_on_interrupt(){
   if(this_module->callback_function != nullptr){
     this_module->callback_function();
   }
-  // interrupts();
-  __NOP();
 
   // Refresh count
-  // this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
-  // this_module->last_refresh_cycle_count_value = entry_counter_value;
-  // this_module->counts_in_interrupt_handler = ARM_DWT_CYCCNT - entry_counter_value;
+  this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
+  this_module->last_refresh_cycle_count_value = entry_counter_value;
+  this_module->counts_in_interrupt_handler = ARM_DWT_CYCCNT - entry_counter_value;
+
+  adc_isr_exit_barrier(); //to resolve timing issues that I speculate were causing USB faults during streamed motion
 }
 
 void AnalogInput::adc2_on_interrupt(){
-  // noInterrupts();
-  __NOP();
-  // uint32_t entry_counter_value = ARM_DWT_CYCCNT;
+  uint32_t entry_counter_value = ARM_DWT_CYCCNT;
+
   AnalogInput *this_module = AnalogInput::adc2_inputs[AnalogInput::module_current_input_index[ADC_MODULE_2]];
 
   // Read and Store ADC Value
@@ -478,12 +476,13 @@ void AnalogInput::adc2_on_interrupt(){
   if(this_module->callback_function != nullptr){
     this_module->callback_function();
   }
-  // interrupts();
-  __NOP();
+
   // Refresh count
-  // this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
-  // this_module->last_refresh_cycle_count_value = entry_counter_value;
-  // this_module->counts_in_interrupt_handler = ARM_DWT_CYCCNT - entry_counter_value;
+  this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
+  this_module->last_refresh_cycle_count_value = entry_counter_value;
+  this_module->counts_in_interrupt_handler = ARM_DWT_CYCCNT - entry_counter_value;
+
+  adc_isr_exit_barrier();
 }
 
 void AnalogInput::enroll(RPC *rpc, const String& instance_name){
