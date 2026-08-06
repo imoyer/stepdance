@@ -56,7 +56,8 @@ void Eibotboard::begin(usb_serial_class *target_usb_serial){
   reset_input_buffer();
   initialize_all_commands_struct();
   ebb_serial_port = target_usb_serial;
-  debug_serial_port = &SerialNone; //dummy function for now
+  // debug_serial_port = &SerialNone; //dummy function for now
+  debug_serial_port = &SerialUSB1;
   register_plugin(PLUGIN_LOOP);
   target_interpolator.begin();
 }
@@ -271,7 +272,7 @@ void Eibotboard::command_set_pen(){
       ebb_serial_port->print("OK\r\n");
       return;
     }else{ //load up the pending block
-      pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position = {.x_mm = 0, .y_mm = 0, .z_mm = servo_delta_steps * z_conversion_mm_per_step, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
+      pending_block = {.block_type = target_interpolator.BLOCK_TYPE_INCREMENTAL, .block_id = block_id++, .block_time_s = move_time_s, .block_position = {.x_mm = 0, .y_mm = 0, .z_mm = servo_delta_steps * z_conversion_mm_per_step, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
       block_pending_flag = EBB_BLOCK_PENDING;
       pending_block_function = &Eibotboard::command_set_pen; // tag this function as having originated the pending block
     }
@@ -298,7 +299,7 @@ void Eibotboard::command_set_pen(){
         debug_serial_port->println("PEN MOVE");
         debug_report_pending_block(false);
         float move_time_s = static_cast<float>(delay_ms) / 1000;
-        pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position = {.x_mm = 0, .y_mm = 0, .z_mm = 0, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
+        pending_block = {.block_type = target_interpolator.BLOCK_TYPE_INCREMENTAL, .block_id = block_id++, .block_time_s = move_time_s, .block_position = {.x_mm = 0, .y_mm = 0, .z_mm = 0, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
         block_pending_flag = EBB_BLOCK_PENDING;
         pending_block_function = &Eibotboard::command_set_pen; // tag this function as having originated the pending block
         loading_delay_flag = 1;       
@@ -345,7 +346,7 @@ void Eibotboard::command_stepper_move(){
     float64_t y_delta_mm = 0.5*(motor_1_delta_mm - motor_2_delta_mm);
 
     // Step 4:  Load parameters into a motion block
-    pending_block = {.block_id = block_id++, .block_time_s = move_time_s, .block_position = {.x_mm = x_delta_mm, .y_mm = y_delta_mm, .z_mm = 0, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
+    pending_block = {.block_type = target_interpolator.BLOCK_TYPE_INCREMENTAL, .block_id = block_id++, .block_time_s = move_time_s, .block_position = {.x_mm = x_delta_mm, .y_mm = y_delta_mm, .z_mm = 0, .e_mm = 0, .r_mm = 0, .t_rad = 0}};
     block_pending_flag = EBB_BLOCK_PENDING;
     pending_block_function = &Eibotboard::command_stepper_move; // tag this function as having originated the pending block
   }
@@ -391,7 +392,9 @@ void Eibotboard::debug_report_pending_block(bool waiting_for_slot){
   debug_serial_port->print(stepdance_get_cpu_usage()*100);
   debug_serial_port->println("%");
   debug_serial_port->print("  SLOTS REMAINING: ");
-  debug_serial_port->println(target_interpolator.slots_remaining);  
+  debug_serial_port->println(target_interpolator.slots_remaining);
+  debug_serial_port->print("  CURRENT BLOCK: ");
+  debug_serial_port->println(target_interpolator.active_block_id);  
 }
 
 // ---- GCODE INTERFACE ----

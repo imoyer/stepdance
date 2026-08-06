@@ -4,7 +4,7 @@
 # February 16th, 2025
 
 # ---- PROJECT NAME ----
-PROJECT=rcstepmodule_180deg
+PROJECT=rcstepmodule
 
 
 # ---- UPLOADER LOCATION ----

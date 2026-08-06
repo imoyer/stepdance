@@ -167,6 +167,14 @@ class TimeBasedInterpolator : public Plugin{
      */
     BlockPort output_duration;
 
+    volatile uint16_t active_block_id; //stores the current active block
+  
+    enum{
+    BLOCK_TYPE_INCREMENTAL,
+    BLOCK_TYPE_ABSOLUTE,
+    BLOCK_TYPE_GLOBAL
+    };
+    
   private:
     // BlockPort State Variables
     DecimalPosition output_position_x;
@@ -187,7 +195,7 @@ class TimeBasedInterpolator : public Plugin{
     void reset_block_queue();
     void pull_block(); //pulls a block from the queue and into the active buffer
     volatile uint8_t in_block = 0; //1 if actively reading a block
-    volatile uint16_t active_block_id; //stores the current active block
+
     volatile uint8_t active_block_type; //we don't use this for now
     volatile uint8_t active_axes[TBI_NUM_AXES]; //indexed by axis #, 0 if axis inactive, 1 if active
     volatile float64_t active_axes_remaining_distance_mm[TBI_NUM_AXES];
@@ -195,12 +203,6 @@ class TimeBasedInterpolator : public Plugin{
     BlockPort* output_BlockPorts[TBI_NUM_AXES - 1] = {&output_x, &output_y, &output_z, &output_e, &output_r, &output_t};
     void run_frame_on_active_block(); //run a frame of the currently active block
     int16_t _add_move(uint8_t mode, float32_t move_time_s, float32_t velocity_per_s, DecimalPosition x, DecimalPosition y, DecimalPosition z, DecimalPosition e, DecimalPosition r, DecimalPosition t);
-    
-    enum{
-      BLOCK_TYPE_INCREMENTAL,
-      BLOCK_TYPE_ABSOLUTE,
-      BLOCK_TYPE_GLOBAL
-    };
 
   protected:
     void run();
