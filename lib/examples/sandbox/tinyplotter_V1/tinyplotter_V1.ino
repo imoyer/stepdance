@@ -161,7 +161,7 @@ void setup() {
   knob_purple.set_floor(0, 25);
   knob_purple.set_ceiling(40, 1020); //rad/sec
   knob_purple.map(&circle_gen.rotational_speed_rev_per_sec);
-  knob_purple.begin(IO_A2);
+  knob_purple.begin(IO_A4);
 
 
   // // -- Configure Position Generator --
