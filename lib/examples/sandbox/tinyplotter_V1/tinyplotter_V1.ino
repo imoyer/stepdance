@@ -153,8 +153,8 @@ void setup() {
 
   // radius
   knob_orange.set_floor(0, 25);
-  knob_orange.set_ceiling(3, 1020); //radius
-  knob_orange.map(&circle_gen.radius);
+  knob_orange.set_ceiling(5, 1020); //radius
+  knob_orange.map(&ebb_interface.target_interpolator.speed_overide);
   knob_orange.begin(IO_A2);
 
   //velocity
