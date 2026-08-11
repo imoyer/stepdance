@@ -1,3 +1,4 @@
+#include "wiring.h"
 #include <iterator>
 #include <cmath>
 #include "arm_math.h"
@@ -29,7 +30,9 @@ int16_t TimeBasedInterpolator::add_block(struct motion_block* block_to_add){
   // A return value of -1 indicates that the block was not loaded due to lack of space.
   if(slots_remaining){
     block_queue[next_write_index] = *block_to_add; //shallow copy, not positive this will work
-    slots_remaining --;
+    noInterrupts();
+    slots_remaining --; //avoid a race condition with run() in interrupt context
+    interrupts();
     advance_head(&next_write_index);
     return (int16_t)slots_remaining;
   }
@@ -173,7 +176,7 @@ void TimeBasedInterpolator::pull_block(){
       active_axes[axis_index] = TBI_AXIS_INACTIVE; //clear active flag
     }
   }
-
+  active_block_id = block_queue[next_read_index].block_id; //track block ID for debugging
   slots_remaining ++; //increment slots remaining
   advance_head(&next_read_index); //advance read head
   in_block = 1; //flag that we are now in a block

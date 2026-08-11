@@ -244,7 +244,7 @@ float64_t BlockPort::read(uint8_t mode){
     // pre-update, so we provide an estimate of what the target state will be post-update.
     if(mode == INCREMENTAL){
       if (target == nullptr) {
-        Serial.println("ERROR: target is nullptr");
+        // Serial.println("ERROR: target is nullptr");
         return 0.0;
       }
       // We return an estimate of the CHANGE to target. 
@@ -303,7 +303,7 @@ void BlockPort::reverse_update(){
 void BlockPort::set(float64_t value, uint8_t mode){
   // add following 3 lines
   if (target == nullptr){
-    Serial.println("ERROR: target is nullptr");
+    // Serial.println("ERROR: target is nullptr");
     return;
   }
   update_has_run = true; //we set this to reflect that the buffers contain the current state of the target

@@ -120,15 +120,13 @@ class Eibotboard : public Plugin{
      */
     BlockPort& output_duration = target_interpolator.output_duration;
 
-
+      // Interpolator
+    TimeBasedInterpolator target_interpolator; //public for access to the speed_overide variable
 
   protected:
     void loop(); // should be run inside loop
     
   private:
-      // Interpolator
-    TimeBasedInterpolator target_interpolator;
-
     // Serial Debug State
     uint8_t debug_port_identified; //1 if debug port has been ID'd, otherwise 0
     Stream *ebb_serial_port; //stores a pointer to the ebb serial port

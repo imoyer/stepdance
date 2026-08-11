@@ -1,3 +1,4 @@
+#include "wiring.h"
 #include "arm_math.h"
 #include <sys/_stdint.h>
 #include "pins_arduino.h"
@@ -261,12 +262,14 @@ void AnalogInput::begin(uint8_t pin_reference){
   // Step 3: add this AnalogInput to the module's list
   uint8_t num_inputs = module_num_inputs[adc_module];
   if(num_inputs < MAX_NUM_ADC_INPUTS){ //check that we don't exceed max number of ADC inputs
+    noInterrupts();
     if(adc_module == ADC_MODULE_1){ //add AnalogInput to ADC Module 1
       adc1_inputs[num_inputs] = this;
     }else{ //add AnalogInput to ADC Module 2
       adc2_inputs[num_inputs] = this;
     }
     module_num_inputs[adc_module] ++;
+    interrupts();
   }
 
   // Step 4: If this is the first AnalogInput assigned to the module, initialize and begin conversions
@@ -397,8 +400,18 @@ void AnalogInput::set_deadband(ControlParameter output_at_deadband, uint16_t adc
   set_slope_intercept();  
 }
 
+float32_t AnalogInput::get_refresh_rate_hz(){
+  return (float)(F_CPU) / (float)(counts_since_last_refresh);
+}
+
+float32_t AnalogInput::get_interrupt_duration_us(){
+  return 1000000.0 * (float)(counts_in_interrupt_handler) / (float)(F_CPU);
+}
+
 // Interrupt Routines
 void AnalogInput::adc1_on_interrupt(){
+  uint32_t entry_counter_value = ARM_DWT_CYCCNT;
+
   AnalogInput *this_module = AnalogInput::adc1_inputs[AnalogInput::module_current_input_index[ADC_MODULE_1]];
 
   // Read and Store ADC Value
@@ -412,7 +425,7 @@ void AnalogInput::adc1_on_interrupt(){
 
   // Increment ADC input
   AnalogInput::module_current_input_index[ADC_MODULE_1]++;
-  if(AnalogInput::module_current_input_index[ADC_MODULE_1] == AnalogInput::module_num_inputs[ADC_MODULE_1]){
+  if(AnalogInput::module_current_input_index[ADC_MODULE_1] >= AnalogInput::module_num_inputs[ADC_MODULE_1]){
     AnalogInput::module_current_input_index[ADC_MODULE_1] = 0;
   }
   AnalogInput *next_module = AnalogInput::adc1_inputs[AnalogInput::module_current_input_index[ADC_MODULE_1]];
@@ -425,9 +438,18 @@ void AnalogInput::adc1_on_interrupt(){
   if(this_module->callback_function != nullptr){
     this_module->callback_function();
   }
+
+  // Refresh count
+  this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
+  this_module->last_refresh_cycle_count_value = entry_counter_value;
+  this_module->counts_in_interrupt_handler = ARM_DWT_CYCCNT - entry_counter_value;
+
+  adc_isr_exit_barrier(); //to resolve timing issues that I speculate were causing USB faults during streamed motion
 }
 
 void AnalogInput::adc2_on_interrupt(){
+  uint32_t entry_counter_value = ARM_DWT_CYCCNT;
+
   AnalogInput *this_module = AnalogInput::adc2_inputs[AnalogInput::module_current_input_index[ADC_MODULE_2]];
 
   // Read and Store ADC Value
@@ -441,7 +463,7 @@ void AnalogInput::adc2_on_interrupt(){
 
   // Increment ADC input
   AnalogInput::module_current_input_index[ADC_MODULE_2]++;
-  if(AnalogInput::module_current_input_index[ADC_MODULE_2] == AnalogInput::module_num_inputs[ADC_MODULE_2]){
+  if(AnalogInput::module_current_input_index[ADC_MODULE_2] >= AnalogInput::module_num_inputs[ADC_MODULE_2]){
     AnalogInput::module_current_input_index[ADC_MODULE_2] = 0;
   }
   AnalogInput *next_module = AnalogInput::adc2_inputs[AnalogInput::module_current_input_index[ADC_MODULE_2]];
@@ -454,6 +476,13 @@ void AnalogInput::adc2_on_interrupt(){
   if(this_module->callback_function != nullptr){
     this_module->callback_function();
   }
+
+  // Refresh count
+  this_module->counts_since_last_refresh = entry_counter_value - this_module->last_refresh_cycle_count_value;
+  this_module->last_refresh_cycle_count_value = entry_counter_value;
+  this_module->counts_in_interrupt_handler = ARM_DWT_CYCCNT - entry_counter_value;
+
+  adc_isr_exit_barrier();
 }
 
 void AnalogInput::enroll(RPC *rpc, const String& instance_name){

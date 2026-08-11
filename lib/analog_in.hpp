@@ -175,6 +175,9 @@ public:
   uint16_t adc_deadband_upper = 0;
 
   void enroll(RPC *rpc, const String &instance_name);
+
+  float32_t get_refresh_rate_hz(); //returns the refresh rate of the analog input
+  float32_t get_interrupt_duration_us(); //returns the time spent in the interrupt routine
   /** \endcond */
 
 private:
@@ -207,6 +210,14 @@ private:
   bool deadband_enabled = false;
 
   int8_t inversion_multiplier = 1; // 1 for straight thru, -1 for inverted
+
+  // Instrumentation for debug
+  volatile uint32_t last_refresh_cycle_count_value = 0; //stores the last ARM_DWT_CYCCNT value from most recent call
+  volatile uint32_t counts_since_last_refresh = 0;
+  volatile uint32_t counts_in_interrupt_handler = 0;
+
+  // ISR exit barrier to resolve timing issues that were causing USB faults
+  static inline void adc_isr_exit_barrier(){ __asm__ volatile("dsb" ::: "memory");};
 };
 
 #endif
