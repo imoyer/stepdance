@@ -8,6 +8,7 @@
 #include "interpolators.hpp"
 #include <map>
 #include <string>
+#include <SD.h>
 
 #ifndef interfaces_h //prevent importing twice
 #define interfaces_h
@@ -381,4 +382,57 @@ class GCodeInterface : public Plugin{
     float64_t modal_feedrate_mm_per_min = 0; // sets the current feedrate, which persists across blocks
 };
 
+class Typewriter : public Plugin{
+  public:
+    Typewriter();
+    enum {
+      ALIGN_BOTTOM, //align baseline of characters to pen position
+      ALIGN_MIDDLE, //align midline of characters to pen position
+      ALIGN_TOP, //align topline of characters to pen position
+    };
+    void begin(const std::string& font_name = "roboto", const float32_t character_height_mm = 10, const uint8_t alignment = ALIGN_BOTTOM); //initializes Typewriter with a default font and height
+    void set_font(std::string& font_name); //sets the font being used
+    void set_height(float32_t font_height_mm); //sets the character height
+    void set_alignment(uint8_t alignment); //aligns characters to the pen position
+    void set_speed(float32_t speed_mm_per_sec); //sets the writing speed
+    void set_line_spacing(float32_t line_spacing_mm); //sets the vertical spacing between lines
+    void set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_down_mm); //sets pen up and down positions
+
+    bool typewrite(char character); //writes a character. Returns true if character accepted, or false if currently busy
+    void pen_up();
+    void pen_down();
+
+    enum{
+      STATUS_IDLE,
+      STATUS_WRITING
+    };
+    uint8_t status; //stores the current status
+
+    BlockPort& output_x = target_interpolator.output_x;
+    BlockPort& output_y = target_interpolator.output_y;
+    BlockPort& output_z = target_interpolator.output_z;
+  
+  private:
+    // typewriting parameters
+    std::string current_font = "roboto";
+    float32_t character_height_mm = 10;
+    uint8_t alignment = ALIGN_BOTTOM;
+    float32_t speed_mm_per_sec = 10;
+
+    // typewriting state
+    struct position{
+      float64_t x_mm; // X
+      float64_t y_mm; // Y
+    };
+
+    struct position pos_line_start; //the start position of the current line
+    struct position pos_char_start; //the start position of the current character
+    struct position pos_pen; //the current position of the pen
+
+    // Interpolator
+    TimeBasedInterpolator target_interpolator;
+
+    // SD Card
+    FsFile active_glyph_file;
+};
 #endif
