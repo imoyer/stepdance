@@ -798,13 +798,17 @@ void GCodeInterface::_feed_hold(){
 }
 
 // TYPEWRITER
+Typewriter::Typewriter(){};
+
 void Typewriter::begin(const std::string& font_name, const float32_t character_height_mm, const uint8_t alignment){
   set_font(font_name);
   set_height(character_height_mm);
   set_alignment(alignment);
+  initialize_sd_card();
   target_interpolator.begin();
   register_plugin(PLUGIN_LOOP); //this runs in the main program loop
 }
+
 
 bool Typewriter::write(char character){
   // writes a character
@@ -823,12 +827,16 @@ bool Typewriter::load_glyph_from_buffer(){
       active_character = character_buffer;
       character_in_buffer = false;
       // construct path to glyph file
-      // THIS SHOULD BE CONVERTED INTO A C STRING
-      std::string glyph_string = std::to_string((int)active_character);
-      std::string glyph_path = this->current_font + "/" + glyph_string + ".txt";
+      char glyph_string[4];
+      char glyph_path[32] = "";
+      itoa((int)active_character, glyph_string, 10);
+      strcat(glyph_path, this->current_font.c_str());
+      strcat(glyph_path, "/");
+      strcat(glyph_path, glyph_string);
+      strcat(glyph_path, ".txt");
 
       // open glyph file
-      this->active_glyph_file = SD.sdfs.open(glyph_path.c_str(), O_READ);
+      this->active_glyph_file = SD.sdfs.open(glyph_path, O_READ);
       return true;
     }else {
       return false; //nothing in buffer to load
@@ -845,8 +853,21 @@ void Typewriter::loop(){
         };
         break;
       case STATUS_IN_GLYPH:
+        if(stream_from_glyph()){
+          status++; //next state
+        }
         break;
       case STATUS_ADVANCE:
+        float64_t advance_value = get_advance_value(active_character);
+        pos_pen.x_mm -= advance_value; // we're now in the coordinate frame of the next character.
+        pos_char_start.x_mm += advance_value; //update the global position of the character coordinate frame
+
+        if(!character_in_buffer){ //nothing is waiting, so let's physically move to the next position
+          buffered_point_position.x_mm = 0.0;
+          buffered_point_position.y_mm = get_neutral_y_position();
+          move_to_buffer_position();
+        }
+        status = STATUS_IDLE; //done writing character, return status to IDLE
         break;
     }
   }
@@ -854,11 +875,11 @@ void Typewriter::loop(){
 
 bool Typewriter::stream_from_glyph(){
   while(!target_interpolator.queue_is_full()){ //while there's space in the queue
-    
     // READ INTO THE BUFFER
     if(glyph_line_buffer_status == BUFFER_CLEAR){ //OK to read a line
       int num_chars_read = active_glyph_file.fgets(glyph_line_buffer, sizeof(glyph_line_buffer)); //load a line into the buffer
       if(num_chars_read <= 0){ //nothing to read, we're done!
+        active_glyph_file.close(); //close the glyph file on the SD card
         return true;
       }else{
         glyph_line_buffer_status = BUFFER_PENDING;
@@ -886,8 +907,21 @@ bool Typewriter::stream_from_glyph(){
         buffered_point_position.y_mm = (float64_t)atof(token) * character_height_mm;
 
         // Act on point
+        move_to_buffer_position();
+
+        if(buffered_point_type == TYPE_POINT){
+          glyph_line_buffer_status = BUFFER_CLEAR; //we're done
+        }else{
+          glyph_line_buffer_status = BUFFER_TWO_STEP;
+        }
         break;
       case BUFFER_TWO_STEP:
+        if(buffered_point_type == TYPE_START){
+          pen_down();
+        }else{
+          pen_up();
+        }
+        glyph_line_buffer_status = BUFFER_CLEAR;
         break;
     }
   }
@@ -895,7 +929,35 @@ bool Typewriter::stream_from_glyph(){
 }
 
 void Typewriter::set_font(std::string font_name){
-  
+  this->current_font = font_name;
+  load_advance_table();
+}
+
+void Typewriter::load_advance_table(){
+      char advance_file_path[32] = "";
+      strcat(advance_file_path, this->current_font.c_str());
+      strcat(advance_file_path, "/");
+      strcat(advance_file_path, "advance.txt");
+
+      // open advance file
+      FsFile advance_file = SD.sdfs.open(advance_file_path, O_READ);
+
+      // read in advance file
+      char advance_line_buffer[32];
+      
+      while(advance_file.fgets(advance_line_buffer, sizeof(advance_line_buffer)) > 0){
+        char* token;
+        token = strtok(advance_line_buffer, " "); //pointer to first token
+        int index = atoi(token); //read index as first token in string
+
+        token = strtok(nullptr, " ");
+        advance_table[index - ADVANCE_TABLE_OFFSET] = (float64_t)atof(token) * character_height_mm;
+      }
+      advance_file.close();
+}
+
+float64_t Typewriter::get_advance_value(char character){
+  return advance_table[character - ADVANCE_TABLE_OFFSET];
 }
 
 void Typewriter::set_height(float32_t font_height_mm){
@@ -919,8 +981,33 @@ void Typewriter::set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_
 }
 
 void Typewriter::pen_up(){
-
+  Serial.println("PEN UP");
 }
 void Typewriter::pen_down(){
+  Serial.println("PEN DOWN");
+}
 
+void Typewriter::move_to_buffer_position(){
+  Serial.print(buffered_point_type);
+  Serial.print(" ");
+  Serial.print(buffered_point_position.x_mm);
+  Serial.print(" ");
+  Serial.println(buffered_point_position.y_mm);  
+}
+
+float64_t Typewriter::get_neutral_y_position(){
+  switch(alignment){
+    case ALIGN_BOTTOM:
+      return 0.0;
+      break;
+    case ALIGN_MIDDLE:
+      return character_height_mm / 2;
+      break;
+    case ALIGN_TOP:
+      return character_height_mm;
+      break;
+    default:
+      return 0.0;
+      break;
+  }
 }

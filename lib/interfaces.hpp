@@ -452,6 +452,13 @@ class Typewriter : public Plugin{
       TYPE_STOP
     };
     uint8_t buffered_point_type;
+    void move_to_buffer_position(); //moves the pen to the buffer position
+    float64_t get_advance_value(char character); //returns the scaled advance value for the provided character
+    void load_advance_table(); //loads the font's advance table
+    static const uint8_t ADVANCE_TABLE_OFFSET = 32; //first table entry is ASCII 32
+    static const uint8_t NUM_SUPPORTED_CHARACTERS = 95;
+    float64_t advance_table[NUM_SUPPORTED_CHARACTERS]; //stores the X advance amount for each character in the font.
+    float64_t get_neutral_y_position(); //returns the neutral y pen position, based on current alignment.
 
     // Interpolator
     TimeBasedInterpolator target_interpolator;
