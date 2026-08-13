@@ -796,3 +796,131 @@ void GCodeInterface::_cycle_start(){
 void GCodeInterface::_feed_hold(){
 
 }
+
+// TYPEWRITER
+void Typewriter::begin(const std::string& font_name, const float32_t character_height_mm, const uint8_t alignment){
+  set_font(font_name);
+  set_height(character_height_mm);
+  set_alignment(alignment);
+  target_interpolator.begin();
+  register_plugin(PLUGIN_LOOP); //this runs in the main program loop
+}
+
+bool Typewriter::write(char character){
+  // writes a character
+
+  if(this->character_in_buffer){
+    return false;
+  }else{
+    this->character_buffer = character;
+    this->character_in_buffer = true;
+    return true;
+  }
+}
+
+bool Typewriter::load_glyph_from_buffer(){
+    if(character_in_buffer){
+      active_character = character_buffer;
+      character_in_buffer = false;
+      // construct path to glyph file
+      // THIS SHOULD BE CONVERTED INTO A C STRING
+      std::string glyph_string = std::to_string((int)active_character);
+      std::string glyph_path = this->current_font + "/" + glyph_string + ".txt";
+
+      // open glyph file
+      this->active_glyph_file = SD.sdfs.open(glyph_path.c_str(), O_READ);
+      return true;
+    }else {
+      return false; //nothing in buffer to load
+    }
+}
+
+void Typewriter::loop(){
+  if(!target_interpolator.queue_is_full()){ //we can't do anything if no slots are available on the interpreter
+    switch (status) {
+      case STATUS_IDLE:
+        // if typewriter is idle, let's load a new character
+        if(load_glyph_from_buffer()){
+          status++; //next state
+        };
+        break;
+      case STATUS_IN_GLYPH:
+        break;
+      case STATUS_ADVANCE:
+        break;
+    }
+  }
+}
+
+bool Typewriter::stream_from_glyph(){
+  while(!target_interpolator.queue_is_full()){ //while there's space in the queue
+    
+    // READ INTO THE BUFFER
+    if(glyph_line_buffer_status == BUFFER_CLEAR){ //OK to read a line
+      int num_chars_read = active_glyph_file.fgets(glyph_line_buffer, sizeof(glyph_line_buffer)); //load a line into the buffer
+      if(num_chars_read <= 0){ //nothing to read, we're done!
+        return true;
+      }else{
+        glyph_line_buffer_status = BUFFER_PENDING;
+      }
+    }
+
+    // INGEST AND ACT ON THE BUFFER
+    switch(glyph_line_buffer_status){
+      char* token;
+      case BUFFER_PENDING: //ingest from buffer
+        //Read in point type (start, point, or stop)
+        token = strtok(glyph_line_buffer, " "); //pointer to first token
+        if(strcmp(token, "point") == 0){
+          buffered_point_type = TYPE_POINT;
+        }else if (strcmp(token, "start") == 0){
+          buffered_point_type = TYPE_START;
+        }else if (strcmp(token, "stop") == 0){
+          buffered_point_type = TYPE_STOP;
+        }
+        //Read X Value
+        token = strtok(nullptr, " ");
+        buffered_point_position.x_mm = (float64_t)atof(token) * character_height_mm;
+        //Read Y Value
+        token = strtok(nullptr, " ");
+        buffered_point_position.y_mm = (float64_t)atof(token) * character_height_mm;
+
+        // Act on point
+        break;
+      case BUFFER_TWO_STEP:
+        break;
+    }
+  }
+  return false;
+}
+
+void Typewriter::set_font(std::string font_name){
+  
+}
+
+void Typewriter::set_height(float32_t font_height_mm){
+  
+}
+
+void Typewriter::set_alignment(uint8_t alignment){
+  
+}
+
+void Typewriter::set_write_speed(float32_t speed_mm_per_sec){
+  
+}
+
+void Typewriter::set_line_spacing(float32_t line_spacing_mm){
+  
+}
+
+void Typewriter::set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_down_mm){
+  
+}
+
+void Typewriter::pen_up(){
+
+}
+void Typewriter::pen_down(){
+
+}

@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <SD.h>
+#include "recording.hpp"
 
 #ifndef interfaces_h //prevent importing twice
 #define interfaces_h
@@ -391,20 +392,21 @@ class Typewriter : public Plugin{
       ALIGN_TOP, //align topline of characters to pen position
     };
     void begin(const std::string& font_name = "roboto", const float32_t character_height_mm = 10, const uint8_t alignment = ALIGN_BOTTOM); //initializes Typewriter with a default font and height
-    void set_font(std::string& font_name); //sets the font being used
+    void set_font(std::string font_name); //sets the font being used
     void set_height(float32_t font_height_mm); //sets the character height
     void set_alignment(uint8_t alignment); //aligns characters to the pen position
-    void set_speed(float32_t speed_mm_per_sec); //sets the writing speed
+    void set_write_speed(float32_t speed_mm_per_sec); //sets the writing speed
     void set_line_spacing(float32_t line_spacing_mm); //sets the vertical spacing between lines
     void set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_down_mm); //sets pen up and down positions
 
-    bool typewrite(char character); //writes a character. Returns true if character accepted, or false if currently busy
+    bool write(char character); //writes a character. Returns true if character accepted, or false if currently busy
     void pen_up();
     void pen_down();
 
     enum{
-      STATUS_IDLE,
-      STATUS_WRITING
+      STATUS_IDLE, // waiting for a character
+      STATUS_IN_GLYPH, // reading the glyph
+      STATUS_ADVANCE // next action: advance pen to next char start
     };
     uint8_t status; //stores the current status
 
@@ -417,7 +419,8 @@ class Typewriter : public Plugin{
     std::string current_font = "roboto";
     float32_t character_height_mm = 10;
     uint8_t alignment = ALIGN_BOTTOM;
-    float32_t speed_mm_per_sec = 10;
+    float32_t write_speed_mm_per_sec = 10;
+    float32_t lift_speed_mm_per_sec = 10;
 
     // typewriting state
     struct position{
@@ -428,11 +431,35 @@ class Typewriter : public Plugin{
     struct position pos_line_start; //the start position of the current line
     struct position pos_char_start; //the start position of the current character
     struct position pos_pen; //the current position of the pen
+    char character_buffer; //stores a single character. This allows us to simplify transitions between characters.
+    bool character_in_buffer = false; //if true, a character is waiting in the buffer.
+    char active_character;
+
+    bool load_glyph_from_buffer(); //returns true if successful
+    bool stream_from_glyph(); //returns true if completed
+    char glyph_line_buffer[128]; //a buffer for storing the most recently read line
+    enum{
+      BUFFER_CLEAR, //ok to write to the buffer
+      BUFFER_PENDING, //line in buffer hasn't run yet
+      BUFFER_TWO_STEP //line in buffer needs to run twice (e.g. for a pen up / pen down move)
+    };
+    uint8_t glyph_line_buffer_status = BUFFER_CLEAR;
+
+    struct position buffered_point_position; //stores the position encoded in the glyph line buffer
+    enum{
+      TYPE_START,
+      TYPE_POINT,
+      TYPE_STOP
+    };
+    uint8_t buffered_point_type;
 
     // Interpolator
     TimeBasedInterpolator target_interpolator;
 
     // SD Card
     FsFile active_glyph_file;
+  
+  protected:
+    void loop(); // should be run inside loop
 };
 #endif
