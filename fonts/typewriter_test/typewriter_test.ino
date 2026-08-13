@@ -155,9 +155,9 @@ void setup() {
   button_yellow.set_callback_on_press(&motors_enable);
   button_yellow.set_callback_on_release(&motors_disable);
 
-  button_yellow.begin(IO_A4, INPUT_PULLUP);
-  button_yellow.set_mode(BUTTON_MODE_STANDARD);
-  button_yellow.set_callback_on_press(&type_test);
+  button_red.begin(IO_A4, INPUT_PULLUP);
+  button_red.set_mode(BUTTON_MODE_STANDARD);
+  button_red.set_callback_on_press(&type_test);
 
   // radius
   knob_orange.set_floor(0, 25);
@@ -178,6 +178,9 @@ void setup() {
 
   // Typewriter
   typewriter.begin();
+  typewriter.output_x.map(&axidraw_kinematics.input_x);
+  typewriter.output_y.map(&axidraw_kinematics.input_y);
+  typewriter.output_z.map(&channel_z.input_target_position);
 
   // -- Start the stepdance library --
   // This activates the system.

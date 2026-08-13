@@ -917,9 +917,9 @@ bool Typewriter::stream_from_glyph(){
         break;
       case BUFFER_TWO_STEP:
         if(buffered_point_type == TYPE_START){
-          pen_down();
+          // pen_down();
         }else{
-          pen_up();
+          // pen_up();
         }
         glyph_line_buffer_status = BUFFER_CLEAR;
         break;
@@ -988,11 +988,21 @@ void Typewriter::pen_down(){
 }
 
 void Typewriter::move_to_buffer_position(){
-  Serial.print(buffered_point_type);
-  Serial.print(" ");
-  Serial.print(buffered_point_position.x_mm);
-  Serial.print(" ");
-  Serial.println(buffered_point_position.y_mm);  
+  struct TimeBasedInterpolator::motion_block interpolator_block;
+  float64_t delta_x_mm = buffered_point_position.x_mm - pos_pen.x_mm;
+  float64_t delta_y_mm = buffered_point_position.y_mm - pos_pen.y_mm;
+  float64_t distance_mm = std::sqrt(delta_x_mm * delta_x_mm + delta_y_mm * delta_y_mm);
+  float64_t move_time_s = distance_mm / write_speed_mm_per_sec;
+
+  interpolator_block.block_time_s = move_time_s;
+  interpolator_block.block_position.x_mm = delta_x_mm;
+  interpolator_block.block_position.y_mm = delta_y_mm;
+  if(move_time_s > 0){
+    target_interpolator.add_block(&interpolator_block);
+  }
+
+  pos_pen.x_mm = buffered_point_position.x_mm;
+  pos_pen.y_mm = buffered_point_position.y_mm;
 }
 
 float64_t Typewriter::get_neutral_y_position(){
