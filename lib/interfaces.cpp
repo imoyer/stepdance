@@ -997,10 +997,10 @@ void Typewriter::move_to_buffer_position(){
   interpolator_block.block_time_s = move_time_s;
   interpolator_block.block_position.x_mm = delta_x_mm;
   interpolator_block.block_position.y_mm = delta_y_mm;
+  interpolator_block.block_type = target_interpolator.BLOCK_TYPE_INCREMENTAL;
   if(move_time_s > 0){
     target_interpolator.add_block(&interpolator_block);
   }
-
   pos_pen.x_mm = buffered_point_position.x_mm;
   pos_pen.y_mm = buffered_point_position.y_mm;
 }

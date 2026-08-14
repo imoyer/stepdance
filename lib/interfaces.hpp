@@ -413,7 +413,9 @@ class Typewriter : public Plugin{
     BlockPort& output_x = target_interpolator.output_x;
     BlockPort& output_y = target_interpolator.output_y;
     BlockPort& output_z = target_interpolator.output_z;
-  
+    // Interpolator
+    TimeBasedInterpolator target_interpolator;
+      
   private:
     // typewriting parameters
     std::string current_font = "roboto";
@@ -459,9 +461,6 @@ class Typewriter : public Plugin{
     static const uint8_t NUM_SUPPORTED_CHARACTERS = 95;
     float64_t advance_table[NUM_SUPPORTED_CHARACTERS]; //stores the X advance amount for each character in the font.
     float64_t get_neutral_y_position(); //returns the neutral y pen position, based on current alignment.
-
-    // Interpolator
-    TimeBasedInterpolator target_interpolator;
 
     // SD Card
     FsFile active_glyph_file;

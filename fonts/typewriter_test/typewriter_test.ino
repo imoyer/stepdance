@@ -219,4 +219,5 @@ void report_overhead(){
   // Serial.println(channel_z.target_position, 4);
   // Serial.println(circle_gen.radius, 4);
   // Serial.println(stepdance_get_cpu_usage(), 4);
+  // Serial.println(typewriter.target_interpolator.slots_remaining);
 }
