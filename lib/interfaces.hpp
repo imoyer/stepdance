@@ -403,6 +403,8 @@ class Typewriter : public Plugin{
     uint8_t alignment = ALIGN_BOTTOM;
     float32_t write_speed_mm_per_sec = 20;
     float32_t lift_speed_mm_per_sec = 10;
+    DecimalPosition pen_up_mm = 3;
+    DecimalPosition pen_down_mm = 0;
 
     bool write(char character); //writes a character. Returns true if character accepted, or false if currently busy
     bool is_idle(); //returns true if ready to accept a new character
@@ -435,6 +437,7 @@ class Typewriter : public Plugin{
     struct position pos_line_start; //the start position of the current line
     struct position pos_char_start; //the start position of the current character
     struct position pos_pen; //the current position of the pen
+    DecimalPosition pen_z_pos; //stores the current pen Z position.
     char character_buffer; //stores a single character. This allows us to simplify transitions between characters.
     bool character_in_buffer = false; //if true, a character is waiting in the buffer.
     char active_character;

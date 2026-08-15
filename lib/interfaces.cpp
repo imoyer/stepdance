@@ -921,9 +921,9 @@ bool Typewriter::stream_from_glyph(){
         break;
       case BUFFER_TWO_STEP:
         if(buffered_point_type == TYPE_START){
-          // pen_down();
+          pen_down();
         }else{
-          // pen_up();
+          pen_up();
         }
         glyph_line_buffer_status = BUFFER_CLEAR;
         break;
@@ -985,10 +985,16 @@ void Typewriter::set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_
 }
 
 void Typewriter::pen_up(){
-  Serial.println("PEN UP");
+  DecimalPosition delta_z = pen_up_mm - pen_z_pos;
+  float32_t move_time_s = fabs(delta_z / lift_speed_mm_per_sec);
+  target_interpolator.add_timed_move(INCREMENTAL, move_time_s, 0, 0, delta_z, 0, 0, 0);
+  pen_z_pos = pen_up_mm;
 }
 void Typewriter::pen_down(){
-  Serial.println("PEN DOWN");
+  DecimalPosition delta_z = pen_down_mm - pen_z_pos;
+  float32_t move_time_s = fabs(delta_z / lift_speed_mm_per_sec);
+  target_interpolator.add_timed_move(INCREMENTAL, move_time_s, 0, 0, delta_z, 0, 0, 0);
+  pen_z_pos = pen_down_mm;
 }
 
 void Typewriter::move_to_buffer_position(){
