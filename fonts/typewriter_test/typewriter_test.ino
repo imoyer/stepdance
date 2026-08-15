@@ -142,6 +142,7 @@ void setup() {
   axidraw_kinematics.begin();
   axidraw_kinematics.output_a.map(&channel_a.input_target_position);
   axidraw_kinematics.output_b.map(&channel_b.input_target_position);
+  axidraw_kinematics.input_y.invert();
 
 
   // -- Configure Button --
