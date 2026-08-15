@@ -40,7 +40,7 @@ Channel channel_b;  // AxiDraw "B" axis --> right motor motion
 Channel channel_z;  // AxiDraw "Z" axis --> pen up/down
 
 // -- AxiDraw Interface
-Eibotboard ebb_interface;
+// Eibotboard ebb_interface;
 
 // -- Define Kinematics --
 // Kinematics convert between two coordinate spaces.
@@ -121,10 +121,10 @@ void setup() {
   encoder_2.output.map(&axidraw_kinematics.input_x); // map the right encoder to the y axis input of the kinematics
 
   // -- Configure and start EBB Interface --
-  ebb_interface.begin();
-  ebb_interface.output_x.map(&axidraw_kinematics.input_x);
-  ebb_interface.output_y.map(&axidraw_kinematics.input_y);
-  ebb_interface.output_z.map(&channel_z.input_target_position);
+  // ebb_interface.begin();
+  // ebb_interface.output_x.map(&axidraw_kinematics.input_x);
+  // ebb_interface.output_y.map(&axidraw_kinematics.input_y);
+  // ebb_interface.output_z.map(&channel_z.input_target_position);
 
   // Configure CircleGenerator with radius 10mm, 1 revolution per second
   circle_gen.radius = 0;
@@ -160,9 +160,9 @@ void setup() {
   button_red.set_callback_on_press(&type_test);
 
   // radius
-  knob_orange.set_floor(0, 25);
-  knob_orange.set_ceiling(5, 1020); //radius
-  knob_orange.map(&ebb_interface.target_interpolator.speed_overide);
+  knob_orange.set_floor(10, 25);
+  knob_orange.set_ceiling(60, 1020); //radius
+  knob_orange.map(&typewriter.write_speed_mm_per_sec);
   knob_orange.begin(IO_A2);
 
   //velocity
@@ -191,6 +191,10 @@ LoopDelay overhead_delay;
 
 void loop() {
   overhead_delay.periodic_call(&report_overhead, 500);
+  if((Serial.available()>0) && typewriter.is_idle()){
+    // Serial.println(Serial.read());
+    typewriter.write(Serial.read());
+  }
 
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
@@ -220,4 +224,5 @@ void report_overhead(){
   // Serial.println(circle_gen.radius, 4);
   // Serial.println(stepdance_get_cpu_usage(), 4);
   // Serial.println(typewriter.target_interpolator.slots_remaining);
+  // Serial.println(typewriter.is_idle());
 }

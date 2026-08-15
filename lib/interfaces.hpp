@@ -399,7 +399,13 @@ class Typewriter : public Plugin{
     void set_line_spacing(float32_t line_spacing_mm); //sets the vertical spacing between lines
     void set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_down_mm); //sets pen up and down positions
 
+    float32_t character_height_mm = 10;
+    uint8_t alignment = ALIGN_BOTTOM;
+    float32_t write_speed_mm_per_sec = 20;
+    float32_t lift_speed_mm_per_sec = 10;
+
     bool write(char character); //writes a character. Returns true if character accepted, or false if currently busy
+    bool is_idle(); //returns true if ready to accept a new character
     void pen_up();
     void pen_down();
 
@@ -415,14 +421,10 @@ class Typewriter : public Plugin{
     BlockPort& output_z = target_interpolator.output_z;
     // Interpolator
     TimeBasedInterpolator target_interpolator;
-      
+
   private:
     // typewriting parameters
     std::string current_font = "roboto";
-    float32_t character_height_mm = 10;
-    uint8_t alignment = ALIGN_BOTTOM;
-    float32_t write_speed_mm_per_sec = 10;
-    float32_t lift_speed_mm_per_sec = 10;
 
     // typewriting state
     struct position{

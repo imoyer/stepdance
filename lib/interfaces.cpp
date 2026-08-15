@@ -801,10 +801,10 @@ void GCodeInterface::_feed_hold(){
 Typewriter::Typewriter(){};
 
 void Typewriter::begin(const std::string& font_name, const float32_t character_height_mm, const uint8_t alignment){
+  initialize_sd_card();
   set_font(font_name);
   set_height(character_height_mm);
   set_alignment(alignment);
-  initialize_sd_card();
   target_interpolator.begin();
   register_plugin(PLUGIN_LOOP); //this runs in the main program loop
 }
@@ -820,6 +820,10 @@ bool Typewriter::write(char character){
     this->character_in_buffer = true;
     return true;
   }
+}
+
+bool Typewriter::is_idle(){
+  return !character_in_buffer;
 }
 
 bool Typewriter::load_glyph_from_buffer(){
@@ -874,7 +878,7 @@ void Typewriter::loop(){
 }
 
 bool Typewriter::stream_from_glyph(){
-  while(!target_interpolator.queue_is_full()){ //while there's space in the queue
+  if(!target_interpolator.queue_is_full()){ //while there's space in the queue
     // READ INTO THE BUFFER
     if(glyph_line_buffer_status == BUFFER_CLEAR){ //OK to read a line
       int num_chars_read = active_glyph_file.fgets(glyph_line_buffer, sizeof(glyph_line_buffer)); //load a line into the buffer
@@ -934,23 +938,23 @@ void Typewriter::set_font(std::string font_name){
 }
 
 void Typewriter::load_advance_table(){
+      
       char advance_file_path[32] = "";
       strcat(advance_file_path, this->current_font.c_str());
       strcat(advance_file_path, "/");
       strcat(advance_file_path, "advance.txt");
-
       // open advance file
       FsFile advance_file = SD.sdfs.open(advance_file_path, O_READ);
 
       // read in advance file
       char advance_line_buffer[32];
-      
       while(advance_file.fgets(advance_line_buffer, sizeof(advance_line_buffer)) > 0){
         char* token;
         token = strtok(advance_line_buffer, " "); //pointer to first token
         int index = atoi(token); //read index as first token in string
 
         token = strtok(nullptr, " ");
+        if (token == nullptr) continue;
         advance_table[index - ADVANCE_TABLE_OFFSET] = (float64_t)atof(token) * character_height_mm;
       }
       advance_file.close();
@@ -988,19 +992,21 @@ void Typewriter::pen_down(){
 }
 
 void Typewriter::move_to_buffer_position(){
-  struct TimeBasedInterpolator::motion_block interpolator_block;
-  float64_t delta_x_mm = buffered_point_position.x_mm - pos_pen.x_mm;
-  float64_t delta_y_mm = buffered_point_position.y_mm - pos_pen.y_mm;
-  float64_t distance_mm = std::sqrt(delta_x_mm * delta_x_mm + delta_y_mm * delta_y_mm);
-  float64_t move_time_s = distance_mm / write_speed_mm_per_sec;
+  // struct TimeBasedInterpolator::motion_block interpolator_block;
+  DecimalPosition delta_x_mm = buffered_point_position.x_mm - pos_pen.x_mm;
+  DecimalPosition delta_y_mm = buffered_point_position.y_mm - pos_pen.y_mm;
+  DecimalPosition distance_mm = std::sqrt(delta_x_mm * delta_x_mm + delta_y_mm * delta_y_mm);
+  float32_t move_time_s = distance_mm / write_speed_mm_per_sec;
 
-  interpolator_block.block_time_s = move_time_s;
-  interpolator_block.block_position.x_mm = delta_x_mm;
-  interpolator_block.block_position.y_mm = delta_y_mm;
-  interpolator_block.block_type = target_interpolator.BLOCK_TYPE_INCREMENTAL;
-  if(move_time_s > 0){
-    target_interpolator.add_block(&interpolator_block);
-  }
+  target_interpolator.add_timed_move(INCREMENTAL, move_time_s, delta_x_mm, delta_y_mm, 0, 0, 0, 0);
+
+  // interpolator_block.block_time_s = move_time_s;
+  // interpolator_block.block_position.x_mm = delta_x_mm;
+  // interpolator_block.block_position.y_mm = delta_y_mm;
+  // interpolator_block.block_type = target_interpolator.BLOCK_TYPE_INCREMENTAL;
+  // if(move_time_s > 0){
+  //   target_interpolator.add_block(&interpolator_block);
+  // }
   pos_pen.x_mm = buffered_point_position.x_mm;
   pos_pen.y_mm = buffered_point_position.y_mm;
 }
