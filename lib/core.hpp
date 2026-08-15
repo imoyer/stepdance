@@ -178,7 +178,14 @@ class BlockPort{
     inline void map(BlockPort *map_target){
       map(map_target, INCREMENTAL); //default internal mode is INCREMENTAL
     }
-    
+
+    /** 
+     * @brief Inverts the reported sign of the blockport position value
+     */
+    inline void invert(){
+      inversion_multiplier *= -1; //Apply inversion. This is realized during the conversion to/from real-world units.
+    }    
+
     // -- External Functions -- these are called outside the block that contains this BlockPort
 /**
  * @brief Returns the position value of the BlockPort in world units. Reading in INCREMENTAL mode returns the change to the position since the last read or update; reading in ABSOLUTE mode returns the absolute position value.
@@ -248,10 +255,10 @@ class BlockPort{
     volatile float64_t absolute_buffer = 0; //contains a new value if absolute_buffer_is_written, otherwise the last value of the associated variable.
 
     inline float64_t convert_block_to_world_units(float64_t block_units){
-      return block_units * world_to_block_ratio;
+      return inversion_multiplier * block_units * world_to_block_ratio;
     }
     inline float64_t convert_world_to_block_units(float64_t world_units){
-      return world_units / world_to_block_ratio;
+      return inversion_multiplier * world_units / world_to_block_ratio;
     }
 
     volatile float64_t* target = nullptr;
@@ -265,6 +272,7 @@ class BlockPort{
                                           // but then this couldn't be operated inside any interrupts incl. the kilohertz interrupt, which could be confusing.
                                           // Can re-examine if we start running out of compute overhead.
     float64_t world_to_block_ratio = 1;
+    int8_t inversion_multiplier = 1; //default is not to invert
 
     BlockPort* target_BlockPort = nullptr;
     Plugin* parent_Plugin = nullptr; //This should only be set on INPUTS.
