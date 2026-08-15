@@ -830,18 +830,26 @@ bool Typewriter::load_glyph_from_buffer(){
     if(character_in_buffer){
       active_character = character_buffer;
       character_in_buffer = false;
-      // construct path to glyph file
-      char glyph_string[4];
-      char glyph_path[32] = "";
-      itoa((int)active_character, glyph_string, 10);
-      strcat(glyph_path, this->current_font.c_str());
-      strcat(glyph_path, "/");
-      strcat(glyph_path, glyph_string);
-      strcat(glyph_path, ".txt");
+      if(active_character == '\n'){ //new line
+        return true;
+      }else{
+        if(active_character >= 32 && active_character<= 126){ //needs to be a valid ascii printing character
+          // construct path to glyph file
+          char glyph_string[4];
+          char glyph_path[32] = "";
+          itoa((int)active_character, glyph_string, 10);
+          strcat(glyph_path, this->current_font.c_str());
+          strcat(glyph_path, "/");
+          strcat(glyph_path, glyph_string);
+          strcat(glyph_path, ".txt");
 
-      // open glyph file
-      this->active_glyph_file = SD.sdfs.open(glyph_path, O_READ);
-      return true;
+          // open glyph file
+          this->active_glyph_file = SD.sdfs.open(glyph_path, O_READ);
+          return true;
+        }else{
+          return false;
+        }
+      }
     }else {
       return false; //nothing in buffer to load
     }
@@ -853,7 +861,11 @@ void Typewriter::loop(){
       case STATUS_IDLE:
         // if typewriter is idle, let's load a new character
         if(load_glyph_from_buffer()){
-          status++; //next state
+          if(active_character == '\n'){ //new line
+            next_line();
+          }else{
+            status++; //next state to stream the glyph
+          }
         };
         break;
       case STATUS_IN_GLYPH:
@@ -995,6 +1007,16 @@ void Typewriter::pen_down(){
   float32_t move_time_s = fabs(delta_z / lift_speed_mm_per_sec);
   target_interpolator.add_timed_move(INCREMENTAL, move_time_s, 0, 0, delta_z, 0, 0, 0);
   pen_z_pos = pen_down_mm;
+}
+
+void Typewriter::next_line(){
+  pos_pen.x_mm += pos_char_start.x_mm;
+  pos_pen.y_mm += line_spacing_fraction*character_height_mm;
+
+  buffered_point_position.x_mm = 0;
+  buffered_point_position.y_mm = get_neutral_y_position();
+  pos_char_start.x_mm = 0;
+  move_to_buffer_position();
 }
 
 void Typewriter::move_to_buffer_position(){

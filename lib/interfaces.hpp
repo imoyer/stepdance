@@ -400,6 +400,7 @@ class Typewriter : public Plugin{
     void set_pen_travels(DecimalPosition pen_up_mm, DecimalPosition pen_down_mm); //sets pen up and down positions
 
     float32_t character_height_mm = 10;
+    float32_t line_spacing_fraction = 1.2; //proportion of the character height
     uint8_t alignment = ALIGN_BOTTOM;
     float32_t write_speed_mm_per_sec = 20;
     float32_t lift_speed_mm_per_sec = 10;
@@ -410,6 +411,7 @@ class Typewriter : public Plugin{
     bool is_idle(); //returns true if ready to accept a new character
     void pen_up();
     void pen_down();
+    void next_line();
 
     enum{
       STATUS_IDLE, // waiting for a character
