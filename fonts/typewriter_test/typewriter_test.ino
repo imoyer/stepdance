@@ -18,6 +18,8 @@ A part of the Mixing Metaphors Project
 #define tiny_plotter_v1
 
 #include "stepdance.hpp"  // Import the stepdance library
+#include "USBHost_t36.h"
+
 // -- Define Input Ports --
 InputPort input_a;
 
@@ -69,6 +71,16 @@ PositionGenerator position_gen;
 
 // -- Circle Generator to add to end-effector motion --
 CircleGenerator circle_gen;
+
+// -- USB Host --
+// Code is from the USBHost_t36 "KeyboardForeward" example, written by Paul Stoffregen
+
+USBHost myusb;
+USBHub hub1(myusb);
+KeyboardController keyboard1(myusb);
+USBHIDParser hid1(myusb);
+USBHIDParser hid2(myusb);
+USBHIDParser hid3(myusb);
 
 void setup() {
   // -- Configure and start the output ports --
@@ -183,12 +195,50 @@ void setup() {
   typewriter.output_y.map(&axidraw_kinematics.input_y);
   typewriter.output_z.map(&channel_z.input_target_position);
 
+  // USB Host
+  myusb.begin();
+  keyboard1.attachPress(OnKeyboardPress);
+
   // -- Start the stepdance library --
   // This activates the system.
   dance_start();
 }
 
 LoopDelay overhead_delay;
+
+// Quick ring buffer for storing keyboard key presses
+const uint8_t KEY_BUFFER_SIZE = 20;
+char key_buffer[KEY_BUFFER_SIZE];
+uint8_t read_index = 0;
+uint8_t write_index = 0;
+uint8_t slots_available = KEY_BUFFER_SIZE;
+bool push_to_buffer(char input){
+  if(slots_available > 0){
+    slots_available --;
+    key_buffer[write_index] = input;
+    write_index++;
+    if(write_index == KEY_BUFFER_SIZE){
+      write_index = 0;
+    }
+    return true;
+  }else{
+    return false;
+  }
+}
+
+char pull_from_buffer(){
+  if(slots_available < KEY_BUFFER_SIZE){
+    char result = key_buffer[read_index];
+    slots_available++;
+    read_index++;
+    if(read_index == KEY_BUFFER_SIZE){
+      read_index = 0;
+    }
+    return result;
+  }else{
+    return '\0';
+  }
+}
 
 void loop() {
   overhead_delay.periodic_call(&report_overhead, 500);
@@ -197,6 +247,11 @@ void loop() {
     typewriter.write(Serial.read());
   }
 
+  if((slots_available < KEY_BUFFER_SIZE) && typewriter.is_idle()){
+    typewriter.write(pull_from_buffer());
+  }
+
+  myusb.Task();
   dance_loop(); // Stepdance loop provides convenience functions, and should be called at the end of the main loop
 }
 
@@ -218,6 +273,11 @@ void motors_disable(){
 
 void type_test(){
   typewriter.write('A');
+}
+
+void OnKeyboardPress(int key){
+  push_to_buffer((char)key);
+  Serial.print((char)key);
 }
 
 void report_overhead(){
